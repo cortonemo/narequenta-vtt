@@ -1,8 +1,6 @@
-
 export class EntitySheetHelper {
 
   static getAttributeData(data) {
-
     // Determine attribute type.
     for ( let attr of Object.values(data.system.attributes) ) {
       if ( attr.dtype ) {
@@ -107,7 +105,7 @@ export class EntitySheetHelper {
         let groups = document.querySelectorAll('.group-key');
         for ( let i = 0; i < groups.length; i++ ) {
           if (groups[i].value === val) {
-            ui.notifications.error(game.i18n.localize("SIMPLE.NotifyAttrDuplicate") + ` (${val})`);
+            ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyAttrDuplicate") + ` (${val})`);
             el.value = oldVal;
             attrError = true;
             break;
@@ -172,7 +170,7 @@ export class EntitySheetHelper {
     const button = event.currentTarget;
     const label = button.closest(".attribute").querySelector(".attribute-label")?.value;
     const chatLabel = label ?? button.parentElement.querySelector(".attribute-key").value;
-    const shorthand = game.settings.get("worldbuilding", "macroShorthand");
+    const shorthand = game.settings.get("narequenta", "macroShorthand");
 
     // Use the actor for rollData so that formulas are always in reference to the parent actor.
     const rollData = this.actor.getRollData();
@@ -233,25 +231,25 @@ export class EntitySheetHelper {
 
     // Check for duplicate group keys.
     if ( groups.includes(groupName) ) {
-      ui.notifications.error(game.i18n.localize("SIMPLE.NotifyGroupDuplicate") + ` (${groupName})`);
+      ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyGroupDuplicate") + ` (${groupName})`);
       return false;
     }
 
     // Check for group keys that match attribute keys.
     if ( attributes.includes(groupName) ) {
-      ui.notifications.error(game.i18n.localize("SIMPLE.NotifyGroupAttrDuplicate") + ` (${groupName})`);
+      ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyGroupAttrDuplicate") + ` (${groupName})`);
       return false;
     }
 
     // Check for reserved group names.
     if ( ["attr", "attributes"].includes(groupName) ) {
-      ui.notifications.error(game.i18n.format("SIMPLE.NotifyGroupReserved", {key: groupName}));
+      ui.notifications.error(game.i18n.format("NAREQUENTA.NotifyGroupReserved", {key: groupName}));
       return false;
     }
 
     // Check for whitespace or periods.
     if ( groupName.match(/[\s|\.]/i) ) {
-      ui.notifications.error(game.i18n.localize("SIMPLE.NotifyGroupAlphanumeric"));
+      ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyGroupAlphanumeric"));
       return false;
     }
     return true;
@@ -387,8 +385,8 @@ export class EntitySheetHelper {
     let group = $(groupHeader).find('.group-key');
     // Create a dialog to confirm group deletion.
     new Dialog({
-      title: game.i18n.localize("SIMPLE.DeleteGroup"),
-      content: `${game.i18n.localize("SIMPLE.DeleteGroupContent")} <strong>${group.val()}</strong>`,
+      title: game.i18n.localize("NAREQUENTA.DeleteGroup"),
+      content: `${game.i18n.localize("NAREQUENTA.DeleteGroupContent")} <strong>${group.val()}</strong>`,
       buttons: {
         confirm: {
           icon: '<i class="fas fa-trash"></i>',
@@ -520,10 +518,10 @@ export class EntitySheetHelper {
 
     // Identify the template Actor types
     const collection = game.collections.get(this.documentName);
-    const templates = collection.filter(a => a.getFlag("worldbuilding", "isTemplate"));
+    const templates = collection.filter(a => a.getFlag("narequenta", "isTemplate")); // Changed flag scope
     const defaultType = this.TYPES.filter(t => t !== CONST.BASE_DOCUMENT_TYPE)[0] ?? CONST.BASE_DOCUMENT_TYPE;
     const types = {
-      [defaultType]: game.i18n.localize("SIMPLE.NoTemplate")
+      [defaultType]: game.i18n.localize("NAREQUENTA.NoTemplate")
     }
     for ( let a of templates ) {
       types[a.id] = a.name;
@@ -558,7 +556,7 @@ export class EntitySheetHelper {
         if ( template ) {
           createData = foundry.utils.mergeObject(template.toObject(), createData);
           createData.type = template.type;
-          delete createData.flags.worldbuilding.isTemplate;
+          delete createData.flags.narequenta.isTemplate; // Changed flag scope
         }
 
         // Merge provided override data
@@ -596,7 +594,7 @@ export class EntitySheetHelper {
    */
   static cleanKey(key) {
     const clean = key.replace(/[\s.]/g, "");
-    if ( clean !== key ) ui.notifications.error("SIMPLE.NotifyAttrInvalid", { localize: true });
+    if ( clean !== key ) ui.notifications.error("NAREQUENTA.NotifyAttrInvalid", { localize: true });
     return clean;
   }
 }
