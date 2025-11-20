@@ -7,17 +7,17 @@ export class NarequentaActor extends Actor {
     super.prepareDerivedData();
 
     // SAFETY CHECK: If this actor doesn't have essences defined yet, stop.
-    // This prevents the "White Sheet" crash on new/old actors.
-    if (!this.system.essences && this.type === 'character') return;
+    if (this.type === 'character' && !this.system.essences) return;
+    if (this.type === 'npc' && !this.system.focus_essence) return;
 
-    // 1. Handle Nárëquenta Specific Logic (Essences)
+    // 1. Handle Character Logic
     if (this.type === 'character') {
         this._prepareCharacterData();
     }
     
-    // 2. Handle NPC Logic
+    // 2. Handle NPC Logic (New Automation)
     if (this.type === 'npc') {
-        // NPC logic (if any)
+        this._prepareNpcData();
     }
 
     // 3. Handle Legacy Worldbuilding Logic
@@ -30,7 +30,6 @@ export class NarequentaActor extends Actor {
       const system = this.system;
       const essences = system.essences;
 
-      // Double check to ensure essences exist before looping
       if (!essences) return;
       
       for (let [key, essence] of Object.entries(essences)) {
@@ -38,17 +37,11 @@ export class NarequentaActor extends Actor {
           if (essence.max < 50) essence.max = 50;
           if (essence.max > 100) essence.max = 100;
 
-          [cite_start]// B. Calculate Tier [cite: 260]
-          let tier = 0;
-          if (essence.max <= 50) tier = 5;      
-          else if (essence.max <= 60) tier = 4; 
-          else if (essence.max <= 70) tier = 3; 
-          else if (essence.max <= 80) tier = 2; 
-          else if (essence.max <= 90) tier = 1; 
-          else tier = 0;                        
+          // B. Calculate Tier
+          essence.tier = this._calculateTier(essence.max);
 
-          [cite_start]// C. Derive Dice Pool [cite: 262]
-          essence.tier = tier;
+          // C. Derive Dice Pool
+          const tier = essence.tier;
           essence.diceCount = (tier === 0) ? 0 : tier;
           essence.diceString = (tier > 0) ? `${tier}d10` : "0";
           essence.mitigation = (tier * 5.5); 
@@ -62,6 +55,33 @@ export class NarequentaActor extends Actor {
           }
           system.resources.action_surges.max = maxTier;
       }
+  }
+
+  _prepareNpcData() {
+      const system = this.system;
+      const focus = system.focus_essence;
+      
+      if (!focus) return;
+
+      // A. Enforce Hard Floor for NPC
+      if (focus.max < 50) focus.max = 50;
+      if (focus.max > 100) focus.max = 100;
+
+      // B. Auto-Calculate NPC Tier based on Focus Essence
+      // This writes to system.tier so the sheet displays it automatically
+      system.tier = this._calculateTier(focus.max);
+  }
+
+  /**
+   * Shared Logic: Returns Tier (0-5) based on E_max value
+   */
+  _calculateTier(maxEssence) {
+      if (maxEssence <= 50) return 5;      
+      if (maxEssence <= 60) return 4; 
+      if (maxEssence <= 70) return 3; 
+      if (maxEssence <= 80) return 2; 
+      if (maxEssence <= 90) return 1; 
+      return 0;     
   }
 
   getRollData() {
