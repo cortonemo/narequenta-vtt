@@ -1,7 +1,7 @@
 {
   "id": "narequenta",
   "title": "Nárëquenta — Tales of the Waning",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "A TTRPG about Beautiful Erosion. Heroes start at their peak and gradually fade. Power is a finite resource; Proficiency Compensates for Decline.",
   "url": "https://github.com/cortonemo/narequenta-vtt",
   "license": "LICENSE.md",
@@ -29,7 +29,7 @@
   ],
   "compatibility": {
     "minimum": "11",
-    "verified": "12"
+    "verified": "13"
   },
   
   "grid": {

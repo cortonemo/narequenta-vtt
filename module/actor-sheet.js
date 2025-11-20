@@ -1,5 +1,5 @@
 import { EntitySheetHelper } from "./helper.js";
-import {ATTRIBUTE_TYPES} from "./constants.js";
+import { ATTRIBUTE_TYPES } from "./constants.js";
 
 export class NarequentaActorSheet extends ActorSheet {
 
@@ -7,9 +7,8 @@ export class NarequentaActorSheet extends ActorSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["narequenta", "sheet", "actor"],
-      // IMPORTANT: This points to where you will put your HTML file
-      template: "systems/narequenta/templates/actor-sheet.html", 
-      width: 800, // Wider for the Essence Grid
+      template: "systems/narequenta/templates/actor-sheet.html",
+      width: 800,
       height: 700,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "essences"}]
     });
@@ -17,16 +16,25 @@ export class NarequentaActorSheet extends ActorSheet {
 
   /** @inheritdoc */
   async getData(options) {
+    // 1. Get the basic context
     const context = await super.getData(options);
+
+    // 2. CRITICAL FIX: Correctly retrieve system data for V10+
+    // We get the plain object from the actor document
+    const actorData = this.actor.toObject(false);
+
+    // 3. Define the variable your HTML is looking for (systemData)
+    context.systemData = actorData.system;
+    context.system = actorData.system; // Backup
+
+    // 4. Prepare Legacy Helper Data (pass the full actorData object)
+    EntitySheetHelper.getAttributeData(actorData);
     
-    // Prepare Worldbuilding Helper Data (for legacy items/attributes)
-    EntitySheetHelper.getAttributeData(context.data);
-    
+    // 5. Pass Settings & Types
     context.shorthand = !!game.settings.get("narequenta", "macroShorthand");
-    context.systemData = context.data.system;
     context.dtypes = ATTRIBUTE_TYPES;
     
-    // Enrich Bio
+    // 6. Enrich Biography (HTML Editor)
     context.biographyHTML = await TextEditor.enrichHTML(context.systemData.biography, {
       secrets: this.document.isOwner,
       async: true
@@ -43,8 +51,6 @@ export class NarequentaActorSheet extends ActorSheet {
     // Keep legacy listeners for Items
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
-
-    // Add Nárëquenta specific listeners here later (like "Refinement" buttons)
   }
 
   _onItemControl(event) {
@@ -65,12 +71,11 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   _onItemRoll(event) {
-    // Basic item rolling
     let button = $(event.currentTarget);
     const li = button.parents(".item");
     const item = this.actor.items.get(li.data("itemId"));
     
-    // Simple roll logic for now
-    item.roll(); 
+    // Basic roll to chat
+    if (item) item.roll(); 
   }
 }
