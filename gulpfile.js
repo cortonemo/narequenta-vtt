@@ -2,27 +2,31 @@ const gulp = require('gulp');
 const less = require('gulp-less');
 
 /* ----------------------------------------- */
-/*  Compile LESS
+/* Compile LESS
 /* ----------------------------------------- */
 
-const SIMPLE_LESS = ["styles/*.less"];
+// Update the constant to match your new file structure
+const SYSTEM_LESS = ["styles/*.less"];
+
 function compileLESS() {
-  return gulp.src("styles/simple.less")
+  // Changed from "simple.less" to "narequenta.less"
+  return gulp.src("styles/narequenta.less")
     .pipe(less())
     .pipe(gulp.dest("./styles/"))
 }
+
 const css = gulp.series(compileLESS);
 
 /* ----------------------------------------- */
-/*  Watch Updates
+/* Watch Updates
 /* ----------------------------------------- */
 
 function watchUpdates() {
-  gulp.watch(SIMPLE_LESS, css);
+  gulp.watch(SYSTEM_LESS, css);
 }
 
 /* ----------------------------------------- */
-/*  Export Tasks
+/* Export Tasks
 /* ----------------------------------------- */
 
 exports.default = gulp.series(

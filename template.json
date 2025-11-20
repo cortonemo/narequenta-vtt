@@ -1,32 +1,75 @@
 {
-"Actor": {
-  "types": ["character"],
-  "htmlFields": ["biography"],
-  "character": {
-    "biography": "",
-    "health": {
-      "value": 10,
-      "min": 0,
-      "max": 10
+  "Actor": {
+    "types": ["character", "npc"],
+    "htmlFields": ["biography", "promise"],
+    "character": {
+      "biography": "",
+      "promise": "",
+      "resources": {
+        "hp": {
+          "value": 100,
+          "min": 0,
+          "max": 100
+        },
+        "action_surges": {
+          "value": 0,
+          "min": 0,
+          "max": 5
+        }
+      },
+      "essences": {
+        "vitalis": { "value": 100, "max": 100, "label": "VITALIS" },
+        "motus":   { "value": 100, "max": 100, "label": "MOTUS" },
+        "sensus":  { "value": 100, "max": 100, "label": "SENSUS" },
+        "verbum":  { "value": 100, "max": 100, "label": "VERBUM" },
+        "anima":   { "value": 100, "max": 100, "label": "ANIMA" }
+      },
+      "attributes": {},
+      "groups": {}
     },
-    "power": {
-      "value": 5,
-      "min": 0,
-      "max": 5
+    "npc": {
+      "biography": "",
+      "resources": {
+        "hp": { "value": 100, "min": 0, "max": 100 }
+      },
+      "tier": 0,
+      "focus_essence": {
+        "label": "Focus Essence",
+        "value": 90,
+        "max": 90
+      },
+      "attributes": {},
+      "groups": {}
+    }
+  },
+  "Item": {
+    "types": ["item", "ability", "weapon"],
+    "htmlFields": ["description"],
+    "item": {
+      "description": "",
+      "quantity": 1,
+      "weight": 0,
+      "attributes": {},
+      "groups": {}
     },
-    "attributes": {},
-    "groups": {}
+    "ability": {
+      "description": "",
+      "cost": {
+        "motor": "vitalis",
+        "quality": "motus"
+      },
+      "attributes": {},
+      "groups": {}
+    },
+    "weapon": {
+      "description": "",
+      "damage_bonus": 0,
+      "cost": {
+        "motor": "vitalis",
+        "quality": "motus"
+      },
+      "attributes": {},
+      "groups": {}
+    }
   }
-},
-"Item": {
-  "types": ["item"],
-  "htmlFields": ["description"],
-  "item": {
-    "description": "",
-    "quantity": 1,
-    "weight": 0,
-    "attributes": {},
-    "groups": {}
-  }
-}
 }

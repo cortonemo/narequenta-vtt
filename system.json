@@ -1,18 +1,19 @@
 {
-  "id": "worldbuilding",
-  "version": "0.8.2",
-  "title": "Simple World-Building",
-  "url": "https://github.com/foundryvtt/worldbuilding/",
-  "description": "A minimalist game system which provides configurable Actor and Item templates to support free-form system agnostic game-play.",
-  "license": "LICENSE.txt",
+  "id": "narequenta",
+  "version": "0.9.0",
+  "title": "Nárëquenta — Tales of the Waning",
+  "description": "A TTRPG about Beautiful Erosion. Heroes start at their peak and gradually fade. Power is a finite resource; Proficiency Compensates for Decline.",
+  "url": "https://github.com/cortonemo/narequenta-vtt",
+  "license": "LICENSE.md",
   "authors": [
     {
-      "name": "Atropos",
-      "url": "https://foundryvtt.com"
+      "name": "Serelith Varn",
+      "email": "serelith.varn@gmail.com",
+      "url": "https://github.com/cortonemo"
     }
   ],
-  "esmodules": ["module/simple.js"],
-  "styles": ["styles/simple.css"],
+  "esmodules": ["module/narequenta.js"],
+  "styles": ["styles/narequenta.css"],
   "packs": [],
   "languages": [
     {
@@ -21,19 +22,19 @@
       "path": "lang/en.json"
     },
     {
-      "lang": "pl",
-      "name": "Polski",
-      "path": "lang/pl.json"
+      "lang": "pt",
+      "name": "Português",
+      "path": "lang/pt.json"
     }
   ],
   "compatibility": {
-    "minimum": "10",
-    "verified": "11"
+    "minimum": "11",
+    "verified": "12"
   },
-  "gridDistance": 5,
-  "gridUnits": "ft",
-  "primaryTokenAttribute": "health",
-  "secondaryTokenAttribute": "power",
-  "manifest": "https://raw.githubusercontent.com/foundryvtt/worldbuilding/master/system.json",
-  "download": "https://github.com/foundryvtt/worldbuilding/archive/refs/tags/release-082.zip"
+  "gridDistance": 1,
+  "gridUnits": "m",
+  "primaryTokenAttribute": "resources.hp",
+  "secondaryTokenAttribute": "resources.action_surges",
+  "manifest": "https://github.com/cortonemo/narequenta-vtt/releases/latest/download/system.json",
+  "download": "https://github.com/cortonemo/narequenta-vtt/releases/latest/download/system.zip"
 }

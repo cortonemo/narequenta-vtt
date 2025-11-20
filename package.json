@@ -1,17 +1,21 @@
 {
-  "name": "worldbuilding",
-  "version": "1.0.0",
-  "description": "CSS compiler for the Worldbuilding system",
+  "name": "narequenta",
+  "version": "0.9.0",
+  "description": "Nárëquenta — Tales of the Waning (Foundry VTT System)",
   "scripts": {
     "css": "gulp css",
     "watch": "gulp",
     "gulp": "gulp"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cortonemo/narequenta-vtt.git"
+  },
   "browserslist": [
     "last 3 versions"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "Serelith Varn",
+  "license": "SEE LICENSE IN LICENSE.md",
   "private": true,
   "dependencies": {
     "gulp": "^4.0.2",
