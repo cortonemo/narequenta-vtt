@@ -1,24 +1,47 @@
 <form class="flexcol {{cssClass}}" autocomplete="off">
     <header class="sheet-header">
-        <img class="profile-img" src="{{data.img}}" data-edit="img" title="{{data.name}}" />
+        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
         <div class="header-fields">
             <h1 class="charname">
-                <input name="name" type="text" value="{{data.name}}" placeholder="Name" />
+                <input name="name" type="text" value="{{item.name}}" placeholder="Name"/>
             </h1>
-            <div class="resource">
-                <label>Quantity</label>
-                <input type="number" name="system.quantity" value="{{systemData.quantity}}"/>
+            
+            <div class="resource-row">
+                <div class="resource">
+                    <label>Quantity</label>
+                    <input type="number" name="system.quantity" value="{{systemData.quantity}}"/>
+                </div>
+                <div class="resource">
+                    <label>Weight</label>
+                    <input type="number" name="system.weight" value="{{systemData.weight}}"/>
+                </div>
             </div>
-            <div class="resource">
-                <label>Weight</label>
-                <input type="number" name="system.weight" value="{{systemData.weight}}"/>
+
+            {{!-- Nárëquenta Specific: Motor & Quality Selection --}}
+            {{!-- Only show if this item has a cost defined (Ability/Weapon) --}}
+            {{#if systemData.cost}}
+            <div class="resource-row" style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px;">
+                <div class="resource">
+                    <label style="font-weight: bold; color: #8b0000;">Motor (E_P)</label>
+                    <select name="system.cost.motor">
+                        {{selectOptions systemData.essencesList selected=systemData.cost.motor localize=true}}
+                    </select>
+                </div>
+                <div class="resource">
+                    <label style="font-weight: bold; color: #006400;">Quality (E_S)</label>
+                    <select name="system.cost.quality">
+                        {{selectOptions systemData.essencesList selected=systemData.cost.quality localize=true}}
+                    </select>
+                </div>
             </div>
+            {{/if}}
+            
         </div>
     </header>
 
     {{!-- Sheet Tab Navigation --}}
     <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="description">Description</a>
+        <a class="item" data-tab="description">{{localize "NAREQUENTA.TabAbilities"}}</a>
         <a class="item" data-tab="attributes">Attributes</a>
     </nav>
 
@@ -33,22 +56,22 @@
         {{!-- Attributes Tab --}}
         <div class="tab attributes" data-group="primary" data-tab="attributes">
             <header class="attributes-header flexrow">
-                <span class="attribute-key">{{localize "SIMPLE.AttributeKey"}}</span>
-                <span class="attribute-value">{{localize "SIMPLE.AttributeValue"}}</span>
-                <span class="attribute-label">{{localize "SIMPLE.AttributeLabel"}}</span>
-                <span class="attribute-dtype">{{localize "SIMPLE.AttributeDtype"}}</span>
+                <span class="attribute-key">{{localize "NAREQUENTA.AttributeKey"}}</span>
+                <span class="attribute-value">{{localize "NAREQUENTA.AttributeValue"}}</span>
+                <span class="attribute-label">{{localize "NAREQUENTA.AttributeLabel"}}</span>
+                <span class="attribute-dtype">{{localize "NAREQUENTA.AttributeDtype"}}</span>
                 <a class="attribute-control" data-action="create" data-group="{{group}}"><i class="fas fa-plus"></i></a>
             </header>
 
-            {{!-- Render the attribute list partial. --}}
-            {{> "systems/worldbuilding/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
+            {{!-- Render the attribute list partial. Note the path fix! --}}
+            {{> "systems/narequenta/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
 
-            {{!-- Render the grouped attributes partial and control. --}}
+            {{!-- Render the grouped attributes partial. Note the path fix! --}}
             <div class="groups">
-                {{> "systems/worldbuilding/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
+                {{> "systems/narequenta/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
                 <div class="group-controls flexrow">
                     <input class="group-prefix" type="text" value=""/>
-                    <a class="button group-control" data-action="create-group"><i class="fas fa-plus"></i>Add Attribute Group</a>
+                    <a class="button group-control" data-action="create-group"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}} Group</a>
                 </div>
             </div>
         </div>

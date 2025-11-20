@@ -21,12 +21,22 @@ export class SimpleItemSheet extends ItemSheet {
 
   /* -------------------------------------------- */
 
-  /** @inheritdoc */
+/** @inheritdoc */
   async getData(options) {
     const context = await super.getData(options);
     EntitySheetHelper.getAttributeData(context.data);
     context.systemData = context.data.system;
     context.dtypes = ATTRIBUTE_TYPES;
+    
+    // ADD THIS BLOCK: Provide Essence Options for Dropdown
+    context.systemData.essencesList = {
+        "vitalis": "NAREQUENTA.Vitalis",
+        "motus": "NAREQUENTA.Motus",
+        "sensus": "NAREQUENTA.Sensus",
+        "verbum": "NAREQUENTA.Verbum",
+        "anima": "NAREQUENTA.Anima"
+    };
+
     context.descriptionHTML = await TextEditor.enrichHTML(context.systemData.description, {
       secrets: this.document.isOwner,
       async: true
