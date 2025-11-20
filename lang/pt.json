@@ -1,0 +1,55 @@
+{
+  "NAREQUENTA.GameTitle": "Nárëquenta: Contos do Declínio",
+
+  "SETTINGS.SimpleMacroShorthandN": "Sintaxe de Macro Abreviada",
+  "SETTINGS.SimpleMacroShorthandL": "Ativar sintaxe abreviada. Permite referenciar essências diretamente, por exemplo @vitalis em vez de @essences.vitalis.value.",
+  "SETTINGS.SimpleInitFormulaN": "Fórmula de Iniciativa",
+  "SETTINGS.SimpleInitFormulaL": "Insira uma fórmula de iniciativa. Recomendado: 1d10 + @essences.sensus.tier",
+
+  "NAREQUENTA.ItemCreate": "Criar Habilidade",
+  "NAREQUENTA.ItemEdit": "Editar Habilidade",
+  "NAREQUENTA.ItemDelete": "Apagar Habilidade",
+  "NAREQUENTA.ItemNew": "Nova Habilidade",
+
+  "NAREQUENTA.NotifyInitFormulaUpdated": "Fórmula de iniciativa atualizada para",
+  "NAREQUENTA.NotifyInitFormulaInvalid": "Fórmula de iniciativa inválida",
+
+  "NAREQUENTA.EssenceMax": "Auge da Alma (E_max) [Mínimo 50%]",
+  "NAREQUENTA.EssenceCur": "Vigor Ativo (E_cur)",
+  "NAREQUENTA.EssenceTier": "Nível / Rendimento do Declínio",
+  "NAREQUENTA.ActionSurges": "Surtos de Intenção",
+
+  "NAREQUENTA.TabEssences": "Facetas do Eu",
+  "NAREQUENTA.TabAbilities": "Habilidades e Equipamento",
+  "NAREQUENTA.TabBiography": "A Lenda (Bio)",
+  "NAREQUENTA.TabPromise": "Voto Final",
+
+  "NAREQUENTA.Vitalis": "VITALIS (Vigor, Presença)",
+  "NAREQUENTA.Motus": "MOTUS (Movimento, Finesse)",
+  "NAREQUENTA.Sensus": "SENSUS (Percepção, Instinto)",
+  "NAREQUENTA.Verbum": "VERBUM (Intelecto, Lógica)",
+  "NAREQUENTA.Anima": "ANIMA (Vontade, Sacrifício)",
+
+  "NAREQUENTA.DefineTemplate": "Definir como Modelo",
+  "NAREQUENTA.UnsetTemplate": "Remover Modelo",
+  "NAREQUENTA.NoTemplate": "Sem Modelo",
+
+  "NAREQUENTA.Create": "Criar",
+  "NAREQUENTA.New": "Novo",
+  
+  "NAREQUENTA.RollSuccess": "Sucesso",
+  "NAREQUENTA.RollFailure": "Falha",
+  "NAREQUENTA.AttritionApplied": "Atrito Aplicado (Motor/Qualidade)",
+
+  "NAREQUENTA.NotifyAttrDuplicate": "Chave de atributo já existe como um grupo.",
+  "NAREQUENTA.NotifyGroupDuplicate": "Grupo de atributos já existe.",
+  "NAREQUENTA.NotifyGroupAttrDuplicate": "Grupo de atributos já existe como um atributo.",
+  "NAREQUENTA.NotifyGroupReserved": "Grupo de atributos \"{key}\" é reservado e não pode ser usado.",
+  "NAREQUENTA.NotifyGroupAlphanumeric": "Nomes de grupos de atributos não podem conter espaços ou pontos.",
+  "NAREQUENTA.NotifyAttrInvalid": "Chaves de atributos não podem conter espaços ou pontos.",
+  
+  "NAREQUENTA.DeleteGroup": "Apagar grupo?",
+  "NAREQUENTA.DeleteGroupContent": "Deseja apagar este grupo? Isto apagará o seguinte grupo e todos os atributos incluídos nele: ",
+  "Yes": "Sim",
+  "No": "Não"
+}

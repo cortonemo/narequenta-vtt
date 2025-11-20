@@ -1,0 +1,148 @@
+/* Global System Styles */
+.narequenta {
+    .window-content {
+        font-family: "Signika", sans-serif;
+        font-size: 14px;
+        color: #191813;
+        background: #fcfcfc;
+    }
+
+    /* --- Header Section --- */
+    header.sheet-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 10px;
+
+        .profile-img {
+            flex: 0 0 100px;
+            height: 100px;
+            margin-right: 15px;
+            border: 1px solid #000;
+        }
+
+        .header-fields {
+            flex: 1;
+        }
+
+        h1.charname input {
+            font-family: "Modesto Condensed", serif;
+            font-size: 2em;
+            border: none;
+            border-bottom: 1px solid #000;
+            width: 100%;
+        }
+    }
+
+    /* --- The Essence Grid (Vitalis, Motus, etc.) --- */
+    .essence-grid-container {
+        border: 1px solid #bbb;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 5px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+
+        /* Grid Definition: Label | E_MAX | E_CUR | Tier | Dice */
+        .essence-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 5px;
+            align-items: center;
+            padding: 4px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .essence-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 5px;
+            align-items: center;
+            padding: 4px;
+            border-bottom: 1px solid #e0e0e0;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .essence-label {
+                font-weight: bold;
+                color: #4a4a4a;
+            }
+        }
+    }
+
+    /* --- Inputs --- */
+    input[type="number"] {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid #7a7971;
+        border-radius: 3px;
+
+        /* Highlight E_MAX (Permanent Loss) */
+        &.input-emax {
+            color: #8b0000; /* Dark Red */
+            font-weight: bold;
+        }
+
+        /* Highlight E_CUR (Daily Energy) */
+        &.input-ecur {
+            color: #006400; /* Dark Green */
+            font-weight: bold;
+        }
+    }
+
+    /* Read-only derived stats */
+    .derived-stat {
+        text-align: center;
+        background: transparent;
+        border: none;
+        color: #555;
+        font-style: italic;
+        pointer-events: none; /* Prevent typing */
+    }
+
+    /* --- Resource Bar (Action Surges) --- */
+    .resource-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px 0;
+        
+        label {
+            font-weight: bold;
+        }
+    }
+    
+    /* --- Tabs Navigation --- */
+    .sheet-tabs {
+        flex: 0 0 40px;
+        border-top: 1px solid #AAA;
+        border-bottom: 1px solid #AAA;
+        line-height: 40px;
+        margin-bottom: 10px;
+
+        .item {
+            display: inline-block;
+            padding: 0 10px;
+            border-bottom: 3px solid transparent;
+            color: #4b4a44;
+            font-weight: bold;
+            
+            &.active {
+                border-bottom: 3px solid #444;
+                color: #191813;
+                text-shadow: 0 0 2px #FFF;
+            }
+            
+            &:hover {
+                color: #000;
+                text-shadow: 0 0 2px #FFF;
+            }
+        }
+    }
+}
