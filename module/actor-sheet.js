@@ -364,56 +364,87 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* CONTESTED ROLL SUITE (v0.9.7)               */
+  /* CONTESTED ROLL SUITE (v0.9.8 - Stable)      */
   /* -------------------------------------------- */
 
   _onLaunchContest(event) {
       event.preventDefault();
       const attacker = this.actor;
       
-      // Gather valid targets from the current scene
-      let targetOptions = "";
+      // 1. Gather Tokens from Scene
+      let pcOptions = "";
+      let npcOptions = "";
+      let count = 0;
+
       canvas.tokens.placeables.forEach(t => {
-          if (!t.actor || t.actor.id === attacker.id) return; // Skip self
-          targetOptions += `<option value="${t.id}">${t.name}</option>`;
+          // Skip objects without actors
+          if (!t.actor) return;
+          
+          // Skip self (Don't target yourself)
+          if (t.actor.id === attacker.id) return; 
+
+          const opt = `<option value="${t.id}">${t.name}</option>`;
+          if (t.actor.type === "character") {
+              pcOptions += opt;
+          } else {
+              npcOptions += opt;
+          }
+          count++;
       });
 
-      if (targetOptions === "") {
-          ui.notifications.warn("No valid targets found on the scene.");
+      if (count === 0) {
+          ui.notifications.warn("No valid targets found on the current scene.");
           return;
       }
 
+      // 2. Build Grouped Select List
+      const targetList = `
+          <optgroup label="Adversaries (NPCs)">${npcOptions}</optgroup>
+          <optgroup label="Characters (PCs)">${pcOptions}</optgroup>
+      `;
+
+      // 3. Show Dialog
       new Dialog({
-          title: `Select Target for ${attacker.name}`,
+          title: `⚔️ Select Target for ${attacker.name}`,
           content: `
-          <form>
+          <form style="margin-bottom:10px;">
               <div class="form-group">
-                  <label>Target:</label>
-                  <select id="contest-target" style="width:100%">${targetOptions}</select>
+                  <label style="font-weight:bold;">Target:</label>
+                  <select id="contest-target" style="width:100%">${targetList}</select>
               </div>
           </form>
           `,
           buttons: {
               fight: {
-                  icon: '<i class="fas fa-fist-raised"></i>',
-                  label: "Open Calculator",
+                  icon: '<i class="fas fa-crosshairs"></i>',
+                  label: "Target Enemy",
                   callback: (html) => {
                       const targetId = html.find("#contest-target").val();
                       this._launchContestCalculator(attacker, targetId);
                   }
               }
-          }
+          },
+          default: "fight"
       }).render(true);
   }
 
   _launchContestCalculator(attacker, targetTokenId) {
       const targetToken = canvas.tokens.get(targetTokenId);
+      
+      // Safety Check: Does token exist?
+      if (!targetToken || !targetToken.actor) {
+          ui.notifications.error("Target token/actor data not found. Is the token linked?");
+          return;
+      }
+      
       const target = targetToken.actor;
 
-      // Get Data
-      const aTier = attacker.system.resources.action_surges.max || attacker.system.tier || 0;
-      const dTier = target.system.resources.action_surges.max || target.system.tier || 0;
-      const dEcur = target.system.essences?.vitalis?.value || 0; // Defaulting to Vitalis for defense base
+      // Get Data with Fallbacks to prevent "undefined" errors
+      const aTier = attacker.system.resources?.action_surges?.max || attacker.system.tier || 0;
+      const dTier = target.system.resources?.action_surges?.max || target.system.tier || 0;
+      
+      // Default Defense Energy to Vitalis (Standard) or 0 if missing
+      const dEcur = target.system.essences?.vitalis?.value || 0; 
       
       const profFormula = aTier > 0 ? `${aTier}d10` : "0";
 
@@ -431,52 +462,56 @@ export class NarequentaActorSheet extends ActorSheet {
           <div class="essence-grid-container">
               <div class="essence-header" style="grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
                   <div>
-                      <span style="color:#006400">${attacker.name}</span>
-                      <div style="font-size: 0.8em; color: #555;">Tier ${aTier}</div>
+                      <span style="color:#006400; font-weight:bold;">${attacker.name}</span>
+                      <div style="font-size: 0.8em; color: #555;">Tier ${aTier} (You)</div>
                   </div>
                   <div>
-                      <span style="color:#8b0000">${target.name}</span>
-                      <div style="font-size: 0.8em; color: #555;">Tier ${dTier}</div>
+                      <span style="color:#8b0000; font-weight:bold;">${target.name}</span>
+                      <div style="font-size: 0.8em; color: #555;">Tier ${dTier} (Target)</div>
                   </div>
               </div>
               <hr>
+              
               <div class="nq-row">
-                  <label style="font-weight:bold;">Attacker Roll (d100)</label>
+                  <label style="font-weight:bold;">Your Attack (d100)</label>
                   <div style="display:flex;">
                       <input type="number" id="atk-d100" class="nq-input" placeholder="0">
                       <a id="btn-roll-d100" class="nq-btn" title="Roll 1d100"><i class="fas fa-dice-d20"></i></a>
                   </div>
               </div>
               <div class="nq-row">
-                  <label style="font-weight:bold;">Proficiency (${profFormula})</label>
+                  <label style="font-weight:bold;">Your Proficiency (${profFormula})</label>
                   <div style="display:flex;">
                       <input type="number" id="atk-rprof" class="nq-input" placeholder="0">
                       <a id="btn-roll-prof" class="nq-btn" title="Roll ${profFormula}"><i class="fas fa-dice-d6"></i></a>
                   </div>
               </div>
+              
               <hr>
+              
               <div class="nq-row">
-                  <label style="font-weight:bold;">Defender Roll (d100)</label>
+                  <label style="font-weight:bold;">${target.name} Defense (d100)</label>
                   <div style="display:flex;">
                       <input type="number" id="def-d100" class="nq-input" placeholder="0">
                       <a id="btn-roll-def" class="nq-btn" title="Roll 1d100"><i class="fas fa-dice-d20"></i></a>
                   </div>
               </div>
               <div class="resource-row">
-                  <label>Defender E_CUR</label>
+                  <label>${target.name} E_CUR</label>
                   <input type="number" id="def-ecur" value="${dEcur}" style="width: 60px; float: right; text-align: center;">
               </div>
               
               <div id="result-area" class="nq-result-box">
                   <div style="font-size: 1.4em; color: #8b0000; font-weight: bold;" id="dmg-display">0 Damage</div>
                   <div style="font-size: 0.8em; color: #555;" id="formula-display"></div>
-                  <button id="btn-post" style="width:100%; margin-top:5px; background:#006400; color:white; border:none; padding:5px;">
-                      <i class="fas fa-comment-alt"></i> Post to Chat
+                  
+                  <button id="btn-post" style="width:100%; margin-top:10px; background:#8b0000; color:white; border:none; padding:8px; font-weight:bold;">
+                      <i class="fas fa-skull"></i> CONFIRM DAMAGE TO ${target.name.toUpperCase()}
                   </button>
               </div>
 
               <div class="nq-actions">
-                  <button id="btn-calculate" class="nq-main-btn"><i class="fas fa-calculator"></i> Calculate</button>
+                  <button id="btn-calculate" class="nq-main-btn"><i class="fas fa-calculator"></i> Calculate Outcome</button>
               </div>
           </div>
       </div>`;
@@ -516,6 +551,7 @@ export class NarequentaActorSheet extends ActorSheet {
                   const D_Margin = d100_D - E_cur_D;
                   const M_Defense = dTier * 5.5;
                   
+                  // Tier Advantage Multiplier (M_DTA)
                   const diff = aTier - dTier;
                   let mult = 1.0;
                   if (diff === 1) mult = 1.25;
@@ -540,7 +576,7 @@ export class NarequentaActorSheet extends ActorSheet {
                   });
               });
 
-              // Post
+              // Post Result to Chat
               html.find("#btn-post").click((ev) => {
                   ev.preventDefault();
                   const data = $(ev.currentTarget).data("result");
@@ -548,8 +584,8 @@ export class NarequentaActorSheet extends ActorSheet {
                   const content = `
                   <div class="narequenta chat-card" data-defender-token-id="${targetTokenId}" data-damage="${data.finalDmg}">
                       <header class="card-header flexrow" style="border-bottom: 2px solid #333; margin-bottom: 5px;">
-                          <img src="${attacker.img}" width="36" height="36"/>
-                          <h3 class="item-name">Contested Result</h3>
+                          <img src="${attacker.img}" width="36" height="36" style="border:1px solid #333;"/>
+                          <h3 class="item-name">vs ${target.name}</h3>
                       </header>
                       <div class="card-content" style="padding: 5px;">
                           <div style="display: flex; justify-content: space-between;">
@@ -562,13 +598,13 @@ export class NarequentaActorSheet extends ActorSheet {
                           <div style="font-size: 1.5em; text-align: center; font-weight: bold; margin: 10px 0; color: #8b0000;">
                               ${data.finalDmg} Damage
                           </div>
-                          <div style="text-align:center;">
-                              <button class="apply-damage-btn" style="background:#8b0000; color:white; width:80%;">
-                                  <i class="fas fa-heart-broken"></i> Apply Damage
-                              </button>
-                          </div>
-                          <div style="font-size: 0.8em; color: #555; text-align: center; margin-top:5px;">
+                          <div style="font-size: 0.8em; color: #555; text-align: center; margin-bottom:10px;">
                               Multiplier: x${data.mult} (Tier ${data.aTier} vs Tier ${data.dTier})
+                          </div>
+                          <div style="text-align:center;">
+                              <button class="apply-damage-btn" style="background:#8b0000; color:white; width:90%;">
+                                  <i class="fas fa-heart-broken"></i> Apply ${data.finalDmg} Damage to ${target.name}
+                              </button>
                           </div>
                       </div>
                   </div>`;
