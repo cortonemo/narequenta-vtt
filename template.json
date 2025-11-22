@@ -1,21 +1,28 @@
 {
   "Actor": {
     "types": ["character", "npc"],
-    "htmlFields": ["biography", "promise"],
+    "templates": {
+      "base": {
+        "biography": "",
+        "resources": {
+          "hp": { "value": 100, "min": 0, "max": 100 }
+        }
+      }
+    },
     "character": {
-      "biography": "",
+      "templates": ["base"],
       "promise": "",
       "resources": {
-        "hp": {
-          "value": 100,
-          "min": 0,
-          "max": 100
-        },
-        "action_surges": {
-          "value": 0,
-          "min": 0,
-          "max": 5
-        }
+        "hp": { "value": 100, "min": 0, "max": 100 },
+        "action_surges": { "value": 0, "min": 0, "max": 5 }
+      },
+      "calculator": {
+        "attack_roll": 50,
+        "prof_roll": 0,
+        "defense_roll": 50,
+        "target_ecur": 100,
+        "target_tier": 0,
+        "output": "Waiting for input..."
       },
       "essences": {
         "vitalis": { "value": 100, "max": 100, "label": "VITALIS" },
@@ -28,11 +35,16 @@
       "groups": {}
     },
     "npc": {
-      "biography": "",
-      "resources": {
-        "hp": { "value": 100, "min": 0, "max": 100 }
-      },
+      "templates": ["base"],
       "tier": 0,
+      "calculator": {
+        "attack_roll": 50,
+        "prof_roll": 0,
+        "defense_roll": 50,
+        "target_ecur": 100,
+        "target_tier": 0,
+        "output": "Waiting for input..."
+      },
       "essences": {
         "vitalis": { "value": 100, "max": 100, "label": "VITALIS" },
         "motus":   { "value": 100, "max": 100, "label": "MOTUS" },

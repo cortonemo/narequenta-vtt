@@ -10,18 +10,18 @@
             <div class="resource-row">
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
-                    <input type="number" name="system.resources.hp.value" value="{{system.resources.hp.value}}" style="width: 50px;">
+                    <input type="number" name="system.resources.hp.value" value="{{systemData.resources.hp.value}}" style="width: 50px;">
                     <span> / </span>
-                    <input type="number" name="system.resources.hp.max" value="{{system.resources.hp.max}}" style="width: 50px;">
+                    <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
                 </div>
 
-                {{!-- Action Surges (Only show Max for PCs, usually) --}}
+                {{!-- Action Surges (Only show Max for PCs) --}}
                 {{#if (eq actor.type "character")}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.ActionSurges"}}</label>
-                    <input type="number" name="system.resources.action_surges.value" value="{{system.resources.action_surges.value}}" style="width: 40px;">
+                    <input type="number" name="system.resources.action_surges.value" value="{{systemData.resources.action_surges.value}}" style="width: 40px;">
                     <span> / </span>
-                    <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{system.resources.action_surges.max}}</span>
+                    <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
                 </div>
                 {{/if}}
             </div>
@@ -29,7 +29,7 @@
             {{!-- Final Vow (PC Only) --}}
             {{#if (eq actor.type "character")}}
             <div class="resource-row">
-                <input type="text" name="system.promise" value="{{system.promise}}" placeholder="{{localize 'NAREQUENTA.TabPromise'}}" style="font-style: italic; width: 100%;">
+                <input type="text" name="system.promise" value="{{systemData.promise}}" placeholder="{{localize 'NAREQUENTA.TabPromise'}}" style="font-style: italic; width: 100%;">
             </div>
             {{/if}}
         </div>
@@ -39,6 +39,7 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
         <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
+        <a class="item" data-tab="calculator"><i class="fas fa-calculator"></i> Calc</a>
         <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
     </nav>
 
@@ -48,7 +49,7 @@
         {{!-- 1. ESSENCES TAB --}}
         <div class="tab essences" data-group="primary" data-tab="essences">
             
-            {{!-- UNIFIED ESSENCE GRID (PC & NPC) --}}
+            {{!-- UNIFIED ESSENCE GRID (Displays for PC AND NPC) --}}
             <div class="essence-grid-container">
                 <div class="essence-header">
                     <span>{{localize "NAREQUENTA.TabEssences"}}</span>
@@ -104,7 +105,7 @@
                 </div>
             </div>
 
-            {{!-- Legacy Attributes (Optional) --}}
+            {{!-- Legacy Attributes --}}
             {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
         </div>
 
@@ -133,7 +134,52 @@
             </ol>
         </div>
 
-        {{!-- 3. BIOGRAPHY TAB --}}
+        {{!-- 3. CALCULATOR TAB (Optional but Recommended) --}}
+        <div class="tab calculator" data-group="primary" data-tab="calculator">
+            <div class="essence-grid-container">
+                <div class="essence-header" style="grid-template-columns: 1fr;">
+                    <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
+                </div>
+                
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">My Roll (d100):</label>
+                    <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
+                </div>
+                <div class="resource-row" style="padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">My R_Prof (Roll):</label>
+                    <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
+                </div>
+
+                <hr>
+
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy Roll (d100):</label>
+                    <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="d100">
+                </div>
+                <div class="resource-row" style="padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy E_CUR:</label>
+                    <input type="number" name="system.calculator.target_ecur" value="{{systemData.calculator.target_ecur}}">
+                </div>
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy Tier (0-5):</label>
+                    <input type="number" name="system.calculator.target_tier" value="{{systemData.calculator.target_tier}}" min="0" max="5">
+                </div>
+
+                <hr>
+
+                <div style="text-align: center; margin: 10px;">
+                    <button type="button" class="roll-calculation" style="background: #333; color: white;">
+                        <i class="fas fa-bolt"></i> CALCULATE RESULT
+                    </button>
+                </div>
+
+                <div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; background: #fff;">
+                    {{systemData.calculator.output}}
+                </div>
+            </div>
+        </div>
+
+        {{!-- 4. BIOGRAPHY TAB --}}
         <div class="tab biography" data-group="primary" data-tab="biography">
             {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
         </div>
