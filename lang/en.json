@@ -39,7 +39,7 @@
   
   "NAREQUENTA.RollSuccess": "Success",
   "NAREQUENTA.RollFailure": "Failure",
-  "NAREQUENTA.AttritionApplied": "Attrition Applied (Motor/Quality)"
+  "NAREQUENTA.AttritionApplied": "Attrition Applied (Motor/Quality)",
   
   "NAREQUENTA.AttributeKey": "Attribute Key",
   "NAREQUENTA.AttributeValue": "Value",
@@ -47,5 +47,18 @@
   "NAREQUENTA.AttributeDtype": "Data Type",
   "NAREQUENTA.ResourceMin": "Min",
   "NAREQUENTA.ResourceValue": "Value",
-  "NAREQUENTA.ResourceMax": "Max"
+  "NAREQUENTA.ResourceMax": "Max",
+
+  "NAREQUENTA.NotifyAttrDuplicate": "Attribute key already exists as a group.",
+  "NAREQUENTA.NotifyGroupDuplicate": "Attribute group already exists.",
+  "NAREQUENTA.NotifyGroupAttrDuplicate": "Attribute group already exists as an attribute.",
+  "NAREQUENTA.NotifyGroupReserved": "Attribute group \"{key}\" is reserved and cannot be used.",
+  "NAREQUENTA.NotifyGroupAlphanumeric": "Attribute group names may not contain spaces or periods.",
+  "NAREQUENTA.NotifyAttrInvalid": "Attribute keys may not contain spaces or periods.",
+  
+  "NAREQUENTA.DeleteGroup": "Delete group?",
+  "NAREQUENTA.DeleteGroupContent": "Do you wish to delete this group? This will delete the following group and all attributes included in it: ",
+  
+  "Yes": "Yes",
+  "No": "No"
 }

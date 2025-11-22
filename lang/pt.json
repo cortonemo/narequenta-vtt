@@ -41,6 +41,14 @@
   "NAREQUENTA.RollFailure": "Falha",
   "NAREQUENTA.AttritionApplied": "Atrito Aplicado (Motor/Qualidade)",
 
+  "NAREQUENTA.AttributeKey": "Chave do Atributo",
+  "NAREQUENTA.AttributeValue": "Valor",
+  "NAREQUENTA.AttributeLabel": "Rótulo",
+  "NAREQUENTA.AttributeDtype": "Tipo de Dados",
+  "NAREQUENTA.ResourceMin": "Mín",
+  "NAREQUENTA.ResourceValue": "Valor",
+  "NAREQUENTA.ResourceMax": "Máx",
+
   "NAREQUENTA.NotifyAttrDuplicate": "Chave de atributo já existe como um grupo.",
   "NAREQUENTA.NotifyGroupDuplicate": "Grupo de atributos já existe.",
   "NAREQUENTA.NotifyGroupAttrDuplicate": "Grupo de atributos já existe como um atributo.",
@@ -50,6 +58,7 @@
   
   "NAREQUENTA.DeleteGroup": "Apagar grupo?",
   "NAREQUENTA.DeleteGroupContent": "Deseja apagar este grupo? Isto apagará o seguinte grupo e todos os atributos incluídos nele: ",
+  
   "Yes": "Sim",
   "No": "Não"
 }

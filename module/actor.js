@@ -6,10 +6,10 @@ export class NarequentaActor extends Actor {
   prepareDerivedData() {
     super.prepareDerivedData();
 
-    // SAFETY: If essences don't exist (e.g., old data), stop to prevent crash
+    // Safety check to prevent crashes on actors without data
     if (!this.system.essences) return;
 
-    // 1. Unified Logic (Runs for BOTH PC and NPC)
+    // 1. Run Tier Calculation for EVERYONE (PC & NPC)
     this._prepareEssenceData();
 
     // 2. Legacy Worldbuilding Logic
@@ -23,11 +23,11 @@ export class NarequentaActor extends Actor {
       const essences = system.essences || {};
 
       for (let [key, essence] of Object.entries(essences)) {
-          [cite_start]// A. Enforce Hard Floor (50%) [cite: 6]
+          // A. Enforce Hard Floor (50%)
           if (essence.max < 50) essence.max = 50;
           if (essence.max > 100) essence.max = 100;
 
-          [cite_start]// B. Calculate Tier based on Remaining E_max [cite: 24-47]
+          // B. Calculate Tier based on Remaining E_max [cite: 328-341]
           let tier = 0;
           if (essence.max <= 50) tier = 5;      
           else if (essence.max <= 60) tier = 4; 
@@ -36,7 +36,7 @@ export class NarequentaActor extends Actor {
           else if (essence.max <= 90) tier = 1; 
           else tier = 0;                        
 
-          [cite_start]// C. Derive Dice Pool [cite: 24-47]
+          // C. Derive Dice Pool
           essence.tier = tier;
           essence.diceCount = (tier === 0) ? 0 : tier;
           essence.diceString = (tier > 0) ? `${tier}d10` : "0";

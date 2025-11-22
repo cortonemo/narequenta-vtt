@@ -151,4 +151,34 @@
             }
         }
     }
+	
+	/* --- NPC SPECIFIC STYLING --- */
+    /* This targets the form with the 'npc' class we just added */
+    form.npc {
+        /* Give NPCs a faint reddish 'Threat' background */
+        background-color: #f4eaea !important; 
+        
+        /* Darker headers */
+        header.sheet-header {
+            border-bottom-color: #500;
+        }
+
+        /* Darker Profile Image Border */
+        .profile-img {
+            border-color: #500;
+            background-color: #2a0f0f;
+        }
+
+        /* Darker Grid Lines */
+        .essence-header {
+            border-bottom-color: #500;
+            color: #500;
+        }
+        
+        /* Calculator Area Distinction */
+        .tab.calculator .essence-grid-container {
+            background: rgba(139, 0, 0, 0.05);
+            border-color: #8b0000;
+        }
+    }
 }
