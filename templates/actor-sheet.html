@@ -143,28 +143,52 @@
             </ol>
         </div>
 
-        {{!-- 3. CALCULATOR TAB (Optional but Recommended) --}}
+        {{!-- 3. CALCULATOR TAB --}}
         <div class="tab calculator" data-group="primary" data-tab="calculator">
             <div class="essence-grid-container">
                 <div class="essence-header" style="grid-template-columns: 1fr;">
                     <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
                 </div>
                 
+                {{!-- NEW: Launch Button --}}
+                <div style="text-align: center; margin: 10px 0;">
+                    <button class="launch-contest" style="background: #222; color: #fff; width: 90%; padding: 8px;">
+                        <i class="fas fa-fist-raised"></i> LAUNCH CONTESTED ROLL VS TARGET
+                    </button>
+                </div>
+                
+                <hr>
+                <div style="text-align:center; font-size:0.9em; font-style:italic; margin-bottom:10px;">Or use Manual Input below:</div>
+
+                {{!-- ATTACKER ROW --}}
                 <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
                     <label style="font-weight:bold; width: 150px;">My Roll (d100):</label>
-                    <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
+                        <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                    </div>
                 </div>
+                
+                {{!-- PROFICIENCY ROW --}}
                 <div class="resource-row" style="padding: 5px;">
                     <label style="font-weight:bold; width: 150px;">My R_Prof (Roll):</label>
-                    <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
+                        <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof"><i class="fas fa-dice-d6"></i></a>
+                    </div>
                 </div>
 
                 <hr>
 
+                {{!-- DEFENDER ROW --}}
                 <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
                     <label style="font-weight:bold; width: 150px;">Enemy Roll (d100):</label>
-                    <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="d100">
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="d100">
+                        <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                    </div>
                 </div>
+                
                 <div class="resource-row" style="padding: 5px;">
                     <label style="font-weight:bold; width: 150px;">Enemy E_CUR:</label>
                     <input type="number" name="system.calculator.target_ecur" value="{{systemData.calculator.target_ecur}}">
