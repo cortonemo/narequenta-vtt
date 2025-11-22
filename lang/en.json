@@ -40,4 +40,12 @@
   "NAREQUENTA.RollSuccess": "Success",
   "NAREQUENTA.RollFailure": "Failure",
   "NAREQUENTA.AttritionApplied": "Attrition Applied (Motor/Quality)"
+  
+  "NAREQUENTA.AttributeKey": "Attribute Key",
+  "NAREQUENTA.AttributeValue": "Value",
+  "NAREQUENTA.AttributeLabel": "Label",
+  "NAREQUENTA.AttributeDtype": "Data Type",
+  "NAREQUENTA.ResourceMin": "Min",
+  "NAREQUENTA.ResourceValue": "Value",
+  "NAREQUENTA.ResourceMax": "Max"
 }
