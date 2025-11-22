@@ -1,0 +1,2254 @@
+https://github.com/cortonemo/narequenta-vtt/blob/main/lang/en.json
+{
+  "NAREQUENTA.GameTitle": "Nárëquenta: Tales of the Waning",
+
+  "SETTINGS.SimpleMacroShorthandN": "Shortened Macro Syntax",
+  "SETTINGS.SimpleMacroShorthandL": "Enable shortened syntax. Allows referencing essences directly, for example @vitalis instead of @essences.vitalis.value.",
+  "SETTINGS.SimpleInitFormulaN": "Initiative Formula",
+  "SETTINGS.SimpleInitFormulaL": "Enter an initiative formula. Recommended: 1d10 + @essences.sensus.tier",
+
+  "NAREQUENTA.ItemCreate": "Create Ability",
+  "NAREQUENTA.ItemEdit": "Edit Ability",
+  "NAREQUENTA.ItemDelete": "Delete Ability",
+  "NAREQUENTA.ItemNew": "New Ability",
+
+  "NAREQUENTA.NotifyInitFormulaUpdated": "Initiative formula updated to",
+  "NAREQUENTA.NotifyInitFormulaInvalid": "Initiative formula was invalid",
+
+  "NAREQUENTA.EssenceMax": "Soul's Peak (E_max) [50% Floor]",
+  "NAREQUENTA.EssenceCur": "Active Vigor (E_cur)",
+  "NAREQUENTA.EssenceTier": "Tier / Waning Yield",
+  "NAREQUENTA.ActionSurges": "Surges of Intent",
+
+  "NAREQUENTA.TabEssences": "Facets of the Self",
+  "NAREQUENTA.TabAbilities": "Abilities & Gear",
+  "NAREQUENTA.TabBiography": "The Legend (Bio)",
+  "NAREQUENTA.TabPromise": "Final Vow",
+
+  "NAREQUENTA.Vitalis": "VITALIS (Vigor, Presence)",
+  "NAREQUENTA.Motus": "MOTUS (Movement, Finesse)",
+  "NAREQUENTA.Sensus": "SENSUS (Awareness, Instinct)",
+  "NAREQUENTA.Verbum": "VERBUM (Intellect, Logic)",
+  "NAREQUENTA.Anima": "ANIMA (Will, Sacrifice)",
+
+  "NAREQUENTA.DefineTemplate": "Define as Template",
+  "NAREQUENTA.UnsetTemplate": "Unset Template",
+  "NAREQUENTA.NoTemplate": "No Template",
+
+  "NAREQUENTA.Create": "Create",
+  "NAREQUENTA.New": "New",
+  
+  "NAREQUENTA.RollSuccess": "Success",
+  "NAREQUENTA.RollFailure": "Failure",
+  "NAREQUENTA.AttritionApplied": "Attrition Applied (Motor/Quality)",
+  
+  "NAREQUENTA.AttributeKey": "Attribute Key",
+  "NAREQUENTA.AttributeValue": "Value",
+  "NAREQUENTA.AttributeLabel": "Label",
+  "NAREQUENTA.AttributeDtype": "Data Type",
+  "NAREQUENTA.ResourceMin": "Min",
+  "NAREQUENTA.ResourceValue": "Value",
+  "NAREQUENTA.ResourceMax": "Max",
+
+  "NAREQUENTA.NotifyAttrDuplicate": "Attribute key already exists as a group.",
+  "NAREQUENTA.NotifyGroupDuplicate": "Attribute group already exists.",
+  "NAREQUENTA.NotifyGroupAttrDuplicate": "Attribute group already exists as an attribute.",
+  "NAREQUENTA.NotifyGroupReserved": "Attribute group \"{key}\" is reserved and cannot be used.",
+  "NAREQUENTA.NotifyGroupAlphanumeric": "Attribute group names may not contain spaces or periods.",
+  "NAREQUENTA.NotifyAttrInvalid": "Attribute keys may not contain spaces or periods.",
+  
+  "NAREQUENTA.DeleteGroup": "Delete group?",
+  "NAREQUENTA.DeleteGroupContent": "Do you wish to delete this group? This will delete the following group and all attributes included in it: ",
+  
+  "Yes": "Yes",
+  "No": "No"
+}
+https://github.com/cortonemo/narequenta-vtt/blob/main/lang/pt.json
+{
+  "NAREQUENTA.GameTitle": "Nárëquenta: Contos do Declínio",
+
+  "SETTINGS.SimpleMacroShorthandN": "Sintaxe de Macro Abreviada",
+  "SETTINGS.SimpleMacroShorthandL": "Ativar sintaxe abreviada. Permite referenciar essências diretamente, por exemplo @vitalis em vez de @essences.vitalis.value.",
+  "SETTINGS.SimpleInitFormulaN": "Fórmula de Iniciativa",
+  "SETTINGS.SimpleInitFormulaL": "Insira uma fórmula de iniciativa. Recomendado: 1d10 + @essences.sensus.tier",
+
+  "NAREQUENTA.ItemCreate": "Criar Habilidade",
+  "NAREQUENTA.ItemEdit": "Editar Habilidade",
+  "NAREQUENTA.ItemDelete": "Apagar Habilidade",
+  "NAREQUENTA.ItemNew": "Nova Habilidade",
+
+  "NAREQUENTA.NotifyInitFormulaUpdated": "Fórmula de iniciativa atualizada para",
+  "NAREQUENTA.NotifyInitFormulaInvalid": "Fórmula de iniciativa inválida",
+
+  "NAREQUENTA.EssenceMax": "Auge da Alma (E_max) [Mínimo 50%]",
+  "NAREQUENTA.EssenceCur": "Vigor Ativo (E_cur)",
+  "NAREQUENTA.EssenceTier": "Nível / Rendimento do Declínio",
+  "NAREQUENTA.ActionSurges": "Surtos de Intenção",
+
+  "NAREQUENTA.TabEssences": "Facetas do Eu",
+  "NAREQUENTA.TabAbilities": "Habilidades e Equipamento",
+  "NAREQUENTA.TabBiography": "A Lenda (Bio)",
+  "NAREQUENTA.TabPromise": "Voto Final",
+
+  "NAREQUENTA.Vitalis": "VITALIS (Vigor, Presença)",
+  "NAREQUENTA.Motus": "MOTUS (Movimento, Finesse)",
+  "NAREQUENTA.Sensus": "SENSUS (Percepção, Instinto)",
+  "NAREQUENTA.Verbum": "VERBUM (Intelecto, Lógica)",
+  "NAREQUENTA.Anima": "ANIMA (Vontade, Sacrifício)",
+
+  "NAREQUENTA.DefineTemplate": "Definir como Modelo",
+  "NAREQUENTA.UnsetTemplate": "Remover Modelo",
+  "NAREQUENTA.NoTemplate": "Sem Modelo",
+
+  "NAREQUENTA.Create": "Criar",
+  "NAREQUENTA.New": "Novo",
+  
+  "NAREQUENTA.RollSuccess": "Sucesso",
+  "NAREQUENTA.RollFailure": "Falha",
+  "NAREQUENTA.AttritionApplied": "Atrito Aplicado (Motor/Qualidade)",
+
+  "NAREQUENTA.AttributeKey": "Chave do Atributo",
+  "NAREQUENTA.AttributeValue": "Valor",
+  "NAREQUENTA.AttributeLabel": "Rótulo",
+  "NAREQUENTA.AttributeDtype": "Tipo de Dados",
+  "NAREQUENTA.ResourceMin": "Mín",
+  "NAREQUENTA.ResourceValue": "Valor",
+  "NAREQUENTA.ResourceMax": "Máx",
+
+  "NAREQUENTA.NotifyAttrDuplicate": "Chave de atributo já existe como um grupo.",
+  "NAREQUENTA.NotifyGroupDuplicate": "Grupo de atributos já existe.",
+  "NAREQUENTA.NotifyGroupAttrDuplicate": "Grupo de atributos já existe como um atributo.",
+  "NAREQUENTA.NotifyGroupReserved": "Grupo de atributos \"{key}\" é reservado e não pode ser usado.",
+  "NAREQUENTA.NotifyGroupAlphanumeric": "Nomes de grupos de atributos não podem conter espaços ou pontos.",
+  "NAREQUENTA.NotifyAttrInvalid": "Chaves de atributos não podem conter espaços ou pontos.",
+  
+  "NAREQUENTA.DeleteGroup": "Apagar grupo?",
+  "NAREQUENTA.DeleteGroupContent": "Deseja apagar este grupo? Isto apagará o seguinte grupo e todos os atributos incluídos nele: ",
+  
+  "Yes": "Sim",
+  "No": "Não"
+}
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/actor-sheet.js
+
+import { EntitySheetHelper } from "./helper.js";
+import { ATTRIBUTE_TYPES } from "./constants.js";
+
+export class NarequentaActorSheet extends ActorSheet {
+
+  /** @inheritdoc */
+  static get defaultOptions() {
+    return foundry.utils.mergeObject(super.defaultOptions, {
+      classes: ["narequenta", "sheet", "actor"],
+      template: "systems/narequenta/templates/actor-sheet.html",
+      width: 800,
+      height: 750,
+      tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "essences"}]
+    });
+  }
+
+  /** @inheritdoc */
+  async getData(options) {
+    const context = await super.getData(options);
+    
+    // Use Live Data
+    const actorData = this.actor.toObject(false);
+    context.systemData = this.actor.system; 
+    context.system = this.actor.system; 
+
+    EntitySheetHelper.getAttributeData(actorData);
+    
+    context.shorthand = !!game.settings.get("narequenta", "macroShorthand");
+    context.dtypes = ATTRIBUTE_TYPES;
+    
+    context.biographyHTML = await TextEditor.enrichHTML(context.systemData.biography, {
+      secrets: this.document.isOwner,
+      async: true
+    });
+    
+    return context;
+  }
+
+  /** @inheritdoc */
+  activateListeners(html) {
+    super.activateListeners(html);
+    if ( !this.isEditable ) return;
+
+    // Items
+    html.find(".item-control").click(this._onItemControl.bind(this));
+    html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
+
+    // Calculator
+    html.find(".roll-calculation").click(this._onCalculate.bind(this));
+
+    // NEW: Waning Roll
+    html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
+  }
+
+  /* -------------------------------------------- */
+  /* WANING PHASE LOGIC                          */
+  /* -------------------------------------------- */
+  
+  async _onWaningPhase(event) {
+      event.preventDefault();
+      const actor = this.actor;
+
+      const essenceKeys = ["vitalis", "motus", "sensus", "verbum", "anima"];
+      const essenceLabels = {
+          "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS",
+          "verbum": "VERBUM", "anima": "ANIMA"
+      };
+
+      let essenceDropdown = "";
+      essenceKeys.forEach(key => {
+          essenceDropdown += `<option value="${key}">${essenceLabels[key]}</option>`;
+      });
+
+      let rowsHTML = "";
+      essenceKeys.forEach(key => {
+          rowsHTML += `
+          <tr id="row-${key}">
+              <td style="font-weight:bold;">${essenceLabels[key]}</td>
+              <td id="formula-${key}" style="color:#555; font-size:0.8em; text-align:center;">1d6</td>
+              <td><input type="number" id="input-${key}" class="nq-manual" placeholder="Auto"></td>
+          </tr>`;
+      });
+
+      const content = `
+      <div class="narequenta">
+          <style>
+              .nq-section { margin-bottom: 10px; }
+              .nq-label { font-weight: bold; display: block; margin-bottom: 2px; color: #333; }
+              .nq-manual { width: 100%; text-align: center; }
+              .nq-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+              .nq-table td { padding: 4px; border-bottom: 1px solid #eee; }
+              .nq-focus-highlight { background-color: rgba(0, 100, 0, 0.1); color: #006400; }
+          </style>
+          
+          <p style="font-style:italic; font-size:0.9em; text-align:center;">"End of Chapter: Progression through Loss."</p>
+
+          <div class="nq-section">
+              <label class="nq-label">Select Focus Essence (2d6):</label>
+              <select id="focus-select" style="width:100%">${essenceDropdown}</select>
+          </div>
+
+          <div class="nq-section">
+              <label class="nq-label">Input Loss (Leave Empty to Auto-Roll):</label>
+              <table class="nq-table">
+                  <thead><tr><th style="text-align:left;">Essence</th><th>Dice</th><th>Manual</th></tr></thead>
+                  <tbody>${rowsHTML}</tbody>
+              </table>
+          </div>
+      </div>`;
+
+      // Define Helper for Logic
+      const performWaning = async (html, dialogInstance) => {
+          const focusKey = html.find("#focus-select").val();
+          const updates = {};
+          let chatOutput = "";
+          
+          for (const key of essenceKeys) {
+              const isFocus = (key === focusKey);
+              const manualInput = html.find(`#input-${key}`).val();
+              let loss = 0;
+              
+              if (manualInput !== "" && Number(manualInput) > 0) {
+                  loss = parseInt(manualInput);
+              } else {
+                  const formula = isFocus ? "2d6" : "1d6";
+                  const r = new Roll(formula);
+                  await r.evaluate();
+                  loss = r.total;
+                  if (game.dice3d) game.dice3d.showForRoll(r);
+              }
+
+              const currentMax = actor.system.essences[key].max;
+              let newMax = currentMax - loss;
+              if (newMax < 50) newMax = 50;
+
+              updates[`system.essences.${key}.max`] = newMax;
+
+              chatOutput += `
+              <div style="display:flex; justify-content:space-between; font-size:0.9em; ${isFocus ? 'font-weight:bold; color:#006400;' : ''}">
+                  <span>${essenceLabels[key]}:</span>
+                  <span>-${loss}% (${newMax}%)</span>
+              </div>`;
+          }
+
+          await actor.update(updates);
+
+          ChatMessage.create({
+              speaker: ChatMessage.getSpeaker({ actor: actor }),
+              content: `
+              <div class="narequenta chat-card">
+                  <h3>The Waning</h3>
+                  <div style="margin-bottom:5px;"><strong>Focus:</strong> ${essenceLabels[focusKey]}</div>
+                  <hr>${chatOutput}<hr>
+                  <div style="text-align:center; font-style:italic;">Sheet Updated.</div>
+              </div>`
+          });
+          
+          dialogInstance.close();
+      };
+
+      const d = new Dialog({
+          title: `The Waning: ${actor.name}`,
+          content: content,
+          buttons: {
+              roll: {
+                  icon: '<i class="fas fa-dice"></i>',
+                  label: "Process Waning",
+                  callback: (html) => performWaning(html, d)
+              }
+          },
+          render: (html) => {
+              const updateHighlights = () => {
+                  const focusKey = html.find("#focus-select").val();
+                  essenceKeys.forEach(k => {
+                      html.find(`#row-${k}`).removeClass("nq-focus-highlight");
+                      html.find(`#formula-${k}`).text("1d6");
+                  });
+                  html.find(`#row-${focusKey}`).addClass("nq-focus-highlight");
+                  html.find(`#formula-${focusKey}`).html("<b>2d6</b>");
+              };
+              updateHighlights();
+              html.find("#focus-select").change(updateHighlights);
+          }
+      });
+      d.render(true);
+  }
+
+  /* -------------------------------------------- */
+  /* ITEM & CALCULATOR HANDLERS                  */
+  /* -------------------------------------------- */
+
+  _onItemControl(event) {
+    event.preventDefault();
+    const button = event.currentTarget;
+    const li = button.closest(".item");
+    const item = this.actor.items.get(li?.dataset.itemId);
+
+    switch ( button.dataset.action ) {
+      case "create":
+        const cls = getDocumentClass("Item");
+        return cls.create({name: game.i18n.localize("NAREQUENTA.ItemNew"), type: "item"}, {parent: this.actor});
+      case "edit":
+        return item.sheet.render(true);
+      case "delete":
+        return item.delete();
+    }
+  }
+
+  _onItemRoll(event) {
+    let button = $(event.currentTarget);
+    const item = this.actor.items.get(button.parents(".item").data("itemId"));
+    if (item) item.roll(); 
+  }
+
+  async _onCalculate(event) {
+      event.preventDefault();
+      const calc = this.actor.system.calculator;
+      
+      const Attacker_d100 = Number(calc.attack_roll);
+      const R_prof = Number(calc.prof_roll);
+      const Defender_d100 = Number(calc.defense_roll);
+      const Defender_Ecur = Number(calc.target_ecur);
+      const Defender_Tier = Number(calc.target_tier);
+
+      let Attacker_Tier = 0;
+      if (this.actor.type === 'character') {
+          for (let e of Object.values(this.actor.system.essences)) {
+              if (e.tier > Attacker_Tier) Attacker_Tier = e.tier;
+          }
+      } else {
+          Attacker_Tier = this.actor.system.tier || 0;
+      }
+
+      const A_FP = 100 - (Attacker_d100 - R_prof);
+      const D_Margin = Defender_d100 - Defender_Ecur;
+      const M_Defense = Defender_Tier * 5.5;
+
+      let rawDamage = (A_FP - M_Defense + D_Margin + R_prof);
+      if (rawDamage < 0) rawDamage = 0;
+
+      let multiplier = 1.0;
+      const diff = Attacker_Tier - Defender_Tier;
+      if (diff === 1) multiplier = 1.25;
+      else if (diff === 2) multiplier = 1.50;
+      else if (diff >= 3) multiplier = 1.75; // Simplified
+      else if (diff === -1) multiplier = 0.75;
+      else if (diff === -2) multiplier = 0.50;
+      else if (diff <= -3) multiplier = 0.25;
+
+      const finalDamage = Math.floor(rawDamage * multiplier);
+      const resultString = `Damage: ${finalDamage} (x${multiplier})`;
+      
+      await this.actor.update({"system.calculator.output": resultString});
+  }
+}
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/actor.js
+
+import { EntitySheetHelper } from "./helper.js";
+
+export class NarequentaActor extends Actor {
+
+  /** @inheritdoc */
+  prepareDerivedData() {
+    super.prepareDerivedData();
+
+    // Safety check to prevent crashes on actors without data
+    if (!this.system.essences) return;
+
+    // 1. Run Tier Calculation for EVERYONE (PC & NPC)
+    this._prepareEssenceData();
+
+    // 2. Legacy Worldbuilding Logic
+    this.system.groups = this.system.groups || {};
+    this.system.attributes = this.system.attributes || {};
+    EntitySheetHelper.clampResourceValues(this.system.attributes);
+  }
+
+  _prepareEssenceData() {
+      const system = this.system;
+      const essences = system.essences || {};
+
+      for (let [key, essence] of Object.entries(essences)) {
+          // A. Enforce Hard Floor (50%)
+          if (essence.max < 50) essence.max = 50;
+          if (essence.max > 100) essence.max = 100;
+
+          // B. Calculate Tier based on Remaining E_max [cite: 328-341]
+          let tier = 0;
+          if (essence.max <= 50) tier = 5;      
+          else if (essence.max <= 60) tier = 4; 
+          else if (essence.max <= 70) tier = 3; 
+          else if (essence.max <= 80) tier = 2; 
+          else if (essence.max <= 90) tier = 1; 
+          else tier = 0;                        
+
+          // C. Derive Dice Pool
+          essence.tier = tier;
+          essence.diceCount = (tier === 0) ? 0 : tier;
+          essence.diceString = (tier > 0) ? `${tier}d10` : "0";
+          essence.mitigation = (tier * 5.5); 
+      }
+
+      // D. Calculate Action Surges
+      if (system.resources && system.resources.action_surges) {
+          let maxTier = 0;
+          for (let [key, essence] of Object.entries(essences)) {
+              if (essence.tier > maxTier) maxTier = essence.tier;
+          }
+          system.resources.action_surges.max = maxTier;
+      }
+  }
+
+  /** @inheritdoc */
+  async rollInitiative(createCombatants=true, context={}) {
+    const parts = ["1d10"];
+    // Tie-breaker: Sensus Tier as decimal
+    if (this.system.essences?.sensus) {
+        parts.push(String(this.system.essences.sensus.tier / 10));
+    }
+    const formula = parts.join("+") || "1d10";
+
+    await new Roll(formula, this.getRollData()).toMessage({
+        speaker: ChatMessage.getSpeaker({actor: this}),
+        flavor: `Rolling Initiative`
+    });
+
+    await super.rollInitiative(createCombatants, { ...context, formula });
+  }
+
+  /** @inheritdoc */
+  getRollData() {
+    const data = { ...this.system };
+    if (this.system.essences) {
+        for (const [key, value] of Object.entries(this.system.essences)) {
+            data[key] = value;
+        }
+    }
+    return data;
+  }
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/constants.js
+
+export const ATTRIBUTE_TYPES = ["String", "Number", "Boolean", "Formula", "Resource"];
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/helper.js
+
+export class EntitySheetHelper {
+
+  static getAttributeData(data) {
+    // Determine attribute type.
+    for ( let attr of Object.values(data.system.attributes) ) {
+      if ( attr.dtype ) {
+        attr.isCheckbox = attr.dtype === "Boolean";
+        attr.isResource = attr.dtype === "Resource";
+        attr.isFormula = attr.dtype === "Formula";
+      }
+    }
+
+    // Initialize ungrouped attributes for later.
+    data.system.ungroupedAttributes = {};
+
+    // Build an array of sorted group keys.
+    const groups = data.system.groups || {};
+    let groupKeys = Object.keys(groups).sort((a, b) => {
+      let aSort = groups[a].label ?? a;
+      let bSort = groups[b].label ?? b;
+      return aSort.localeCompare(bSort);
+    });
+
+    // Iterate over the sorted groups to add their attributes.
+    for ( let key of groupKeys ) {
+      let group = data.system.attributes[key] || {};
+
+      // Initialize the attributes container for this group.
+      if ( !data.system.groups[key]['attributes'] ) data.system.groups[key]['attributes'] = {};
+
+      // Sort the attributes within the group, and then iterate over them.
+      Object.keys(group).sort((a, b) => a.localeCompare(b)).forEach(attr => {
+        // Avoid errors if this is an invalid group.
+        if ( typeof group[attr] != "object" || !group[attr]) return;
+        // For each attribute, determine whether it's a checkbox or resource, and then add it to the group's attributes list.
+        group[attr]['isCheckbox'] = group[attr]['dtype'] === 'Boolean';
+        group[attr]['isResource'] = group[attr]['dtype'] === 'Resource';
+        group[attr]['isFormula'] = group[attr]['dtype'] === 'Formula';
+        data.system.groups[key]['attributes'][attr] = group[attr];
+      });
+    }
+
+    // Sort the remaining attributes.
+    const keys = Object.keys(data.system.attributes).filter(a => !groupKeys.includes(a));
+    keys.sort((a, b) => a.localeCompare(b));
+    for ( const key of keys ) data.system.ungroupedAttributes[key] = data.system.attributes[key];
+
+    // Modify attributes on items.
+    if ( data.items ) {
+      data.items.forEach(item => {
+        // Iterate over attributes.
+        for ( let [k, v] of Object.entries(item.system.attributes) ) {
+          // Grouped attributes.
+          if ( !v.dtype ) {
+            for ( let [gk, gv] of Object.entries(v) ) {
+              if ( gv.dtype ) {
+                // Add label fallback.
+                if ( !gv.label ) gv.label = gk;
+                // Add formula bool.
+                if ( gv.dtype === "Formula" ) {
+                  gv.isFormula = true;
+                }
+                else {
+                  gv.isFormula = false;
+                }
+              }
+            }
+          }
+          // Ungrouped attributes.
+          else {
+            // Add label fallback.
+            if ( !v.label ) v.label = k;
+            // Add formula bool.
+            if ( v.dtype === "Formula" ) {
+              v.isFormula = true;
+            }
+            else {
+              v.isFormula = false;
+            }
+          }
+        }
+      });
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /** @override */
+  static onSubmit(event) {
+    // Closing the form/sheet will also trigger a submit, so only evaluate if this is an event.
+    if ( event.currentTarget ) {
+      // Exit early if this isn't a named attribute.
+      if ( (event.currentTarget.tagName.toLowerCase() === 'input') && !event.currentTarget.hasAttribute('name')) {
+        return false;
+      }
+
+      let attr = false;
+      // If this is the attribute key, we need to make a note of it so that we can restore focus when its recreated.
+      const el = event.currentTarget;
+      if ( el.classList.contains("attribute-key") ) {
+        let val = el.value;
+        let oldVal = el.closest(".attribute").dataset.attribute;
+        let attrError = false;
+        // Prevent attributes that already exist as groups.
+        let groups = document.querySelectorAll('.group-key');
+        for ( let i = 0; i < groups.length; i++ ) {
+          if (groups[i].value === val) {
+            ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyAttrDuplicate") + ` (${val})`);
+            el.value = oldVal;
+            attrError = true;
+            break;
+          }
+        }
+        // Handle value and name replacement otherwise.
+        if ( !attrError ) {
+          oldVal = oldVal.includes('.') ? oldVal.split('.')[1] : oldVal;
+          attr = $(el).attr('name').replace(oldVal, val);
+        }
+      }
+
+      // Return the attribute key if set, or true to confirm the submission should be triggered.
+      return attr ? attr : true;
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Listen for click events on an attribute control to modify the composition of attributes in the sheet
+   * @param {MouseEvent} event    The originating left click event
+   */
+  static async onClickAttributeControl(event) {
+    event.preventDefault();
+    const a = event.currentTarget;
+    const action = a.dataset.action;
+    switch ( action ) {
+      case "create":
+        return EntitySheetHelper.createAttribute(event, this);
+      case "delete":
+        return EntitySheetHelper.deleteAttribute(event, this);
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Listen for click events and modify attribute groups.
+   * @param {MouseEvent} event    The originating left click event
+   */
+  static async onClickAttributeGroupControl(event) {
+    event.preventDefault();
+    const a = event.currentTarget;
+    const action = a.dataset.action;
+    switch ( action ) {
+      case "create-group":
+        return EntitySheetHelper.createAttributeGroup(event, this);
+      case "delete-group":
+        return EntitySheetHelper.deleteAttributeGroup(event, this);
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Listen for the roll button on attributes.
+   * @param {MouseEvent} event    The originating left click event
+   */
+  static onAttributeRoll(event) {
+    event.preventDefault();
+    const button = event.currentTarget;
+    const label = button.closest(".attribute").querySelector(".attribute-label")?.value;
+    const chatLabel = label ?? button.parentElement.querySelector(".attribute-key").value;
+    const shorthand = game.settings.get("narequenta", "macroShorthand");
+
+    // Use the actor for rollData so that formulas are always in reference to the parent actor.
+    const rollData = this.actor.getRollData();
+    let formula = button.closest(".attribute").querySelector(".attribute-value")?.value;
+
+    // If there's a formula, attempt to roll it.
+    if ( formula ) {
+      let replacement = null;
+      if ( formula.includes('@item.') && this.item ) {
+        let itemName = this.item.name.slugify({strict: true}); // Get the machine safe version of the item name.
+        replacement = !!shorthand ? `@items.${itemName}.` : `@items.${itemName}.attributes.`;
+        formula = formula.replace('@item.', replacement);
+      }
+
+      // Create the roll and the corresponding message
+      let r = new Roll(formula, rollData);
+      return r.toMessage({
+        user: game.user.id,
+        speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+        flavor: `${chatLabel}`
+      });
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Return HTML for a new attribute to be applied to the form for submission.
+   *
+   * @param {Object} items  Keyed object where each item has a "type" and "value" property.
+   * @param {string} index  Numeric index or key of the new attribute.
+   * @param {string|boolean} group String key of the group, or false.
+   *
+   * @returns {string} Html string.
+   */
+  static getAttributeHtml(items, index, group = false) {
+    // Initialize the HTML.
+    let result = '<div style="display: none;">';
+    // Iterate over the supplied keys and build their inputs (including whether they need a group key).
+    for (let [key, item] of Object.entries(items)) {
+      result = result + `<input type="${item.type}" name="system.attributes${group ? '.' + group : '' }.attr${index}.${key}" value="${item.value}"/>`;
+    }
+    // Close the HTML and return.
+    return result + '</div>';
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Validate whether or not a group name can be used.
+   * @param {string} groupName    The candidate group name to validate
+   * @param {Document} document   The Actor or Item instance within which the group is being defined
+   * @returns {boolean}
+   */
+  static validateGroup(groupName, document) {
+    let groups = Object.keys(document.system.groups || {});
+    let attributes = Object.keys(document.system.attributes).filter(a => !groups.includes(a));
+
+    // Check for duplicate group keys.
+    if ( groups.includes(groupName) ) {
+      ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyGroupDuplicate") + ` (${groupName})`);
+      return false;
+    }
+
+    // Check for group keys that match attribute keys.
+    if ( attributes.includes(groupName) ) {
+      ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyGroupAttrDuplicate") + ` (${groupName})`);
+      return false;
+    }
+
+    // Check for reserved group names.
+    if ( ["attr", "attributes"].includes(groupName) ) {
+      ui.notifications.error(game.i18n.format("NAREQUENTA.NotifyGroupReserved", {key: groupName}));
+      return false;
+    }
+
+    // Check for whitespace or periods.
+    if ( groupName.match(/[\s|\.]/i) ) {
+      ui.notifications.error(game.i18n.localize("NAREQUENTA.NotifyGroupAlphanumeric"));
+      return false;
+    }
+    return true;
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Create new attributes.
+   * @param {MouseEvent} event    The originating left click event
+   * @param {Object} app          The form application object.
+   * @private
+   */
+  static async createAttribute(event, app) {
+    const a = event.currentTarget;
+    const group = a.dataset.group;
+    let dtype = a.dataset.dtype;
+    const attrs = app.object.system.attributes;
+    const groups = app.object.system.groups;
+    const form = app.form;
+
+    // Determine the new attribute key for ungrouped attributes.
+    let objKeys = Object.keys(attrs).filter(k => !Object.keys(groups).includes(k));
+    let nk = Object.keys(attrs).length + 1;
+    let newValue = `attr${nk}`;
+    let newKey = document.createElement("div");
+    while ( objKeys.includes(newValue) ) {
+      ++nk;
+      newValue = `attr${nk}`;
+    }
+
+    // Build options for construction HTML inputs.
+    let htmlItems = {
+      key: {
+        type: "text",
+        value: newValue
+      }
+    };
+
+    // Grouped attributes.
+    if ( group ) {
+      objKeys = attrs[group] ? Object.keys(attrs[group]) : [];
+      nk = objKeys.length + 1;
+      newValue = `attr${nk}`;
+      while ( objKeys.includes(newValue) ) {
+        ++nk;
+        newValue =  `attr${nk}`;
+      }
+
+      // Update the HTML options used to build the new input.
+      htmlItems.key.value = newValue;
+      htmlItems.group = {
+        type: "hidden",
+        value: group
+      };
+      htmlItems.dtype = {
+        type: "hidden",
+        value: dtype
+      };
+    }
+    // Ungrouped attributes.
+    else {
+      // Choose a default dtype based on the last attribute, fall back to "String".
+      if (!dtype) {
+        let lastAttr = document.querySelector('.attributes > .attributes-group .attribute:last-child .attribute-dtype')?.value;
+        dtype = lastAttr ? lastAttr : "String";
+        htmlItems.dtype = {
+          type: "hidden",
+          value: dtype
+        };
+      }
+    }
+
+    // Build the form elements used to create the new grouped attribute.
+    newKey.innerHTML = EntitySheetHelper.getAttributeHtml(htmlItems, nk, group);
+
+    // Append the form element and submit the form.
+    newKey = newKey.children[0];
+    form.appendChild(newKey);
+    await app._onSubmit(event);
+  }
+
+  /**
+   * Delete an attribute.
+   * @param {MouseEvent} event    The originating left click event
+   * @param {Object} app          The form application object.
+   * @private
+   */
+  static async deleteAttribute(event, app) {
+    const a = event.currentTarget;
+    const li = a.closest(".attribute");
+    if ( li ) {
+      li.parentElement.removeChild(li);
+      await app._onSubmit(event);
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Create new attribute groups.
+   * @param {MouseEvent} event    The originating left click event
+   * @param {Object} app          The form application object.
+   * @private
+   */
+  static async createAttributeGroup(event, app) {
+    const a = event.currentTarget;
+    const form = app.form;
+    let newValue = $(a).siblings('.group-prefix').val();
+    // Verify the new group key is valid, and use it to create the group.
+    if ( newValue.length > 0 && EntitySheetHelper.validateGroup(newValue, app.object) ) {
+      let newKey = document.createElement("div");
+      newKey.innerHTML = `<input type="text" name="system.groups.${newValue}.key" value="${newValue}"/>`;
+      // Append the form element and submit the form.
+      newKey = newKey.children[0];
+      form.appendChild(newKey);
+      await app._onSubmit(event);
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Delete an attribute group.
+   * @param {MouseEvent} event    The originating left click event
+   * @param {Object} app          The form application object.
+   * @private
+   */
+  static async deleteAttributeGroup(event, app) {
+    const a = event.currentTarget;
+    let groupHeader = a.closest(".group-header");
+    let groupContainer = groupHeader.closest(".group");
+    let group = $(groupHeader).find('.group-key');
+    // Create a dialog to confirm group deletion.
+    new Dialog({
+      title: game.i18n.localize("NAREQUENTA.DeleteGroup"),
+      content: `${game.i18n.localize("NAREQUENTA.DeleteGroupContent")} <strong>${group.val()}</strong>`,
+      buttons: {
+        confirm: {
+          icon: '<i class="fas fa-trash"></i>',
+          label: game.i18n.localize("Yes"),
+          callback: async () => {
+            groupContainer.parentElement.removeChild(groupContainer);
+            await app._onSubmit(event);
+          }
+        },
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: game.i18n.localize("No"),
+        }
+      }
+    }).render(true);
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Update attributes when updating an actor object.
+   * @param {object} formData       The form data object to modify keys and values for.
+   * @param {Document} document     The Actor or Item document within which attributes are being updated
+   * @returns {object}              The updated formData object.
+   */
+  static updateAttributes(formData, document) {
+    let groupKeys = [];
+
+    // Handle the free-form attributes list
+    const formAttrs = foundry.utils.expandObject(formData)?.system?.attributes || {};
+    const attributes = Object.values(formAttrs).reduce((obj, v) => {
+      let attrs = [];
+      let group = null;
+      // Handle attribute keys for grouped attributes.
+      if ( !v["key"] ) {
+        attrs = Object.keys(v);
+        attrs.forEach(attrKey => {
+          group = v[attrKey]['group'];
+          groupKeys.push(group);
+          let attr = v[attrKey];
+          const k = this.cleanKey(v[attrKey]["key"] ? v[attrKey]["key"].trim() : attrKey.trim());
+          delete attr["key"];
+          // Add the new attribute if it's grouped, but we need to build the nested structure first.
+          if ( !obj[group] ) {
+            obj[group] = {};
+          }
+          obj[group][k] = attr;
+        });
+      }
+      // Handle attribute keys for ungrouped attributes.
+      else {
+        const k = this.cleanKey(v["key"].trim());
+        delete v["key"];
+        // Add the new attribute only if it's ungrouped.
+        if ( !group ) {
+          obj[k] = v;
+        }
+      }
+      return obj;
+    }, {});
+
+    // Remove attributes which are no longer used
+    for ( let k of Object.keys(document.system.attributes) ) {
+      if ( !attributes.hasOwnProperty(k) ) attributes[`-=${k}`] = null;
+    }
+
+    // Remove grouped attributes which are no longer used.
+    for ( let group of groupKeys) {
+      if ( document.system.attributes[group] ) {
+        for ( let k of Object.keys(document.system.attributes[group]) ) {
+          if ( !attributes[group].hasOwnProperty(k) ) attributes[group][`-=${k}`] = null;
+        }
+      }
+    }
+
+    // Re-combine formData
+    formData = Object.entries(formData).filter(e => !e[0].startsWith("system.attributes")).reduce((obj, e) => {
+      obj[e[0]] = e[1];
+      return obj;
+    }, {_id: document.id, "system.attributes": attributes});
+
+    return formData;
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Update attribute groups when updating an actor object.
+   * @param {object} formData       The form data object to modify keys and values for.
+   * @param {Document} document     The Actor or Item document within which attributes are being updated
+   * @returns {object}              The updated formData object.
+   */
+  static updateGroups(formData, document) {
+    const formGroups = foundry.utils.expandObject(formData).system.groups || {};
+    const documentGroups = Object.keys(document.system.groups || {});
+
+    // Identify valid groups submitted on the form
+    const groups = Object.entries(formGroups).reduce((obj, [k, v]) => {
+      const validGroup = documentGroups.includes(k) || this.validateGroup(k, document);
+      if ( validGroup )  obj[k] = v;
+      return obj;
+    }, {});
+
+    // Remove groups which are no longer used
+    for ( let k of Object.keys(document.system.groups)) {
+      if ( !groups.hasOwnProperty(k) ) groups[`-=${k}`] = null;
+    }
+
+    // Re-combine formData
+    formData = Object.entries(formData).filter(e => !e[0].startsWith("system.groups")).reduce((obj, e) => {
+      obj[e[0]] = e[1];
+      return obj;
+    }, {_id: document.id, "system.groups": groups});
+    return formData;
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * @see ClientDocumentMixin.createDialog
+   */
+  static async createDialog(data={}, options={}) {
+
+    // Collect data
+    const documentName = this.metadata.name;
+    const folders = game.folders.filter(f => (f.type === documentName) && f.displayed);
+    const label = game.i18n.localize(this.metadata.label);
+    const title = game.i18n.format("DOCUMENT.Create", {type: label});
+
+    // Identify the template Actor types
+    const collection = game.collections.get(this.documentName);
+    const templates = collection.filter(a => a.getFlag("narequenta", "isTemplate")); // Changed flag scope
+    const defaultType = this.TYPES.filter(t => t !== CONST.BASE_DOCUMENT_TYPE)[0] ?? CONST.BASE_DOCUMENT_TYPE;
+    const types = {
+      [defaultType]: game.i18n.localize("NAREQUENTA.NoTemplate")
+    }
+    for ( let a of templates ) {
+      types[a.id] = a.name;
+    }
+
+    // Render the document creation form
+    const template = "templates/sidebar/document-create.html";
+    const html = await renderTemplate(template, {
+      name: data.name || game.i18n.format("DOCUMENT.New", {type: label}),
+      folder: data.folder,
+      folders: folders,
+      hasFolders: folders.length > 1,
+      type: data.type || templates[0]?.id || "",
+      types: types,
+      hasTypes: true
+    });
+
+    // Render the confirmation dialog window
+    return Dialog.prompt({
+      title: title,
+      content: html,
+      label: title,
+      callback: html => {
+
+        // Get the form data
+        const form = html[0].querySelector("form");
+        const fd = new FormDataExtended(form);
+        let createData = fd.object;
+
+        // Merge with template data
+        const template = collection.get(form.type.value);
+        if ( template ) {
+          createData = foundry.utils.mergeObject(template.toObject(), createData);
+          createData.type = template.type;
+          delete createData.flags.narequenta.isTemplate; // Changed flag scope
+        }
+
+        // Merge provided override data
+        createData = foundry.utils.mergeObject(createData, data, { inplace: false });
+        return this.create(createData, {renderSheet: true});
+      },
+      rejectClose: false,
+      options: options
+    });
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Ensure the resource values are within the specified min and max.
+   * @param {object} attrs  The Document's attributes.
+   */
+  static clampResourceValues(attrs) {
+    const flat = foundry.utils.flattenObject(attrs);
+    for ( const [attr, value] of Object.entries(flat) ) {
+      const parts = attr.split(".");
+      if ( parts.pop() !== "value" ) continue;
+      const current = foundry.utils.getProperty(attrs, parts.join("."));
+      if ( current?.dtype !== "Resource" ) continue;
+      foundry.utils.setProperty(attrs, attr, Math.clamped(value, current.min || 0, current.max || 0));
+    }
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Clean an attribute key, emitting an error if it contained invalid characters.
+   * @param {string} key  The key to clean.
+   * @returns {string}
+   */
+  static cleanKey(key) {
+    const clean = key.replace(/[\s.]/g, "");
+    if ( clean !== key ) ui.notifications.error("NAREQUENTA.NotifyAttrInvalid", { localize: true });
+    return clean;
+  }
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/item-sheet.js
+
+import { EntitySheetHelper } from "./helper.js";
+import {ATTRIBUTE_TYPES} from "./constants.js";
+
+/**
+ * Extend the basic ItemSheet with some very simple modifications
+ * @extends {ItemSheet}
+ */
+export class SimpleItemSheet extends ItemSheet {
+
+  /** @inheritdoc */
+  static get defaultOptions() {
+    return foundry.utils.mergeObject(super.defaultOptions, {
+      classes: ["narequenta", "sheet", "item"], // Changed from worldbuilding
+      template: "systems/narequenta/templates/item-sheet.html", // Changed path
+      width: 520,
+      height: 480,
+      tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description"}],
+      scrollY: [".attributes"],
+    });
+  }
+
+  /* -------------------------------------------- */
+
+/** @inheritdoc */
+  async getData(options) {
+    const context = await super.getData(options);
+    EntitySheetHelper.getAttributeData(context.data);
+    context.systemData = context.data.system;
+    context.dtypes = ATTRIBUTE_TYPES;
+    
+    // ADD THIS BLOCK: Provide Essence Options for Dropdown
+    context.systemData.essencesList = {
+        "vitalis": "NAREQUENTA.Vitalis",
+        "motus": "NAREQUENTA.Motus",
+        "sensus": "NAREQUENTA.Sensus",
+        "verbum": "NAREQUENTA.Verbum",
+        "anima": "NAREQUENTA.Anima"
+    };
+
+    context.descriptionHTML = await TextEditor.enrichHTML(context.systemData.description, {
+      secrets: this.document.isOwner,
+      async: true
+    });
+    return context;
+  }
+
+  /* -------------------------------------------- */
+
+  /** @inheritdoc */
+  activateListeners(html) {
+    super.activateListeners(html);
+
+    // Everything below here is only needed if the sheet is editable
+    if ( !this.isEditable ) return;
+
+    // Attribute Management
+    html.find(".attributes").on("click", ".attribute-control", EntitySheetHelper.onClickAttributeControl.bind(this));
+    html.find(".groups").on("click", ".group-control", EntitySheetHelper.onClickAttributeGroupControl.bind(this));
+    html.find(".attributes").on("click", "a.attribute-roll", EntitySheetHelper.onAttributeRoll.bind(this));
+
+    // Add draggable for Macro creation
+    html.find(".attributes a.attribute-roll").each((i, a) => {
+      a.setAttribute("draggable", true);
+      a.addEventListener("dragstart", ev => {
+        let dragData = ev.currentTarget.dataset;
+        ev.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+      }, false);
+    });
+  }
+
+  /* -------------------------------------------- */
+
+  /** @override */
+  _getSubmitData(updateData) {
+    let formData = super._getSubmitData(updateData);
+    formData = EntitySheetHelper.updateAttributes(formData, this.object);
+    formData = EntitySheetHelper.updateGroups(formData, this.object);
+    return formData;
+  }
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/item.js
+
+import {EntitySheetHelper} from "./helper.js";
+
+/**
+ * Extend the base Item document to support attributes and groups with a custom template creation dialog.
+ * @extends {Item}
+ */
+export class SimpleItem extends Item {
+
+  /** @inheritdoc */
+  prepareDerivedData() {
+    super.prepareDerivedData();
+    this.system.groups = this.system.groups || {};
+    this.system.attributes = this.system.attributes || {};
+    EntitySheetHelper.clampResourceValues(this.system.attributes);
+  }
+
+  /* -------------------------------------------- */
+
+  /** @override */
+  static async createDialog(data={}, options={}) {
+    return EntitySheetHelper.createDialog.call(this, data, options);
+  }
+
+  /* -------------------------------------------- */
+
+  /**
+   * Is this Item used as a template for other Items?
+   * @type {boolean}
+   */
+  get isTemplate() {
+    return !!this.getFlag("narequenta", "isTemplate"); // Changed flag scope
+  }
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/macro.js
+
+/**
+ * Create a Macro from an attribute drop.
+ * Get an existing worldbuilding macro if one exists, otherwise create a new one.
+ * @param {Object} data     The dropped data
+ * @param {number} slot     The hotbar slot to use
+ * @returns {Promise}
+ */
+export async function createWorldbuildingMacro(data, slot) {
+  if ( !data.roll || !data.label ) return false;
+  const command = `const roll = new Roll("${data.roll}", actor ? actor.getRollData() : {});
+  roll.toMessage({speaker, flavor: "${data.label}"});`;
+  let macro = game.macros.find(m => (m.name === data.label) && (m.command === command));
+  if (!macro) {
+    macro = await Macro.create({
+      name: data.label,
+      type: "script",
+      command: command,
+      flags: { "worldbuilding.attrMacro": true }
+    });
+  }
+  game.user.assignHotbarMacro(macro, slot);
+  return false;
+}
+
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/narequenta.js
+
+/**
+ * Nárëquenta — Tales of the Waning
+ * System Entry Point
+ */
+
+// Import Modules
+import { NarequentaActor } from "./actor.js";
+import { SimpleItem } from "./item.js"; // We can keep Item simple for now
+import { SimpleItemSheet } from "./item-sheet.js";
+import { NarequentaActorSheet } from "./actor-sheet.js";
+import { preloadHandlebarsTemplates } from "./templates.js";
+import { createWorldbuildingMacro } from "./macro.js";
+import { SimpleToken, SimpleTokenDocument } from "./token.js";
+
+/* -------------------------------------------- */
+/* Foundry VTT Initialization                  */
+/* -------------------------------------------- */
+
+Hooks.once("init", async function() {
+  console.log(`Initializing Nárëquenta System`);
+
+  /**
+   * Set an initiative formula for the system.
+   * @type {String}
+   */
+  CONFIG.Combat.initiative = {
+    formula: "1d10",
+    decimals: 2
+  };
+
+  game.narequenta = {
+    NarequentaActor,
+    createWorldbuildingMacro
+  };
+
+  // Define custom Document classes
+  CONFIG.Actor.documentClass = NarequentaActor;
+  CONFIG.Item.documentClass = SimpleItem;
+  CONFIG.Token.documentClass = SimpleTokenDocument;
+  CONFIG.Token.objectClass = SimpleToken;
+
+  // Register sheet application classes
+  Actors.unregisterSheet("core", ActorSheet);
+  Actors.registerSheet("narequenta", NarequentaActorSheet, { makeDefault: true });
+  Items.unregisterSheet("core", ItemSheet);
+  Items.registerSheet("narequenta", SimpleItemSheet, { makeDefault: true });
+
+  // Register system settings
+  game.settings.register("narequenta", "macroShorthand", {
+    name: "SETTINGS.SimpleMacroShorthandN",
+    hint: "SETTINGS.SimpleMacroShorthandL",
+    scope: "world",
+    type: Boolean,
+    default: true,
+    config: true
+  });
+
+  // Register initiative setting.
+  game.settings.register("narequenta", "initFormula", {
+    name: "SETTINGS.SimpleInitFormulaN",
+    hint: "SETTINGS.SimpleInitFormulaL",
+    scope: "world",
+    type: String,
+    default: "1d10",
+    config: true,
+    onChange: formula => _simpleUpdateInit(formula, true)
+  });
+
+  const initFormula = game.settings.get("narequenta", "initFormula");
+  _simpleUpdateInit(initFormula);
+
+  function _simpleUpdateInit(formula, notify = false) {
+    const isValid = Roll.validate(formula);
+    if ( !isValid ) {
+      if ( notify ) ui.notifications.error(`${game.i18n.localize("NAREQUENTA.NotifyInitFormulaInvalid")}: ${formula}`);
+      return;
+    }
+    CONFIG.Combat.initiative.formula = formula;
+  }
+
+  Handlebars.registerHelper('slugify', function(value) {
+    return value.slugify({strict: true});
+  });
+
+  await preloadHandlebarsTemplates();
+});
+
+Hooks.on("hotbarDrop", (bar, data, slot) => createWorldbuildingMacro(data, slot));
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/templates.js
+
+export const preloadHandlebarsTemplates = async function() {
+  // Define template paths to load
+  // Note: You likely won't need sheet-attributes.html if you hardcode the essence grid
+  // But we keep them for Item Sheets.
+  const templatePaths = [
+    "systems/narequenta/templates/parts/sheet-attributes.html", 
+    "systems/narequenta/templates/parts/sheet-groups.html"
+  ];
+
+  return loadTemplates(templatePaths);
+};
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/module/token.js
+
+export class SimpleTokenDocument extends TokenDocument {
+  // Foundry VTT Core handles bar attributes for {value, max} objects automatically.
+  // We can rely on default behavior for Nárëquenta Essences.
+}
+
+export class SimpleToken extends Token {
+  // Keep default bar drawing
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/styles/narequenta.css
+
+/* Global System Styles */
+.narequenta .window-content {
+    font-family: "Signika", sans-serif;
+    font-size: 14px;
+    color: #191813;
+    background: #fcfcfc;
+}
+
+/* --- Header Section --- */
+.narequenta header.sheet-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+}
+
+.narequenta .profile-img {
+    flex: 0 0 100px;
+    height: 100px;
+    margin-right: 15px;
+    border: 2px solid #333;       /* Thicker border */
+    background-color: #4b4a44;    /* Dark Grey Background */
+    border-radius: 5px;           /* Rounded corners */
+    object-fit: cover;            /* Ensures image fits nicely */
+    cursor: pointer;              /* Shows it's clickable */
+}
+
+.narequenta .header-fields {
+    flex: 1;
+}
+
+.narequenta h1.charname input {
+    font-family: "Modesto Condensed", serif;
+    font-size: 2em;
+    border: none;
+    border-bottom: 1px solid #000;
+}
+
+/* --- The Essence Grid (Vitalis, Motus, etc.) --- */
+.essence-grid-container {
+    border: 1px solid #bbb;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 5px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+/* Grid Definition: 5 Columns
+   1. Label (Wide)
+   2. E_MAX
+   3. E_CUR
+   4. Tier (Derived)
+   5. Dice (Derived) 
+*/
+.essence-header, .essence-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 5px;
+    align-items: center;
+    padding: 4px;
+}
+
+.essence-header {
+    font-weight: bold;
+    border-bottom: 1px solid #333;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.essence-row {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.essence-row:last-child {
+    border-bottom: none;
+}
+
+.essence-label {
+    font-weight: bold;
+    color: #4a4a4a;
+}
+
+/* --- Inputs --- */
+.narequenta input[type="number"] {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid #7a7971;
+    border-radius: 3px;
+}
+
+/* Highlight E_MAX (Permanent Loss) */
+.input-emax {
+    color: #8b0000; /* Dark Red */
+    font-weight: bold;
+}
+
+/* Highlight E_CUR (Daily Energy) */
+.input-ecur {
+    color: #006400; /* Dark Green */
+    font-weight: bold;
+}
+
+/* Read-only derived stats */
+.derived-stat {
+    text-align: center;
+    background: transparent;
+    border: none;
+    color: #555;
+    font-style: italic;
+}
+
+/* --- Resource Bar (Action Surges) --- */
+.resource-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 5px 0;
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/styles/narequenta.less
+
+/* Global System Styles */
+.narequenta {
+    .window-content {
+        font-family: "Signika", sans-serif;
+        font-size: 14px;
+        color: #191813;
+        background: #fcfcfc;
+    }
+
+/* --- Header Section --- */
+	.narequenta header.sheet-header {
+		display: flex;
+		align-items: center;
+		margin-bottom: 10px;
+		border-bottom: 2px solid #333;
+		padding-bottom: 10px;
+	}
+
+	.narequenta .profile-img {
+		flex: 0 0 100px;
+		height: 100px;
+		margin-right: 15px;
+		border: 2px solid #333;       /* Thicker border */
+		background-color: #4b4a44;    /* Dark Grey Background */
+		border-radius: 5px;           /* Rounded corners */
+		object-fit: cover;            /* Ensures image fits nicely */
+		cursor: pointer;              /* Shows it's clickable */
+	}
+
+
+        .header-fields {
+            flex: 1;
+        }
+
+        h1.charname input {
+            font-family: "Modesto Condensed", serif;
+            font-size: 2em;
+            border: none;
+            border-bottom: 1px solid #000;
+            width: 100%;
+        }
+    }
+
+    /* --- The Essence Grid (Vitalis, Motus, etc.) --- */
+    .essence-grid-container {
+        border: 1px solid #bbb;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 5px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+
+        /* Grid Definition: Label | E_MAX | E_CUR | Tier | Dice */
+        .essence-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 5px;
+            align-items: center;
+            padding: 4px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .essence-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 5px;
+            align-items: center;
+            padding: 4px;
+            border-bottom: 1px solid #e0e0e0;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .essence-label {
+                font-weight: bold;
+                color: #4a4a4a;
+            }
+        }
+    }
+
+    /* --- Inputs --- */
+    input[type="number"] {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid #7a7971;
+        border-radius: 3px;
+
+        /* Highlight E_MAX (Permanent Loss) */
+        &.input-emax {
+            color: #8b0000; /* Dark Red */
+            font-weight: bold;
+        }
+
+        /* Highlight E_CUR (Daily Energy) */
+        &.input-ecur {
+            color: #006400; /* Dark Green */
+            font-weight: bold;
+        }
+    }
+
+    /* Read-only derived stats */
+    .derived-stat {
+        text-align: center;
+        background: transparent;
+        border: none;
+        color: #555;
+        font-style: italic;
+        pointer-events: none; /* Prevent typing */
+    }
+
+    /* --- Resource Bar (Action Surges) --- */
+    .resource-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px 0;
+        
+        label {
+            font-weight: bold;
+        }
+    }
+    
+    /* --- Tabs Navigation --- */
+    .sheet-tabs {
+        flex: 0 0 40px;
+        border-top: 1px solid #AAA;
+        border-bottom: 1px solid #AAA;
+        line-height: 40px;
+        margin-bottom: 10px;
+
+        .item {
+            display: inline-block;
+            padding: 0 10px;
+            border-bottom: 3px solid transparent;
+            color: #4b4a44;
+            font-weight: bold;
+            
+            &.active {
+                border-bottom: 3px solid #444;
+                color: #191813;
+                text-shadow: 0 0 2px #FFF;
+            }
+            
+            &:hover {
+                color: #000;
+                text-shadow: 0 0 2px #FFF;
+            }
+        }
+    }
+	
+	/* --- NPC SPECIFIC STYLING --- */
+    /* This targets the form with the 'npc' class we just added */
+    form.npc {
+        /* Give NPCs a faint reddish 'Threat' background */
+        background-color: #f4eaea !important; 
+        
+        /* Darker headers */
+        header.sheet-header {
+            border-bottom-color: #500;
+        }
+
+        /* Darker Profile Image Border */
+        .profile-img {
+            border-color: #500;
+            background-color: #2a0f0f;
+        }
+
+        /* Darker Grid Lines */
+        .essence-header {
+            border-bottom-color: #500;
+            color: #500;
+        }
+        
+        /* Calculator Area Distinction */
+        .tab.calculator .essence-grid-container {
+            background: rgba(139, 0, 0, 0.05);
+            border-color: #8b0000;
+        }
+    }
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/templates/actor-sheet.html
+
+<form class="{{cssClass}} {{actor.type}}" autocomplete="off">
+
+    {{!-- Sheet Header --}}
+    <header class="sheet-header">
+        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
+        <div class="header-fields">
+            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+            
+            {{!-- Resources Row (HP & Action Surges) --}}
+            <div class="resource-row">
+                <div class="resource">
+                    <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
+                    <input type="number" name="system.resources.hp.value" value="{{systemData.resources.hp.value}}" style="width: 50px;">
+                    <span> / </span>
+                    <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
+                </div>
+
+                {{!-- Action Surges (Only show Max for PCs) --}}
+                {{#if (eq actor.type "character")}}
+                <div class="resource">
+                    <label>{{localize "NAREQUENTA.ActionSurges"}}</label>
+                    <input type="number" name="system.resources.action_surges.value" value="{{systemData.resources.action_surges.value}}" style="width: 40px;">
+                    <span> / </span>
+                    <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            {{!-- Final Vow (PC Only) --}}
+            {{#if (eq actor.type "character")}}
+            <div class="resource-row">
+                <input type="text" name="system.promise" value="{{systemData.promise}}" placeholder="{{localize 'NAREQUENTA.TabPromise'}}" style="font-style: italic; width: 100%;">
+            </div>
+            {{/if}}
+        </div>
+    </header>
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
+        <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
+        <a class="item" data-tab="calculator"><i class="fas fa-calculator"></i> Calc</a>
+        <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- 1. ESSENCES TAB --}}
+        <div class="tab essences" data-group="primary" data-tab="essences">
+            
+            {{!-- UNIFIED ESSENCE GRID --}}
+            <div class="essence-grid-container">
+                <div class="essence-header">
+                    <span>{{localize "NAREQUENTA.TabEssences"}}</span>
+                    <span>E_MAX</span>
+                    <span>E_CUR</span>
+                    <span>TIER</span>
+                    <span>DICE</span>
+                </div>
+
+                {{!-- VITALIS --}}
+                <div class="essence-row">
+                    <span class="essence-label">{{localize "NAREQUENTA.Vitalis"}}</span>
+                    <input class="input-emax" type="number" name="system.essences.vitalis.max" value="{{systemData.essences.vitalis.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.vitalis.value" value="{{systemData.essences.vitalis.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.vitalis.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.vitalis.diceString}}</span>
+                </div>
+
+                {{!-- MOTUS --}}
+                <div class="essence-row">
+                    <span class="essence-label">{{localize "NAREQUENTA.Motus"}}</span>
+                    <input class="input-emax" type="number" name="system.essences.motus.max" value="{{systemData.essences.motus.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.motus.value" value="{{systemData.essences.motus.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.motus.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.motus.diceString}}</span>
+                </div>
+
+                {{!-- SENSUS --}}
+                <div class="essence-row">
+                    <span class="essence-label">{{localize "NAREQUENTA.Sensus"}}</span>
+                    <input class="input-emax" type="number" name="system.essences.sensus.max" value="{{systemData.essences.sensus.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.sensus.value" value="{{systemData.essences.sensus.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.sensus.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.sensus.diceString}}</span>
+                </div>
+
+                {{!-- VERBUM --}}
+                <div class="essence-row">
+                    <span class="essence-label">{{localize "NAREQUENTA.Verbum"}}</span>
+                    <input class="input-emax" type="number" name="system.essences.verbum.max" value="{{systemData.essences.verbum.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.verbum.value" value="{{systemData.essences.verbum.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.verbum.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.verbum.diceString}}</span>
+                </div>
+
+                {{!-- ANIMA --}}
+                <div class="essence-row">
+                    <span class="essence-label">{{localize "NAREQUENTA.Anima"}}</span>
+                    <input class="input-emax" type="number" name="system.essences.anima.max" value="{{systemData.essences.anima.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.anima.value" value="{{systemData.essences.anima.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.anima.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.anima.diceString}}</span>
+                </div>
+            </div>
+
+            {{!-- NEW: THE WANING BUTTON (Only for PCs) --}}
+            {{#if (eq actor.type "character")}}
+            <div style="text-align:center; margin-bottom: 15px;">
+                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333;">
+                    <i class="fas fa-skull"></i> Trigger Waning Phase
+                </button>
+            </div>
+            {{/if}}
+
+            {{!-- Legacy Attributes --}}
+            {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
+        </div>
+
+        {{!-- 2. ITEMS TAB --}}
+        <div class="tab items" data-group="primary" data-tab="items">
+            <ol class="items-list">
+                <li class="item flexrow item-header">
+                    <div class="item-image"></div>
+                    <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
+                    <div class="item-controls">
+                        <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
+                    </div>
+                </li>
+                {{#each items as |item id|}}
+                <li class="item flexrow" data-item-id="{{item._id}}">
+                    <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                    <h4 class="item-name mb-0">
+                        <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
+                    </h4>
+                    <div class="item-controls">
+                        <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
+                        <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
+                    </div>
+                </li>
+                {{/each}}
+            </ol>
+        </div>
+
+        {{!-- 3. CALCULATOR TAB (Optional but Recommended) --}}
+        <div class="tab calculator" data-group="primary" data-tab="calculator">
+            <div class="essence-grid-container">
+                <div class="essence-header" style="grid-template-columns: 1fr;">
+                    <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
+                </div>
+                
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">My Roll (d100):</label>
+                    <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
+                </div>
+                <div class="resource-row" style="padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">My R_Prof (Roll):</label>
+                    <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
+                </div>
+
+                <hr>
+
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy Roll (d100):</label>
+                    <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="d100">
+                </div>
+                <div class="resource-row" style="padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy E_CUR:</label>
+                    <input type="number" name="system.calculator.target_ecur" value="{{systemData.calculator.target_ecur}}">
+                </div>
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy Tier (0-5):</label>
+                    <input type="number" name="system.calculator.target_tier" value="{{systemData.calculator.target_tier}}" min="0" max="5">
+                </div>
+
+                <hr>
+
+                <div style="text-align: center; margin: 10px;">
+                    <button type="button" class="roll-calculation" style="background: #333; color: white;">
+                        <i class="fas fa-bolt"></i> CALCULATE RESULT
+                    </button>
+                </div>
+
+                <div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; background: #fff;">
+                    {{systemData.calculator.output}}
+                </div>
+            </div>
+        </div>
+
+        {{!-- 4. BIOGRAPHY TAB --}}
+        <div class="tab biography" data-group="primary" data-tab="biography">
+            {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
+        </div>
+
+    </section>
+</form>
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/templates/item-sheet.html
+
+<form class="flexcol {{cssClass}}" autocomplete="off">
+    <header class="sheet-header">
+        <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
+        <div class="header-fields">
+            <h1 class="charname">
+                <input name="name" type="text" value="{{item.name}}" placeholder="Name"/>
+            </h1>
+            
+            <div class="resource-row">
+                <div class="resource">
+                    <label>Quantity</label>
+                    <input type="number" name="system.quantity" value="{{systemData.quantity}}"/>
+                </div>
+                <div class="resource">
+                    <label>Weight</label>
+                    <input type="number" name="system.weight" value="{{systemData.weight}}"/>
+                </div>
+            </div>
+
+            {{!-- Nárëquenta Specific: Motor & Quality Selection --}}
+            {{!-- Only show if this item has a cost defined (Ability/Weapon) --}}
+            {{#if systemData.cost}}
+            <div class="resource-row" style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 5px;">
+                <div class="resource">
+                    <label style="font-weight: bold; color: #8b0000;">Motor (E_P)</label>
+                    <select name="system.cost.motor">
+                        {{selectOptions systemData.essencesList selected=systemData.cost.motor localize=true}}
+                    </select>
+                </div>
+                <div class="resource">
+                    <label style="font-weight: bold; color: #006400;">Quality (E_S)</label>
+                    <select name="system.cost.quality">
+                        {{selectOptions systemData.essencesList selected=systemData.cost.quality localize=true}}
+                    </select>
+                </div>
+            </div>
+            {{/if}}
+            
+        </div>
+    </header>
+
+    {{!-- Sheet Tab Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="description">{{localize "NAREQUENTA.TabAbilities"}}</a>
+        <a class="item" data-tab="attributes">Attributes</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+
+        {{!-- Description Tab --}}
+        <div class="tab" data-group="primary" data-tab="description">
+            {{editor descriptionHTML target="system.description" button=true editable=editable engine="prosemirror"}}
+        </div>
+
+        {{!-- Attributes Tab --}}
+        <div class="tab attributes" data-group="primary" data-tab="attributes">
+            <header class="attributes-header flexrow">
+                <span class="attribute-key">{{localize "NAREQUENTA.AttributeKey"}}</span>
+                <span class="attribute-value">{{localize "NAREQUENTA.AttributeValue"}}</span>
+                <span class="attribute-label">{{localize "NAREQUENTA.AttributeLabel"}}</span>
+                <span class="attribute-dtype">{{localize "NAREQUENTA.AttributeDtype"}}</span>
+                <a class="attribute-control" data-action="create" data-group="{{group}}"><i class="fas fa-plus"></i></a>
+            </header>
+
+            {{!-- Render the attribute list partial. Note the path fix! --}}
+            {{> "systems/narequenta/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
+
+            {{!-- Render the grouped attributes partial. Note the path fix! --}}
+            <div class="groups">
+                {{> "systems/narequenta/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
+                <div class="group-controls flexrow">
+                    <input class="group-prefix" type="text" value=""/>
+                    <a class="button group-control" data-action="create-group"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}} Group</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</form>
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/templates/parts/sheet-attributes.html
+
+<section class="attributes-group">
+    <ol class="attributes-list">
+        {{#each attributes as |attr key|}}
+        <li class="attribute flexrow" data-attribute="{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}">
+            <div class="attribute-key-wrapper flexrow">
+                {{#if attr.isFormula}}
+                    <a class="attribute-roll" data-label="{{attr.label}}" data-roll="{{attr.value}}"><i class="fas fa-dice-d20"></i></a>
+                {{/if}}
+                <input class="attribute-key" type="text" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.key" value="{{key}}" placeholder="{{localize "NAREQUENTA.AttributeKey"}}"/>
+            </div>
+            {{!-- Handle booleans. --}}
+            {{#if attr.isCheckbox}}
+            <label class="attribute-value checkbox"><input type="checkbox" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
+                    {{checked attr.value}} /></label>
+            {{else}}
+            {{!-- Handle resources. --}}
+            {{#if attr.isResource}}
+            <div class="attribute-group flexrow">
+                <span class="attribute-col flexcol">
+                    <label for="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.min">{{localize "NAREQUENTA.ResourceMin"}}</label>
+                    <input class="attribute-value" type="text" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.min" value="{{attr.min}}"
+                        data-dtype="Number" />
+                </span>
+                <span class="attribute-col flexcol">
+                    <label for="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value">{{localize "NAREQUENTA.ResourceValue"}}</label>
+                    <input class="attribute-value" type="text" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value"
+                        value="{{attr.value}}" data-dtype="Number" />
+                </span>
+                <span class="attribute-col flexcol">
+                    <label for="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.max">{{localize "NAREQUENTA.ResourceMax"}}</label>
+                    <input class="attribute-value" type="text" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.max" value="{{attr.max}}"
+                        data-dtype="Number" />
+                </span>
+            </div>
+            {{!-- Handle other input types. --}}
+            {{else}}
+            <input class="attribute-value" type="text" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.value" value="{{attr.value}}"
+                data-dtype="{{attr.dtype}}" placeholder="{{localize "NAREQUENTA.AttributeValue"}}"/>
+            {{/if}}
+            {{/if}}
+            <input class="attribute-label" type="text" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.label" value="{{attr.label}}"
+                placeholder="{{localize "NAREQUENTA.AttributeLabel"}}"/>
+            <select class="attribute-dtype" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.dtype">
+                {{#select attr.dtype}}
+                {{#each ../dtypes as |t|}}
+                <option value="{{t}}">{{t}}</option>
+                {{/each}}
+                {{/select}}
+            </select>
+            <input type="hidden" name="system.attributes.{{#if attr.group}}{{attr.group}}.{{/if}}{{key}}.group" value="{{attr.group}}" />
+            <a class="attribute-control" data-action="delete"><i class="fas fa-trash"></i></a>
+        </li>
+        {{/each}}
+    </ol>
+</section>
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/templates/parts/sheet-groups.html
+
+<ol class="groups-list">
+    {{#each groups as |group groupKey|}}
+    <li class="group" data-group="{{groupKey}}">
+        <div class="group-header flexrow">
+            <input class="group-key" type="text" readonly name="system.groups.{{groupKey}}.key" value="{{groupKey}}" />
+            <input class="group-label" type="text" name="system.groups.{{groupKey}}.label" value="{{group.label}}" placeholder="Group Label" />
+            <select class="group-dtype" name="system.groups.{{groupKey}}.dtype">
+                {{#select group.dtype}}
+                {{#each ../dtypes as |t|}}
+                <option value="{{t}}">{{t}}</option>
+                {{/each}}
+                {{/select}}
+            </select>
+            <a class="attribute-control" data-action="create" data-group="{{groupKey}}" data-dtype="{{group.dtype}}"><i class="fas fa-plus"></i></a>
+            <a class="group-control" data-action="delete-group"><i class="fas fa-trash"></i></a>
+        </div>
+
+        {{!-- FIX: Updated path from 'worldbuilding' to 'narequenta' --}}
+        {{> "systems/narequenta/templates/parts/sheet-attributes.html" attributes=group.attributes group=groupKey dtypes=../dtypes}}
+    </li>
+    {{/each}}
+</ol>
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/LICENSE.txt
+
+MIT License
+
+Copyright (c) 2020 Foundry Network
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/README.md
+
+# Simple Worldbuilding System
+
+A simple game system for Foundry VTT which allows for flexible definition of Actors and Items to assist with worldbuilding or for running games which do not have a more complete system implementation available.
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/gulpfile.js
+
+const gulp = require('gulp');
+const less = require('gulp-less');
+
+/* ----------------------------------------- */
+/* Compile LESS
+/* ----------------------------------------- */
+
+// Update the constant to match your new file structure
+const SYSTEM_LESS = ["styles/*.less"];
+
+function compileLESS() {
+  // Changed from "simple.less" to "narequenta.less"
+  return gulp.src("styles/narequenta.less")
+    .pipe(less())
+    .pipe(gulp.dest("./styles/"))
+}
+
+const css = gulp.series(compileLESS);
+
+/* ----------------------------------------- */
+/* Watch Updates
+/* ----------------------------------------- */
+
+function watchUpdates() {
+  gulp.watch(SYSTEM_LESS, css);
+}
+
+/* ----------------------------------------- */
+/* Export Tasks
+/* ----------------------------------------- */
+
+exports.default = gulp.series(
+  gulp.parallel(css),
+  watchUpdates
+);
+exports.css = css;
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/package.json
+
+{
+  "name": "narequenta",
+  "version": "0.9.0",
+  "description": "Nárëquenta — Tales of the Waning (Foundry VTT System)",
+  "scripts": {
+    "css": "gulp css",
+    "watch": "gulp",
+    "gulp": "gulp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cortonemo/narequenta-vtt.git"
+  },
+  "browserslist": [
+    "last 3 versions"
+  ],
+  "author": "Serelith Varn",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "private": true,
+  "dependencies": {
+    "gulp": "^4.0.2",
+    "gulp-less": "^4.0.1"
+  },
+  "devDependencies": {}
+}
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/system.json
+
+{
+  "id": "narequenta",
+  "title": "Nárëquenta — Tales of the Waning",
+  "version": "v.9.12",
+  "description": "A TTRPG about Beautiful Erosion. Heroes start at their peak and gradually fade. Power is a finite resource; Proficiency Compensates for Decline.",
+  "url": "https://github.com/cortonemo/narequenta-vtt",
+  "license": "LICENSE.md",
+  "authors": [
+    {
+      "name": "Serelith Varn",
+      "email": "serelith.varn@proton.me",
+      "url": "https://github.com/cortonemo"
+    }
+  ],
+  "esmodules": ["module/narequenta.js"],
+  "styles": ["styles/narequenta.css"],
+  "packs": [],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "pt",
+      "name": "Português",
+      "path": "lang/pt.json"
+    }
+  ],
+  "compatibility": {
+    "minimum": "11",
+    "verified": "13"
+  },
+  
+  "grid": {
+    "distance": 1,
+    "units": "m"
+  },
+  
+  "primaryTokenAttribute": "resources.hp",
+  "secondaryTokenAttribute": "resources.action_surges",
+  "manifest": "https://github.com/cortonemo/narequenta-vtt/releases/latest/download/system.json",
+  "download": "https://github.com/cortonemo/narequenta-vtt/releases/latest/download/system.zip"
+}
+
+
+https://github.com/cortonemo/narequenta-vtt/blob/main/template.json
+
+{
+  "Actor": {
+    "types": ["character", "npc"],
+    "templates": {
+      "base": {
+        "biography": "",
+        "resources": {
+          "hp": { "value": 100, "min": 0, "max": 100 }
+        }
+      }
+    },
+    "character": {
+      "templates": ["base"],
+      "promise": "",
+      "resources": {
+        "hp": { "value": 100, "min": 0, "max": 100 },
+        "action_surges": { "value": 0, "min": 0, "max": 5 }
+      },
+      "calculator": {
+        "attack_roll": 50,
+        "prof_roll": 0,
+        "defense_roll": 50,
+        "target_ecur": 100,
+        "target_tier": 0,
+        "output": "Waiting for input..."
+      },
+      "essences": {
+        "vitalis": { "value": 100, "max": 100, "label": "VITALIS" },
+        "motus":   { "value": 100, "max": 100, "label": "MOTUS" },
+        "sensus":  { "value": 100, "max": 100, "label": "SENSUS" },
+        "verbum":  { "value": 100, "max": 100, "label": "VERBUM" },
+        "anima":   { "value": 100, "max": 100, "label": "ANIMA" }
+      },
+      "attributes": {},
+      "groups": {}
+    },
+    "npc": {
+      "templates": ["base"],
+      "tier": 0,
+      "calculator": {
+        "attack_roll": 50,
+        "prof_roll": 0,
+        "defense_roll": 50,
+        "target_ecur": 100,
+        "target_tier": 0,
+        "output": "Waiting for input..."
+      },
+      "essences": {
+        "vitalis": { "value": 100, "max": 100, "label": "VITALIS" },
+        "motus":   { "value": 100, "max": 100, "label": "MOTUS" },
+        "sensus":  { "value": 100, "max": 100, "label": "SENSUS" },
+        "verbum":  { "value": 100, "max": 100, "label": "VERBUM" },
+        "anima":   { "value": 100, "max": 100, "label": "ANIMA" }
+      },
+      "attributes": {},
+      "groups": {}
+    }
+  },
+  "Item": {
+    "types": ["item", "ability", "weapon"],
+    "htmlFields": ["description"],
+    "item": {
+      "description": "",
+      "quantity": 1,
+      "weight": 0,
+      "attributes": {},
+      "groups": {}
+    },
+    "ability": {
+      "description": "",
+      "cost": {
+        "motor": "vitalis",
+        "quality": "motus"
+      },
+      "attributes": {},
+      "groups": {}
+    },
+    "weapon": {
+      "description": "",
+      "damage_bonus": 0,
+      "cost": {
+        "motor": "vitalis",
+        "quality": "motus"
+      },
+      "attributes": {},
+      "groups": {}
+    }
+  }
+}

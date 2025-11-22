@@ -131,6 +131,22 @@ export class NarequentaActorSheet extends ActorSheet {
 
               const currentMax = actor.system.essences[key].max;
               let newMax = currentMax - loss;
+
+              // --- LOGIC FIX START: Tier I Guarantee ---
+              // If this is the FOCUS essence AND we are starting from 100%
+              if (isFocus && currentMax === 100) {
+                  // If the result would leave us above 90% (meaning roll was < 10)
+                  // We force it down to exactly 90% to guarantee Tier I.
+                  if (newMax > 90) {
+                      const forcedLoss = 100 - 90; // Should be 10
+                      loss = forcedLoss; 
+                      newMax = 90;
+                  }
+                  // If newMax is already <= 90 (roll was 10, 11, 12), we keep the actual result.
+              }
+              // --- LOGIC FIX END ---
+
+              // Hard Floor Check
               if (newMax < 50) newMax = 50;
 
               updates[`system.essences.${key}.max`] = newMax;
@@ -222,11 +238,10 @@ export class NarequentaActorSheet extends ActorSheet {
       const Defender_Ecur = Number(calc.target_ecur);
       const Defender_Tier = Number(calc.target_tier);
 
+      // Optimized Tier Fetch
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
-          for (let e of Object.values(this.actor.system.essences)) {
-              if (e.tier > Attacker_Tier) Attacker_Tier = e.tier;
-          }
+          Attacker_Tier = this.actor.system.resources.action_surges.max || 0;
       } else {
           Attacker_Tier = this.actor.system.tier || 0;
       }
@@ -242,7 +257,7 @@ export class NarequentaActorSheet extends ActorSheet {
       const diff = Attacker_Tier - Defender_Tier;
       if (diff === 1) multiplier = 1.25;
       else if (diff === 2) multiplier = 1.50;
-      else if (diff >= 3) multiplier = 1.75; // Simplified
+      else if (diff >= 3) multiplier = 1.75; 
       else if (diff === -1) multiplier = 0.75;
       else if (diff === -2) multiplier = 0.50;
       else if (diff <= -3) multiplier = 0.25;
