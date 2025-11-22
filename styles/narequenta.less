@@ -7,20 +7,26 @@
         background: #fcfcfc;
     }
 
-    /* --- Header Section --- */
-    header.sheet-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-        border-bottom: 2px solid #333;
-        padding-bottom: 10px;
+/* --- Header Section --- */
+	.narequenta header.sheet-header {
+		display: flex;
+		align-items: center;
+		margin-bottom: 10px;
+		border-bottom: 2px solid #333;
+		padding-bottom: 10px;
+	}
 
-        .profile-img {
-            flex: 0 0 100px;
-            height: 100px;
-            margin-right: 15px;
-            border: 1px solid #000;
-        }
+	.narequenta .profile-img {
+		flex: 0 0 100px;
+		height: 100px;
+		margin-right: 15px;
+		border: 2px solid #333;       /* Thicker border */
+		background-color: #4b4a44;    /* Dark Grey Background */
+		border-radius: 5px;           /* Rounded corners */
+		object-fit: cover;            /* Ensures image fits nicely */
+		cursor: pointer;              /* Shows it's clickable */
+	}
+
 
         .header-fields {
             flex: 1;

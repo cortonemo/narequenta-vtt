@@ -48,8 +48,7 @@
         {{!-- 1. ESSENCES TAB --}}
         <div class="tab essences" data-group="primary" data-tab="essences">
             
-            {{#if (eq actor.type "character")}}
-            {{!-- PC ESSENCE GRID --}}
+            {{!-- UNIFIED ESSENCE GRID (PC & NPC) --}}
             <div class="essence-grid-container">
                 <div class="essence-header">
                     <span>{{localize "NAREQUENTA.TabEssences"}}</span>
@@ -62,69 +61,48 @@
                 {{!-- VITALIS --}}
                 <div class="essence-row">
                     <span class="essence-label">{{localize "NAREQUENTA.Vitalis"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.vitalis.max" value="{{system.essences.vitalis.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.vitalis.value" value="{{system.essences.vitalis.value}}" min="0" max="100">
-                    <span class="derived-stat">{{system.essences.vitalis.tier}}</span>
-                    <span class="derived-stat">{{system.essences.vitalis.diceString}}</span>
+                    <input class="input-emax" type="number" name="system.essences.vitalis.max" value="{{systemData.essences.vitalis.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.vitalis.value" value="{{systemData.essences.vitalis.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.vitalis.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.vitalis.diceString}}</span>
                 </div>
 
                 {{!-- MOTUS --}}
                 <div class="essence-row">
                     <span class="essence-label">{{localize "NAREQUENTA.Motus"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.motus.max" value="{{system.essences.motus.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.motus.value" value="{{system.essences.motus.value}}" min="0" max="100">
-                    <span class="derived-stat">{{system.essences.motus.tier}}</span>
-                    <span class="derived-stat">{{system.essences.motus.diceString}}</span>
+                    <input class="input-emax" type="number" name="system.essences.motus.max" value="{{systemData.essences.motus.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.motus.value" value="{{systemData.essences.motus.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.motus.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.motus.diceString}}</span>
                 </div>
 
                 {{!-- SENSUS --}}
                 <div class="essence-row">
                     <span class="essence-label">{{localize "NAREQUENTA.Sensus"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.sensus.max" value="{{system.essences.sensus.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.sensus.value" value="{{system.essences.sensus.value}}" min="0" max="100">
-                    <span class="derived-stat">{{system.essences.sensus.tier}}</span>
-                    <span class="derived-stat">{{system.essences.sensus.diceString}}</span>
+                    <input class="input-emax" type="number" name="system.essences.sensus.max" value="{{systemData.essences.sensus.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.sensus.value" value="{{systemData.essences.sensus.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.sensus.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.sensus.diceString}}</span>
                 </div>
 
                 {{!-- VERBUM --}}
                 <div class="essence-row">
                     <span class="essence-label">{{localize "NAREQUENTA.Verbum"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.verbum.max" value="{{system.essences.verbum.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.verbum.value" value="{{system.essences.verbum.value}}" min="0" max="100">
-                    <span class="derived-stat">{{system.essences.verbum.tier}}</span>
-                    <span class="derived-stat">{{system.essences.verbum.diceString}}</span>
+                    <input class="input-emax" type="number" name="system.essences.verbum.max" value="{{systemData.essences.verbum.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.verbum.value" value="{{systemData.essences.verbum.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.verbum.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.verbum.diceString}}</span>
                 </div>
 
                 {{!-- ANIMA --}}
                 <div class="essence-row">
                     <span class="essence-label">{{localize "NAREQUENTA.Anima"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.anima.max" value="{{system.essences.anima.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.anima.value" value="{{system.essences.anima.value}}" min="0" max="100">
-                    <span class="derived-stat">{{system.essences.anima.tier}}</span>
-                    <span class="derived-stat">{{system.essences.anima.diceString}}</span>
+                    <input class="input-emax" type="number" name="system.essences.anima.max" value="{{systemData.essences.anima.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.anima.value" value="{{systemData.essences.anima.value}}" min="0" max="100">
+                    <span class="derived-stat">{{systemData.essences.anima.tier}}</span>
+                    <span class="derived-stat">{{systemData.essences.anima.diceString}}</span>
                 </div>
             </div>
-            {{else}}
-            
-            {{!-- NPC VIEW --}}
-            <div class="essence-grid-container">
-                <div class="essence-header">
-                    <span>Focus Essence</span>
-                    <span>E_MAX</span>
-                    <span>E_CUR</span>
-                    <span>TIER</span>
-                </div>
-                <div class="essence-row">
-                    <input type="text" name="system.focus_essence.label" value="{{system.focus_essence.label}}" placeholder="Name (e.g. Motus)" style="text-align: left;">
-                    <input class="input-emax" type="number" name="system.focus_essence.max" value="{{system.focus_essence.max}}">
-                    <input class="input-ecur" type="number" name="system.focus_essence.value" value="{{system.focus_essence.value}}">
-                    <input type="number" name="system.tier" value="{{system.tier}}" placeholder="Tier" style="width: 50px;">
-                </div>
-            </div>
-            <p style="font-style: italic; font-size: 0.9em; text-align: center;">
-                Adversaries use a simplified Focus Essence to determine defense margins.
-            </p>
-            {{/if}}
 
             {{!-- Legacy Attributes (Optional) --}}
             {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
