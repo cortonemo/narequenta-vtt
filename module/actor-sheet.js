@@ -477,7 +477,7 @@ export class NarequentaActorSheet extends ActorSheet {
       });
   }
 
-  // --- NEW: APPLY DAMAGE FROM SHEET (With Sync) ---
+  // --- NEW: APPLY DAMAGE FROM SHEET (With "Dead" Status) ---
   async _onApplySheetDamage(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
@@ -499,14 +499,27 @@ export class NarequentaActorSheet extends ActorSheet {
           return;
       }
 
-      // 1. Calculate New HP
-      const currentHP = token.actor.system.resources.hp.value;
+      // 1. Calculate New HP (Force numbers to ensure NPC compatibility)
+      const currentHP = Number(token.actor.system.resources.hp.value) || 0;
+      const maxHP = Number(token.actor.system.resources.hp.max) || 0; // Needed for logic if you add healing later
       const newHP = Math.max(0, currentHP - damage);
 
       // 2. Update the Target Actor
       await token.actor.update({ "system.resources.hp.value": newHP });
       
-      // 3. SYNC: Update YOUR calculator to show the new HP
+      // 3. Check for "Down/Dead" Status
+      if (newHP === 0 && currentHP > 0) {
+          // Apply the "Defeated" overlay (Big Skull)
+          const effect = CONFIG.statusEffects.find(e => e.id === "dead")?.icon || "icons/svg/skull.svg";
+          await token.toggleEffect(effect, { overlay: true, active: true });
+          
+          // Optional: Send chat notification
+          ChatMessage.create({
+              content: `<strong>${token.name}</strong> has been defeated!`
+          });
+      }
+
+      // 4. SYNC: Update YOUR calculator to show the new HP
       await this.actor.update({ "system.calculator.target_ecur": newHP });
 
       ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);

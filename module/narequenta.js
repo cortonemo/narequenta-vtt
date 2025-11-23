@@ -82,7 +82,7 @@ Hooks.once("init", async function() {
 
 Hooks.on("hotbarDrop", (bar, data, slot) => createWorldbuildingMacro(data, slot));
 
-// --- NEW: GLOBAL LISTENER FOR CHAT BUTTONS ---
+// --- NEW: GLOBAL LISTENER FOR CHAT BUTTONS (With Dead Status) ---
 Hooks.once("ready", () => {
     $(document).on("click", ".apply-damage-btn", async (ev) => {
         ev.preventDefault();
@@ -97,10 +97,22 @@ Hooks.once("ready", () => {
             return;
         }
 
-        const currentHP = token.actor.system.resources.hp.value;
+        // Check permissions (Players shouldn't delete/kill NPCs unless GM)
+        if (!game.user.isGM && token.actor.type === "npc") {
+             ui.notifications.warn("You do not have permission to update this Adversary. Ask the GM.");
+             return;
+        }
+
+        const currentHP = Number(token.actor.system.resources.hp.value) || 0;
         const newHP = Math.max(0, currentHP - damage);
 
         await token.actor.update({ "system.resources.hp.value": newHP });
+
+        // Apply Dead Status if HP hits 0
+        if (newHP === 0 && currentHP > 0) {
+            const effect = CONFIG.statusEffects.find(e => e.id === "dead")?.icon || "icons/svg/skull.svg";
+            await token.toggleEffect(effect, { overlay: true, active: true });
+        }
 
         ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
         
