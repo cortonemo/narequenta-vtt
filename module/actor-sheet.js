@@ -56,7 +56,7 @@ export class NarequentaActorSheet extends ActorSheet {
     });
     html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
     
-    // Rest Buttons (Refocus/Renewal)
+    // Rest Buttons
     html.find(".short-rest").click(this._onShortRest.bind(this));
     html.find(".long-rest").click(this._onLongRest.bind(this));
 
@@ -120,32 +120,31 @@ export class NarequentaActorSheet extends ActorSheet {
     const actor = this.actor;
 
     const content = `
-    <form>
-      <div class="form-group">
-        <label>Rest Intensity:</label>
-        <select id="rest-type" style="width:100%; margin-bottom: 10px;">
-          <option value="quick">Quick Breath (1d6%) - Momentary</option>
-          <option value="mental" selected>Mental Calming (Variable) - 5 to 30 Mins</option>
-          <option value="deep">Deep Meditation (4d10%) - 1 Hour</option>
-        </select>
-      </div>
-      <div id="mental-options" style="display:block; background:#f0f0f0; padding:5px; border:1px solid #ccc; margin-bottom:10px;">
-         <label>Calming Duration:</label>
-         <select id="mental-duration" style="width:100%;">
-            <option value="2d8">5 Minutes (2d8%)</option>
-            <option value="3d8">10 Minutes (3d8%)</option>
-            <option value="4d8">15 Minutes (4d8%)</option>
-            <option value="5d8">20 Minutes (5d8%)</option>
-            <option value="6d8">25 Minutes (6d8%)</option>
-            <option value="7d8">30 Minutes (7d8%)</option>
-         </select>
-      </div>
-      <div class="form-group" style="border-top:1px solid #333; padding-top:5px;">
-        <label style="font-weight:bold; color:#006400;">Manual Override (%):</label>
-        <input type="number" id="manual-recovery" placeholder="Auto-Roll" style="width:100%;">
-        <p class="notes" style="font-size:0.8em;">Enter a number to skip the roll.</p>
-      </div>
-    </form>
+    <div class="narequenta">
+        <div class="form-group">
+            <label style="font-weight:bold;">Rest Intensity:</label>
+            <select id="rest-type" style="width:100%; margin-bottom: 10px;">
+              <option value="quick">Quick Breath (1d6%) - Momentary</option>
+              <option value="mental" selected>Mental Calming (Variable) - 5 to 30 Mins</option>
+              <option value="deep">Deep Meditation (4d10%) - 1 Hour</option>
+            </select>
+        </div>
+        <div id="mental-options" style="display:block; background:#f0f0f0; padding:5px; border:1px solid #ccc; margin-bottom:10px;">
+             <label>Calming Duration:</label>
+             <select id="mental-duration" style="width:100%;">
+                <option value="2d8">5 Minutes (2d8%)</option>
+                <option value="3d8">10 Minutes (3d8%)</option>
+                <option value="4d8">15 Minutes (4d8%)</option>
+                <option value="5d8">20 Minutes (5d8%)</option>
+                <option value="6d8">25 Minutes (6d8%)</option>
+                <option value="7d8">30 Minutes (7d8%)</option>
+             </select>
+        </div>
+        <div style="display:flex; gap:5px; align-items:center; margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
+            <button type="button" id="btn-roll-rest" style="flex:0 0 40px;"><i class="fas fa-dice"></i></button>
+            <input type="number" id="rest-result" placeholder="Roll or Type %" style="text-align:center; font-weight:bold;">
+        </div>
+    </div>
     <script>
       $("#rest-type").change(function() {
          if ($(this).val() === "mental") $("#mental-options").slideDown();
@@ -154,43 +153,18 @@ export class NarequentaActorSheet extends ActorSheet {
     </script>
     `;
 
-    new Dialog({
+    const d = new Dialog({
       title: "Refocus (Short Rest)",
       content: content,
       buttons: {
-        rest: {
-          icon: '<i class="fas fa-coffee"></i>',
-          label: "Recover Energy",
+        apply: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Apply Recovery",
           callback: async (html) => {
-            const type = html.find("#rest-type").val();
-            const manualVal = html.find("#manual-recovery").val();
-            
-            let formula = "1d6"; 
-            if (type === "mental") formula = html.find("#mental-duration").val();
-            else if (type === "deep") formula = "4d10";
+            const val = html.find("#rest-result").val();
+            if (val === "") return; // Do nothing if empty
 
-            let recoveredAmount = 0;
-            let resultMsg = "";
-
-            // CHECK MANUAL INPUT
-            if (manualVal !== "" && Number(manualVal) >= 0) {
-                recoveredAmount = parseInt(manualVal);
-                resultMsg = `Manual Input: +${recoveredAmount}%`;
-            } else {
-                // ROLL DICE
-                const roll = new Roll(formula);
-                await roll.evaluate();
-                if (game.dice3d) game.dice3d.showForRoll(roll);
-                recoveredAmount = roll.total;
-                resultMsg = `Roll (${formula}): +${recoveredAmount}%`;
-                
-                // Show Roll Result in Chat
-                roll.toMessage({
-                    speaker: ChatMessage.getSpeaker({ actor: actor }),
-                    flavor: "Refocus Roll"
-                });
-            }
-
+            const recoveredAmount = parseInt(val);
             const updates = {};
             const essences = actor.system.essences;
             const hp = actor.system.resources.hp;
@@ -200,7 +174,6 @@ export class NarequentaActorSheet extends ActorSheet {
             for (const [key, essence] of Object.entries(essences)) {
               let newValue = essence.value + recoveredAmount;
               if (newValue > essence.max) newValue = essence.max;
-              
               updates[`system.essences.${key}.value`] = newValue;
               
               if (essence.value < essence.max) {
@@ -223,15 +196,38 @@ export class NarequentaActorSheet extends ActorSheet {
               speaker: ChatMessage.getSpeaker({ actor: actor }),
               content: `
                 <div class="narequenta chat-card">
-                  <h3>Refocus (${type.toUpperCase()})</h3>
-                  <div><strong>${resultMsg}</strong></div>
-                  <hr><ul>${outputList || "<li>No recovery needed.</li>"}</ul>
+                  <h3>Refocus Applied</h3>
+                  <div><strong>Recovered:</strong> +${recoveredAmount}%</div>
+                  <hr><ul>${outputList || "<li>No recovery needed (At Max).</li>"}</ul>
                 </div>`
             });
           }
         }
+      },
+      render: (html) => {
+          // Internal Roll Button Logic
+          html.find("#btn-roll-rest").click(async () => {
+              const type = html.find("#rest-type").val();
+              let formula = "1d6"; 
+              if (type === "mental") formula = html.find("#mental-duration").val();
+              else if (type === "deep") formula = "4d10";
+
+              const roll = new Roll(formula);
+              await roll.evaluate();
+              if (game.dice3d) game.dice3d.showForRoll(roll);
+              
+              // Show result in input
+              html.find("#rest-result").val(roll.total);
+              
+              // Announce Roll
+              roll.toMessage({
+                  speaker: ChatMessage.getSpeaker({ actor: actor }),
+                  flavor: `Refocus Roll (${formula})`
+              });
+          });
       }
-    }).render(true);
+    });
+    d.render(true);
   }
 
   /* -------------------------------------------- */
@@ -261,7 +257,7 @@ export class NarequentaActorSheet extends ActorSheet {
               <td>
                   <button class="roll-individual-btn" data-key="${key}" style="padding:2px 8px;"><i class="fas fa-dice"></i></button>
               </td>
-              <td><input type="number" id="result-${key}" class="nq-manual" style="width:50px; text-align:center;"></td>
+              <td><input type="number" id="result-${key}" class="nq-manual" style="width:50px; text-align:center;" readonly></td>
               <td id="display-${key}" style="font-size:0.8em; color:#666;">-</td>
           </tr>`;
       });
@@ -300,7 +296,6 @@ export class NarequentaActorSheet extends ActorSheet {
 
                       for (const key of essenceKeys) {
                           const resultVal = html.find(`#result-${key}`).val();
-                          // Only process if a result exists (rolled or manual)
                           if (resultVal === "") continue; 
 
                           const loss = parseInt(resultVal);
@@ -363,6 +358,7 @@ export class NarequentaActorSheet extends ActorSheet {
                   let loss = r.total;
                   let displayInfo = `Rolled ${loss}`;
 
+                  // Tier I Guarantee Logic
                   const currentMax = actor.system.essences[key].max;
                   if (isFocus && currentMax === 100) {
                       const potentialMax = currentMax - loss;
@@ -375,7 +371,6 @@ export class NarequentaActorSheet extends ActorSheet {
                   html.find(`#result-${key}`).val(loss);
                   html.find(`#display-${key}`).text(displayInfo);
                   
-                  // Show roll result in chat
                   r.toMessage({
                       speaker: ChatMessage.getSpeaker({ actor: actor }),
                       flavor: `Waning Roll (${essenceLabels[key]})`
@@ -470,6 +465,7 @@ export class NarequentaActorSheet extends ActorSheet {
       const btn = $(event.currentTarget);
       const targetField = btn.data("target");
       const type = btn.data("type");
+      const label = btn.data("label") || "Calculator Roll"; // Use label from HTML
       
       let formula = "1d100";
       
@@ -483,6 +479,11 @@ export class NarequentaActorSheet extends ActorSheet {
           
           if (tier === 0) {
               await this.actor.update({ [targetField]: 0 });
+              // Announce even if 0
+              await ChatMessage.create({
+                  speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+                  content: `${label}: <strong>0</strong> (No Proficiency)`
+              });
               return;
           }
           formula = `${tier}d10`;
@@ -493,10 +494,10 @@ export class NarequentaActorSheet extends ActorSheet {
       
       if (game.dice3d) game.dice3d.showForRoll(roll);
       
-      // Output Roll to Chat
+      // Output Roll to Chat with clear Label
       await roll.toMessage({
           speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-          flavor: `Calculator Roll (${formula})`
+          flavor: label 
       });
       
       await this.actor.update({ [targetField]: roll.total });
@@ -528,6 +529,7 @@ export class NarequentaActorSheet extends ActorSheet {
   async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
+      const targetName = calc.target_name || "Target";
       
       const Attacker_d100 = Number(calc.attack_roll);
       const R_prof = Number(calc.prof_roll);
@@ -549,6 +551,9 @@ export class NarequentaActorSheet extends ActorSheet {
       let rawDamage = (A_FP - M_Defense + D_Margin + R_prof);
       if (rawDamage < 0) rawDamage = 0;
 
+      // Calculate Attrition (Loss for Attacker)
+      const attrition = Math.max(0, 7 - R_prof);
+
       let multiplier = 1.0;
       const diff = Attacker_Tier - Defender_Tier;
       if (diff === 1) multiplier = 1.25;
@@ -562,5 +567,43 @@ export class NarequentaActorSheet extends ActorSheet {
       const resultString = `Damage: ${finalDamage} (x${multiplier})`;
       
       await this.actor.update({"system.calculator.output": resultString});
+
+      // Get Token ID from scene for the button
+      let targetTokenId = "";
+      const tokens = canvas.tokens.placeables.filter(t => t.actor && t.actor.name === targetName);
+      if (tokens.length > 0) targetTokenId = tokens[0].id;
+
+      // Create Chat Card
+      const content = `
+      <div class="narequenta chat-card" data-defender-token-id="${targetTokenId}" data-damage="${finalDamage}">
+          <header class="card-header flexrow" style="border-bottom: 2px solid #333; margin-bottom: 5px;">
+              <h3>vs ${targetName}</h3>
+          </header>
+          <div class="card-content" style="padding: 5px;">
+              <div style="display: flex; justify-content: space-between;">
+                  <strong>${this.actor.name}</strong> <span>Roll: ${Attacker_d100} (Prof: ${R_prof})</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                  <strong>${targetName}</strong> <span>Roll: ${Defender_d100} (E_cur: ${Defender_Ecur})</span>
+              </div>
+              <hr>
+              <div style="font-size: 1.5em; text-align: center; font-weight: bold; margin: 10px 0; color: #8b0000;">
+                  ${finalDamage} Damage
+              </div>
+              <div style="font-size: 0.9em; text-align: center; color: #555;">
+                  <strong>Attrition Cost:</strong> -${attrition}% E_cur (Motor)
+              </div>
+              <div style="text-align:center; margin-top:10px;">
+                  <button class="apply-damage-btn" style="background:#8b0000; color:white; width:90%;" data-defender-token-id="${targetTokenId}" data-damage="${finalDamage}">
+                      <i class="fas fa-heart-broken"></i> Apply Damage
+                  </button>
+              </div>
+          </div>
+      </div>`;
+
+      ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+          content: content
+      });
   }
 }

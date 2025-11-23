@@ -181,7 +181,9 @@
                     <label style="font-weight:bold; width: 150px;">My Roll (d100):</label>
                     <div style="display:flex; align-items:center; gap:5px;">
                         <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
-                        <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                        <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100" data-label="Attacker d100 ({{actor.name}})">
+                            <i class="fas fa-dice-d20"></i>
+                        </a>
                     </div>
                 </div>
                 
@@ -190,7 +192,9 @@
                     <label style="font-weight:bold; width: 150px;">My R_Prof (Roll):</label>
                     <div style="display:flex; align-items:center; gap:5px;">
                         <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
-                        <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof"><i class="fas fa-dice-d6"></i></a>
+                        <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof" data-label="Proficiency Roll ({{actor.name}})">
+                            <i class="fas fa-dice-d6"></i>
+                        </a>
                     </div>
                 </div>
 
@@ -201,7 +205,9 @@
                     <label style="font-weight:bold; width: 150px;">Enemy Roll (d100):</label>
                     <div style="display:flex; align-items:center; gap:5px;">
                         <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="d100">
-                        <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                        <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100" data-label="Defender d100 ({{systemData.calculator.target_name}})">
+                            <i class="fas fa-dice-d20"></i>
+                        </a>
                     </div>
                 </div>
                 
