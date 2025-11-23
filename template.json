@@ -17,11 +17,12 @@
         "action_surges": { "value": 0, "min": 0, "max": 5 }
       },
       "calculator": {
-        "attack_roll": 50,
+        "attack_roll": 0,
         "prof_roll": 0,
-        "defense_roll": 50,
-        "target_ecur": 100,
+        "defense_roll": 0,
+        "target_ecur": 0,
         "target_tier": 0,
+		"target_name": "None",
         "output": "Waiting for input..."
       },
       "essences": {

@@ -6,7 +6,7 @@
         <div class="header-fields">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
             
-            {{!-- Resources Row (HP & Action Surges) --}}
+            {{!-- Resources Row (HP & Action Surges & Rests) --}}
             <div class="resource-row">
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
@@ -24,6 +24,12 @@
                     <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
                 </div>
                 {{/if}}
+
+                {{!-- REST BUTTONS --}}
+                <div class="resource" style="display: flex; gap: 5px; align-items: flex-end;">
+                    <a class="rest-btn short-rest" title="Refocus (Short Rest: Restore 1d6%)"><i class="fas fa-coffee"></i> Short</a>
+                    <a class="rest-btn long-rest" title="Renewal (Long Rest: Full Recovery)"><i class="fas fa-bed"></i> Long</a>
+                </div>
             </div>
             
             {{!-- Final Vow (PC Only) --}}
@@ -105,10 +111,14 @@
                 </div>
             </div>
 
-            {{!-- NEW: THE WANING BUTTON (Only for PCs) --}}
+            {{!-- WANING SECTION (Toggle + Button) --}}
             {{#if (eq actor.type "character")}}
-            <div style="text-align:center; margin-bottom: 15px;">
-                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333;">
+            <div style="text-align:center; margin-bottom: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+                <div style="margin-bottom: 5px;">
+                    <input type="checkbox" class="waning-toggle" id="enable-waning">
+                    <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
+                </div>
+                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
                     <i class="fas fa-skull"></i> Trigger Waning Phase
                 </button>
             </div>
@@ -153,12 +163,18 @@
                 {{!-- NEW: Launch Button --}}
                 <div style="text-align: center; margin: 10px 0;">
                     <button class="launch-contest" style="background: #222; color: #fff; width: 90%; padding: 8px;">
-                        <i class="fas fa-fist-raised"></i> LAUNCH CONTESTED ROLL VS TARGET
+                        <i class="fas fa-crosshairs"></i> SELECT TARGET
                     </button>
                 </div>
                 
+                <div style="text-align:center; margin-bottom: 5px;">
+                    <strong>Target:</strong> 
+                    <span style="color: #8b0000; font-weight: bold; font-size: 1.1em;">
+                        {{systemData.calculator.target_name}}
+                    </span>
+                </div>
+
                 <hr>
-                <div style="text-align:center; font-size:0.9em; font-style:italic; margin-bottom:10px;">Or use Manual Input below:</div>
 
                 {{!-- ATTACKER ROW --}}
                 <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
