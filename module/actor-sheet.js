@@ -56,7 +56,7 @@ export class NarequentaActorSheet extends ActorSheet {
     });
     html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
     
-    // Rest Buttons
+    // Rest Buttons (Refocus/Renewal)
     html.find(".short-rest").click(this._onShortRest.bind(this));
     html.find(".long-rest").click(this._onLongRest.bind(this));
 
@@ -162,7 +162,7 @@ export class NarequentaActorSheet extends ActorSheet {
           label: "Apply Recovery",
           callback: async (html) => {
             const val = html.find("#rest-result").val();
-            if (val === "") return; // Do nothing if empty
+            if (val === "") return; 
 
             const recoveredAmount = parseInt(val);
             const updates = {};
@@ -170,7 +170,6 @@ export class NarequentaActorSheet extends ActorSheet {
             const hp = actor.system.resources.hp;
             let outputList = "";
 
-            // 1. Apply to All Essences
             for (const [key, essence] of Object.entries(essences)) {
               let newValue = essence.value + recoveredAmount;
               if (newValue > essence.max) newValue = essence.max;
@@ -181,7 +180,6 @@ export class NarequentaActorSheet extends ActorSheet {
               }
             }
 
-            // 2. Apply to Active Vigor (HP)
             let newHP = hp.value + recoveredAmount;
             if (newHP > hp.max) newHP = hp.max;
             updates[`system.resources.hp.value`] = newHP;
@@ -205,7 +203,6 @@ export class NarequentaActorSheet extends ActorSheet {
         }
       },
       render: (html) => {
-          // Internal Roll Button Logic
           html.find("#btn-roll-rest").click(async () => {
               const type = html.find("#rest-type").val();
               let formula = "1d6"; 
@@ -216,10 +213,8 @@ export class NarequentaActorSheet extends ActorSheet {
               await roll.evaluate();
               if (game.dice3d) game.dice3d.showForRoll(roll);
               
-              // Show result in input
               html.find("#rest-result").val(roll.total);
               
-              // Announce Roll
               roll.toMessage({
                   speaker: ChatMessage.getSpeaker({ actor: actor }),
                   flavor: `Refocus Roll (${formula})`
@@ -358,7 +353,6 @@ export class NarequentaActorSheet extends ActorSheet {
                   let loss = r.total;
                   let displayInfo = `Rolled ${loss}`;
 
-                  // Tier I Guarantee Logic
                   const currentMax = actor.system.essences[key].max;
                   if (isFocus && currentMax === 100) {
                       const potentialMax = currentMax - loss;
@@ -444,11 +438,6 @@ export class NarequentaActorSheet extends ActorSheet {
                           "system.calculator.defense_roll": 0, 
                           "system.calculator.output": "Target Selected. Roll when ready."
                       });
-
-                      const sheet = attacker.sheet;
-                      if (sheet._tabs && sheet._tabs[0]) {
-                          sheet._tabs[0].activate("calculator");
-                      }
                   }
               }
           },
@@ -465,7 +454,7 @@ export class NarequentaActorSheet extends ActorSheet {
       const btn = $(event.currentTarget);
       const targetField = btn.data("target");
       const type = btn.data("type");
-      const label = btn.data("label") || "Calculator Roll"; // Use label from HTML
+      const label = btn.data("label") || "Calculator Roll"; 
       
       let formula = "1d100";
       
@@ -479,7 +468,6 @@ export class NarequentaActorSheet extends ActorSheet {
           
           if (tier === 0) {
               await this.actor.update({ [targetField]: 0 });
-              // Announce even if 0
               await ChatMessage.create({
                   speaker: ChatMessage.getSpeaker({ actor: this.actor }),
                   content: `${label}: <strong>0</strong> (No Proficiency)`
@@ -494,7 +482,6 @@ export class NarequentaActorSheet extends ActorSheet {
       
       if (game.dice3d) game.dice3d.showForRoll(roll);
       
-      // Output Roll to Chat with clear Label
       await roll.toMessage({
           speaker: ChatMessage.getSpeaker({ actor: this.actor }),
           flavor: label 
@@ -544,6 +531,7 @@ export class NarequentaActorSheet extends ActorSheet {
           Attacker_Tier = this.actor.system.tier || 0;
       }
 
+      [cite_start]// CALCULATE COMPONENTS [cite: 271-277]
       const A_FP = 100 - (Attacker_d100 - R_prof);
       const D_Margin = Defender_d100 - Defender_Ecur;
       const M_Defense = Defender_Tier * 5.5;
@@ -551,7 +539,6 @@ export class NarequentaActorSheet extends ActorSheet {
       let rawDamage = (A_FP - M_Defense + D_Margin + R_prof);
       if (rawDamage < 0) rawDamage = 0;
 
-      // Calculate Attrition (Loss for Attacker)
       const attrition = Math.max(0, 7 - R_prof);
 
       let multiplier = 1.0;
@@ -568,12 +555,21 @@ export class NarequentaActorSheet extends ActorSheet {
       
       await this.actor.update({"system.calculator.output": resultString});
 
-      // Get Token ID from scene for the button
       let targetTokenId = "";
       const tokens = canvas.tokens.placeables.filter(t => t.actor && t.actor.name === targetName);
       if (tokens.length > 0) targetTokenId = tokens[0].id;
 
-      // Create Chat Card
+      // MATH BREAKDOWN TABLE
+      const breakdownHtml = `
+        <table style="font-size:0.8em; width:100%; border-collapse:collapse; margin:5px 0;">
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>A_FP</strong> (100 - [${Attacker_d100}-${R_prof}]):</td><td style="text-align:right;">${A_FP}</td></tr>
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>D_Margin</strong> (${Defender_d100}-${Defender_Ecur}):</td><td style="text-align:right;">${D_Margin}</td></tr>
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>M_Defense</strong> (${Defender_Tier}*5.5):</td><td style="text-align:right;">-${M_Defense}</td></tr>
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>R_Prof</strong> (Bonus):</td><td style="text-align:right;">+${R_prof}</td></tr>
+            <tr><td><strong>M_DTA</strong> (Tier ${Attacker_Tier} vs ${Defender_Tier}):</td><td style="text-align:right;">x${multiplier}</td></tr>
+        </table>
+      `;
+
       const content = `
       <div class="narequenta chat-card" data-defender-token-id="${targetTokenId}" data-damage="${finalDamage}">
           <header class="card-header flexrow" style="border-bottom: 2px solid #333; margin-bottom: 5px;">
@@ -586,6 +582,8 @@ export class NarequentaActorSheet extends ActorSheet {
               <div style="display: flex; justify-content: space-between;">
                   <strong>${targetName}</strong> <span>Roll: ${Defender_d100} (E_cur: ${Defender_Ecur})</span>
               </div>
+              <hr>
+              ${breakdownHtml}
               <hr>
               <div style="font-size: 1.5em; text-align: center; font-weight: bold; margin: 10px 0; color: #8b0000;">
                   ${finalDamage} Damage

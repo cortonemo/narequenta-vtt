@@ -45,14 +45,13 @@
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
         <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
-        <a class="item" data-tab="calculator"><i class="fas fa-calculator"></i> Calc</a>
         <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
     </nav>
 
     {{!-- Sheet Body --}}
     <section class="sheet-body">
 
-        {{!-- 1. ESSENCES TAB --}}
+        {{!-- 1. ESSENCES TAB (Includes Calculator & Waning) --}}
         <div class="tab essences" data-group="primary" data-tab="essences">
             
             {{!-- UNIFIED ESSENCE GRID --}}
@@ -111,56 +110,13 @@
                 </div>
             </div>
 
-            {{!-- WANING SECTION (Toggle + Button) --}}
-            {{#if (eq actor.type "character")}}
-            <div style="text-align:center; margin-bottom: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
-                <div style="margin-bottom: 5px;">
-                    <input type="checkbox" class="waning-toggle" id="enable-waning">
-                    <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
-                </div>
-                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
-                    <i class="fas fa-skull"></i> Trigger Waning Phase
-                </button>
-            </div>
-            {{/if}}
-
-            {{!-- Legacy Attributes --}}
-            {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
-        </div>
-
-        {{!-- 2. ITEMS TAB --}}
-        <div class="tab items" data-group="primary" data-tab="items">
-            <ol class="items-list">
-                <li class="item flexrow item-header">
-                    <div class="item-image"></div>
-                    <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
-                    <div class="item-controls">
-                        <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
-                    </div>
-                </li>
-                {{#each items as |item id|}}
-                <li class="item flexrow" data-item-id="{{item._id}}">
-                    <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
-                    <h4 class="item-name mb-0">
-                        <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
-                    </h4>
-                    <div class="item-controls">
-                        <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
-                        <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
-                    </div>
-                </li>
-                {{/each}}
-            </ol>
-        </div>
-
-        {{!-- 3. CALCULATOR TAB --}}
-        <div class="tab calculator" data-group="primary" data-tab="calculator">
-            <div class="essence-grid-container">
+            {{!-- CALCULATOR SECTION (Moved Here) --}}
+            <div class="essence-grid-container" style="background: rgba(255, 255, 255, 0.3); border: 1px solid #999;">
                 <div class="essence-header" style="grid-template-columns: 1fr;">
                     <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
                 </div>
                 
-                {{!-- NEW: Launch Button --}}
+                {{!-- SELECT TARGET BUTTON --}}
                 <div style="text-align: center; margin: 10px 0;">
                     <button class="launch-contest" style="background: #222; color: #fff; width: 90%; padding: 8px;">
                         <i class="fas fa-crosshairs"></i> SELECT TARGET
@@ -232,6 +188,47 @@
                     {{systemData.calculator.output}}
                 </div>
             </div>
+
+            {{!-- WANING SECTION (Toggle + Button) --}}
+            {{#if (eq actor.type "character")}}
+            <div style="text-align:center; margin-bottom: 15px; margin-top: 20px; border-top: 2px solid #333; padding-top: 10px;">
+                <div style="margin-bottom: 5px;">
+                    <input type="checkbox" class="waning-toggle" id="enable-waning">
+                    <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
+                </div>
+                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
+                    <i class="fas fa-skull"></i> Trigger Waning Phase
+                </button>
+            </div>
+            {{/if}}
+
+            {{!-- Legacy Attributes --}}
+            {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
+        </div>
+
+        {{!-- 2. ITEMS TAB --}}
+        <div class="tab items" data-group="primary" data-tab="items">
+            <ol class="items-list">
+                <li class="item flexrow item-header">
+                    <div class="item-image"></div>
+                    <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
+                    <div class="item-controls">
+                        <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
+                    </div>
+                </li>
+                {{#each items as |item id|}}
+                <li class="item flexrow" data-item-id="{{item._id}}">
+                    <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                    <h4 class="item-name mb-0">
+                        <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
+                    </h4>
+                    <div class="item-controls">
+                        <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
+                        <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
+                    </div>
+                </li>
+                {{/each}}
+            </ol>
         </div>
 
         {{!-- 4. BIOGRAPHY TAB --}}
