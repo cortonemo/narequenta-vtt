@@ -9,7 +9,7 @@ export class NarequentaActorSheet extends ActorSheet {
       classes: ["narequenta", "sheet", "actor"],
       template: "systems/narequenta/templates/actor-sheet.html",
       width: 800,
-      height: 1060,
+      height: 1100,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "essences"}]
     });
   }
