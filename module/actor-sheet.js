@@ -541,25 +541,32 @@ export class NarequentaActorSheet extends ActorSheet {
     if (item) item.roll(); 
   }
 
-  async _onCalculate(event) {
+async _onCalculate(event) {
       event.preventDefault();
-      const calc = this.actor.system.calculator;
+      console.log("Nárëquenta | Calculator Button Clicked"); // Debug Log
+
+      // SAFETY: Ensure calculator object exists, even on old actors
+      const system = this.actor.system;
+      const calc = system.calculator || {};
       const targetName = calc.target_name || "Target";
       
+      // SAFETY: defaulting to 0 if data is missing/null
       const Attacker_d100 = Number(calc.attack_roll) || 0;
       const R_prof = Number(calc.prof_roll) || 0;
       const Defender_d100 = Number(calc.defense_roll) || 0;
       const Defender_Ecur = Number(calc.target_ecur) || 0;
       const Defender_Tier = Number(calc.target_tier) || 0;
 
+      // Determine Attacker Tier
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
-          Attacker_Tier = this.actor.system.resources.action_surges.max || 0;
+          // Safely access resources
+          Attacker_Tier = system.resources?.action_surges?.max || 0;
       } else {
-          Attacker_Tier = this.actor.system.tier || 0;
+          Attacker_Tier = system.tier || 0;
       }
 
-      [cite_start]// CALCULATE COMPONENTS [cite: 271-277]
+      // --- MATH LOGIC ---
       const A_FP = 100 - (Attacker_d100 - R_prof);
       const D_Margin = Defender_d100 - Defender_Ecur;
       const M_Defense = Defender_Tier * 5.5;
@@ -581,14 +588,23 @@ export class NarequentaActorSheet extends ActorSheet {
       const finalDamage = Math.floor(rawDamage * multiplier);
       const resultString = `Damage: ${finalDamage} (x${multiplier})`;
       
+      // Update the sheet with the result
       await this.actor.update({"system.calculator.output": resultString});
 
-      // Get Token ID from scene for the button
+      // --- TOKEN SEARCH (Safe Mode) ---
       let targetTokenId = "";
-      const tokens = canvas.tokens.placeables.filter(t => t.actor && t.actor.name === targetName);
-      if (tokens.length > 0) targetTokenId = tokens[0].id;
+      try {
+          // Only try to find a token if we have a valid name to search for
+          if (targetName && targetName !== "Target") {
+              const cleanName = targetName.split(" (")[0]; // Remove " (Vitalis)" etc
+              const tokens = canvas.tokens.placeables.filter(t => t.actor && t.actor.name === cleanName);
+              if (tokens.length > 0) targetTokenId = tokens[0].id;
+          }
+      } catch (err) {
+          console.warn("Nárëquenta | Could not link calculator target to scene token:", err);
+      }
 
-      // MATH BREAKDOWN TABLE
+      // --- CHAT MESSAGE ---
       const breakdownHtml = `
         <table style="font-size:0.8em; width:100%; border-collapse:collapse; margin:5px 0;">
             <tr style="border-bottom:1px solid #ccc;"><td><strong>A_FP</strong> (100 - [${Attacker_d100}-${R_prof}]):</td><td style="text-align:right;">${A_FP}</td></tr>
@@ -602,7 +618,8 @@ export class NarequentaActorSheet extends ActorSheet {
       const content = `
       <div class="narequenta chat-card" data-defender-token-id="${targetTokenId}" data-damage="${finalDamage}">
           <header class="card-header flexrow" style="border-bottom: 2px solid #333; margin-bottom: 5px;">
-              <h3>vs ${targetName}</h3>
+              <img src="${this.actor.img}" width="36" height="36" style="border:1px solid #333; margin-right:10px;"/>
+              <h3 class="item-name">vs ${targetName}</h3>
           </header>
           <div class="card-content" style="padding: 5px;">
               <div style="display: flex; justify-content: space-between;">
