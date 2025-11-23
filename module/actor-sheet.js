@@ -9,7 +9,7 @@ export class NarequentaActorSheet extends ActorSheet {
       classes: ["narequenta", "sheet", "actor"],
       template: "systems/narequenta/templates/actor-sheet.html",
       width: 800,
-      height: 750,
+      height: 900,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "essences"}]
     });
   }
@@ -378,7 +378,7 @@ export class NarequentaActorSheet extends ActorSheet {
       d.render(true);
   }
 
-  /* -------------------------------------------- */
+/* -------------------------------------------- */
   /* CONTESTED ROLL SUITE (Updates Sheet Data)   */
   /* -------------------------------------------- */
 
@@ -408,13 +408,27 @@ export class NarequentaActorSheet extends ActorSheet {
           <optgroup label="Characters (PCs)">${pcOptions}</optgroup>
       `;
 
+      // NEW: Essence Selector options
+      const essenceOptions = `
+          <option value="vitalis">VITALIS (Force/Body)</option>
+          <option value="motus">MOTUS (Agility/Reflex)</option>
+          <option value="sensus">SENSUS (Instinct/Perception)</option>
+          <option value="verbum">VERBUM (Logic/Magic)</option>
+          <option value="anima">ANIMA (Will/Soul)</option>
+      `;
+
       new Dialog({
           title: `⚔️ Select Target`,
           content: `
           <form style="margin-bottom:10px;">
               <div class="form-group">
                   <label style="font-weight:bold;">Target:</label>
-                  <select id="contest-target" style="width:100%">${targetList}</select>
+                  <select id="contest-target" style="width:100%; margin-bottom:10px;">${targetList}</select>
+              </div>
+              <div class="form-group">
+                  <label style="font-weight:bold;">Target Defends With:</label>
+                  <select id="target-essence" style="width:100%;">${essenceOptions}</select>
+                  <p class="notes" style="font-size:0.8em; margin-top:2px;">Select the Essence the enemy uses to resist.</p>
               </div>
           </form>
           `,
@@ -424,6 +438,8 @@ export class NarequentaActorSheet extends ActorSheet {
                   label: "Lock Target",
                   callback: async (html) => {
                       const targetId = html.find("#contest-target").val();
+                      const essenceKey = html.find("#target-essence").val(); // Get selected essence
+                      
                       const targetToken = canvas.tokens.get(targetId);
                       if(!targetToken) return;
                       
@@ -431,16 +447,25 @@ export class NarequentaActorSheet extends ActorSheet {
                       
                       // Calculate Target Stats
                       const dTier = target.system.resources?.action_surges?.max || target.system.tier || 0;
-                      const dEcur = target.system.essences?.vitalis?.value || 0; 
+                      
+                      // NEW: Get E_cur from the SELECTED Essence
+                      const dEcur = target.system.essences[essenceKey]?.value || 0; 
+                      const essenceLabel = essenceKey.charAt(0).toUpperCase() + essenceKey.slice(1);
 
                       // Update THIS Actor's Calculator Data
                       await attacker.update({
-                          "system.calculator.target_name": target.name,
+                          "system.calculator.target_name": `${target.name} (${essenceLabel})`, // Show Essence in name
                           "system.calculator.target_tier": dTier,
                           "system.calculator.target_ecur": dEcur,
                           "system.calculator.defense_roll": 0, 
-                          "system.calculator.output": "Target Selected. Roll when ready."
+                          "system.calculator.output": `Targeting ${essenceLabel}. Roll when ready.`
                       });
+
+                      // Switch Tab to Calculator
+                      const sheet = attacker.sheet;
+                      if (sheet._tabs && sheet._tabs[0]) {
+                          sheet._tabs[0].activate("calculator");
+                      }
                   }
               }
           },
