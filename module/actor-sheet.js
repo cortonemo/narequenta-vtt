@@ -477,7 +477,7 @@ export class NarequentaActorSheet extends ActorSheet {
       });
   }
 
-  // --- NEW: APPLY DAMAGE FROM SHEET (With "Dead" Status) ---
+  // --- NEW: APPLY DAMAGE FROM SHEET (Fixed Dead Status) ---
   async _onApplySheetDamage(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
@@ -499,9 +499,8 @@ export class NarequentaActorSheet extends ActorSheet {
           return;
       }
 
-      // 1. Calculate New HP (Force numbers to ensure NPC compatibility)
+      // 1. Calculate New HP
       const currentHP = Number(token.actor.system.resources.hp.value) || 0;
-      const maxHP = Number(token.actor.system.resources.hp.max) || 0; // Needed for logic if you add healing later
       const newHP = Math.max(0, currentHP - damage);
 
       // 2. Update the Target Actor
@@ -509,14 +508,16 @@ export class NarequentaActorSheet extends ActorSheet {
       
       // 3. Check for "Down/Dead" Status
       if (newHP === 0 && currentHP > 0) {
-          // Apply the "Defeated" overlay (Big Skull)
-          const effect = CONFIG.statusEffects.find(e => e.id === "dead")?.icon || "icons/svg/skull.svg";
-          await token.toggleEffect(effect, { overlay: true, active: true });
-          
-          // Optional: Send chat notification
-          ChatMessage.create({
-              content: `<strong>${token.name}</strong> has been defeated!`
-          });
+          // Use the ACTOR method to toggle the effect. This is the most robust way.
+          const isDead = token.actor.effects.some(e => e.statusId === "dead");
+          if (!isDead) {
+              await token.actor.toggleStatusEffect("dead", { overlay: true });
+              
+              // Optional: Send chat notification
+              ChatMessage.create({
+                  content: `<strong>${token.name}</strong> has been defeated!`
+              });
+          }
       }
 
       // 4. SYNC: Update YOUR calculator to show the new HP
