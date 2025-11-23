@@ -56,7 +56,7 @@ export class NarequentaActorSheet extends ActorSheet {
     });
     html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
     
-    // Rest Buttons (Refocus/Renewal)
+    // Rest Buttons
     html.find(".short-rest").click(this._onShortRest.bind(this));
     html.find(".long-rest").click(this._onLongRest.bind(this));
 
@@ -77,16 +77,16 @@ export class NarequentaActorSheet extends ActorSheet {
 
     const confirmed = await Dialog.confirm({
       title: "Renewal (Long Rest)",
-      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to their current Maximum.</p>"
+      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to <strong>100%</strong>.</p>"
     });
 
     if (confirmed) {
       const updates = {};
       const essences = actor.system.essences;
 
-      // 1. Restore All Essences to Max
+      // 1. Restore All Essences to 100% (Ignoring E_max cap)
       for (const [key, essence] of Object.entries(essences)) {
-        updates[`system.essences.${key}.value`] = essence.max;
+        updates[`system.essences.${key}.value`] = 100;
       }
 
       // 2. Restore Action Surges (PCs only)
@@ -106,7 +106,7 @@ export class NarequentaActorSheet extends ActorSheet {
             <h3>Renewal (Long Rest)</h3>
             <p>The character rests for 6 hours.</p>
             <ul>
-              <li><strong>Essences:</strong> Fully Restored.</li>
+              <li><strong>Essences:</strong> Fully Restored to 100%.</li>
               <li><strong>Active Vigor (HP):</strong> Fully Restored.</li>
               <li><strong>Action Surges:</strong> Reset.</li>
             </ul>
@@ -170,16 +170,20 @@ export class NarequentaActorSheet extends ActorSheet {
             const hp = actor.system.resources.hp;
             let outputList = "";
 
+            // 1. Apply to All Essences
             for (const [key, essence] of Object.entries(essences)) {
               let newValue = essence.value + recoveredAmount;
-              if (newValue > essence.max) newValue = essence.max;
+              // CAP AT 100% (User Request), NOT E_MAX
+              if (newValue > 100) newValue = 100;
+              
               updates[`system.essences.${key}.value`] = newValue;
               
-              if (essence.value < essence.max) {
+              if (essence.value < 100) {
                  outputList += `<li><strong>${essence.label}:</strong> +${recoveredAmount}% (${newValue}%)</li>`;
               }
             }
 
+            // 2. Apply to Active Vigor (HP)
             let newHP = hp.value + recoveredAmount;
             if (newHP > hp.max) newHP = hp.max;
             updates[`system.resources.hp.value`] = newHP;
@@ -196,7 +200,7 @@ export class NarequentaActorSheet extends ActorSheet {
                 <div class="narequenta chat-card">
                   <h3>Refocus Applied</h3>
                   <div><strong>Recovered:</strong> +${recoveredAmount}%</div>
-                  <hr><ul>${outputList || "<li>No recovery needed (At Max).</li>"}</ul>
+                  <hr><ul>${outputList || "<li>No recovery needed (At 100%).</li>"}</ul>
                 </div>`
             });
           }
@@ -234,8 +238,7 @@ export class NarequentaActorSheet extends ActorSheet {
       const actor = this.actor;
       const essenceKeys = ["vitalis", "motus", "sensus", "verbum", "anima"];
       const essenceLabels = {
-          "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS",
-          "verbum": "VERBUM", "anima": "ANIMA"
+          "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS", "verbum": "VERBUM", "anima": "ANIMA"
       };
 
       let essenceDropdown = "";
@@ -518,11 +521,11 @@ export class NarequentaActorSheet extends ActorSheet {
       const calc = this.actor.system.calculator;
       const targetName = calc.target_name || "Target";
       
-      const Attacker_d100 = Number(calc.attack_roll);
-      const R_prof = Number(calc.prof_roll);
-      const Defender_d100 = Number(calc.defense_roll);
-      const Defender_Ecur = Number(calc.target_ecur);
-      const Defender_Tier = Number(calc.target_tier);
+      const Attacker_d100 = Number(calc.attack_roll) || 0;
+      const R_prof = Number(calc.prof_roll) || 0;
+      const Defender_d100 = Number(calc.defense_roll) || 0;
+      const Defender_Ecur = Number(calc.target_ecur) || 0;
+      const Defender_Tier = Number(calc.target_tier) || 0;
 
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
@@ -555,6 +558,7 @@ export class NarequentaActorSheet extends ActorSheet {
       
       await this.actor.update({"system.calculator.output": resultString});
 
+      // Get Token ID from scene for the button
       let targetTokenId = "";
       const tokens = canvas.tokens.placeables.filter(t => t.actor && t.actor.name === targetName);
       if (tokens.length > 0) targetTokenId = tokens[0].id;

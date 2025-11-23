@@ -21,36 +21,45 @@ export class NarequentaActor extends Actor {
   _prepareEssenceData() {
       const system = this.system;
       const essences = system.essences || {};
+      
+      // Track highest tier found among essences
+      let maxTier = 0;
 
       for (let [key, essence] of Object.entries(essences)) {
           // A. Enforce Hard Floor (50%)
           if (essence.max < 50) essence.max = 50;
           if (essence.max > 100) essence.max = 100;
 
-          // B. Calculate Tier based on Remaining E_max [cite: 328-341]
+          // B. Calculate Tier based on Remaining E_max
           let tier = 0;
           if (essence.max <= 50) tier = 5;      
           else if (essence.max <= 60) tier = 4; 
           else if (essence.max <= 70) tier = 3; 
-          else if (essence.max <= 80) tier = 2; 
+          else if (essence.max <= 80) tier = 2;
           else if (essence.max <= 90) tier = 1; 
-          else tier = 0;                        
-
+          else tier = 0;
+          
           // C. Derive Dice Pool
           essence.tier = tier;
           essence.diceCount = (tier === 0) ? 0 : tier;
           essence.diceString = (tier > 0) ? `${tier}d10` : "0";
           essence.mitigation = (tier * 5.5); 
+          
+          // Update Max Tier Tracker
+          if (tier > maxTier) maxTier = tier;
       }
 
-      // D. Calculate Action Surges
-      if (system.resources && system.resources.action_surges) {
-          let maxTier = 0;
-          for (let [key, essence] of Object.entries(essences)) {
-              if (essence.tier > maxTier) maxTier = essence.tier;
+      // D. ASSIGN GLOBAL TIER (Fixes NPC Proficiency)
+      // For Characters, this drives Action Surges.
+      if (this.type === "character") {
+          if (system.resources?.action_surges) {
+              system.resources.action_surges.max = maxTier;
           }
-          system.resources.action_surges.max = maxTier;
       }
+      
+      // For NPCs (and generic actors), we must set the system.tier 
+      // so the calculator can read it easily.
+      system.tier = maxTier;
   }
 
   /** @inheritdoc */
