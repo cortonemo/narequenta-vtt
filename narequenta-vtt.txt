@@ -141,7 +141,7 @@ export class NarequentaActorSheet extends ActorSheet {
       classes: ["narequenta", "sheet", "actor"],
       template: "systems/narequenta/templates/actor-sheet.html",
       width: 800,
-      height: 750,
+      height: 1060,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "essences"}]
     });
   }
@@ -150,7 +150,6 @@ export class NarequentaActorSheet extends ActorSheet {
   async getData(options) {
     const context = await super.getData(options);
     
-    // Use Live Data
     const actorData = this.actor.toObject(false);
     context.systemData = this.actor.system; 
     context.system = this.actor.system; 
@@ -179,162 +178,334 @@ export class NarequentaActorSheet extends ActorSheet {
 
     // Calculator
     html.find(".roll-calculation").click(this._onCalculate.bind(this));
+    html.find(".apply-sheet-damage").click(this._onApplySheetDamage.bind(this)); // NEW LISTENER
 
-    // NEW: Waning Roll
+    // Waning Toggle & Button
+    html.find(".waning-toggle").change(ev => {
+        const isChecked = ev.target.checked;
+        if (isChecked) html.find(".waning-roll-btn").slideDown();
+        else html.find(".waning-roll-btn").slideUp();
+    });
     html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
+    
+    // Rest Buttons
+    html.find(".short-rest").click(this._onShortRest.bind(this));
+    html.find(".long-rest").click(this._onLongRest.bind(this));
+
+    // Contested Roll Launcher
+    html.find(".launch-contest").click(this._onLaunchContest.bind(this));
+    
+    // Sheet Calculator Roll Buttons
+    html.find(".roll-calc-btn").click(this._onRollSheetCalc.bind(this));    
   }
 
   /* -------------------------------------------- */
-  /* WANING PHASE LOGIC                          */
+  /* REST & RECOVERY LOGIC                       */
   /* -------------------------------------------- */
-  
+  // ... (Keep existing _onLongRest and _onShortRest same as before) ...
+  async _onLongRest(event) {
+    event.preventDefault();
+    const actor = this.actor;
+    const confirmed = await Dialog.confirm({
+      title: "Renewal (Long Rest)",
+      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to <strong>100%</strong>.</p>"
+    });
+    if (confirmed) {
+      const updates = {};
+      const essences = actor.system.essences;
+      for (const [key, essence] of Object.entries(essences)) {
+        updates[`system.essences.${key}.value`] = 100;
+      }
+      if (actor.type === "character") {
+        updates[`system.resources.action_surges.value`] = actor.system.resources.action_surges.max;
+      }
+      updates[`system.resources.hp.value`] = actor.system.resources.hp.max;
+      await actor.update(updates);
+      ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: actor }),
+        content: `<div class="narequenta chat-card"><h3>Renewal</h3><p>Fully Restored.</p></div>`
+      });
+    }
+  }
+
+  async _onShortRest(event) {
+    event.preventDefault();
+    const actor = this.actor;
+    // ... (Copy the previously provided _onShortRest function here) ...
+    const content = `
+    <div class="narequenta">
+        <div class="form-group">
+            <label style="font-weight:bold;">Rest Intensity:</label>
+            <select id="rest-type" style="width:100%; margin-bottom: 10px;">
+              <option value="quick">Quick Breath (1d6%) - Momentary</option>
+              <option value="mental" selected>Mental Calming (Variable) - 5 to 30 Mins</option>
+              <option value="deep">Deep Meditation (4d10%) - 1 Hour</option>
+            </select>
+        </div>
+        <div id="mental-options" style="display:block; background:#f0f0f0; padding:5px; border:1px solid #ccc; margin-bottom:10px;">
+             <label>Calming Duration:</label>
+             <select id="mental-duration" style="width:100%;">
+                <option value="2d8">5 Minutes (2d8%)</option>
+                <option value="3d8">10 Minutes (3d8%)</option>
+                <option value="4d8">15 Minutes (4d8%)</option>
+                <option value="5d8">20 Minutes (5d8%)</option>
+                <option value="6d8">25 Minutes (6d8%)</option>
+                <option value="7d8">30 Minutes (7d8%)</option>
+             </select>
+        </div>
+        <div style="display:flex; gap:5px; align-items:center; margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
+            <button type="button" id="btn-roll-rest" style="flex:0 0 40px;"><i class="fas fa-dice"></i></button>
+            <input type="number" id="rest-result" placeholder="Roll or Type %" style="text-align:center; font-weight:bold;">
+        </div>
+    </div>
+    <script>$("#rest-type").change(function(){if($(this).val()==="mental")$("#mental-options").slideDown();else $("#mental-options").slideUp();});</script>`;
+
+    const d = new Dialog({
+      title: "Refocus (Short Rest)",
+      content: content,
+      buttons: {
+        apply: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Apply Recovery",
+          callback: async (html) => {
+            const val = html.find("#rest-result").val();
+            if (val === "") return; 
+            const recoveredAmount = parseInt(val);
+            const updates = {};
+            const essences = actor.system.essences;
+            const hp = actor.system.resources.hp;
+            let outputList = "";
+            for (const [key, essence] of Object.entries(essences)) {
+              let newValue = essence.value + recoveredAmount;
+              if (newValue > 100) newValue = 100; // Cap at 100%
+              updates[`system.essences.${key}.value`] = newValue;
+              if (essence.value < 100) outputList += `<li><strong>${essence.label}:</strong> +${recoveredAmount}% (${newValue}%)</li>`;
+            }
+            let newHP = hp.value + recoveredAmount;
+            if (newHP > hp.max) newHP = hp.max;
+            updates[`system.resources.hp.value`] = newHP;
+            if (hp.value < hp.max) outputList += `<li><strong>Active Vigor:</strong> +${recoveredAmount} (${newHP})</li>`;
+            await actor.update(updates);
+            ChatMessage.create({
+              speaker: ChatMessage.getSpeaker({ actor: actor }),
+              content: `<div class="narequenta chat-card"><h3>Refocus Applied</h3><div><strong>Recovered:</strong> +${recoveredAmount}%</div><hr><ul>${outputList || "<li>At 100%.</li>"}</ul></div>`
+            });
+          }
+        }
+      },
+      render: (html) => {
+          html.find("#btn-roll-rest").click(async () => {
+              const type = html.find("#rest-type").val();
+              let formula = "1d6"; 
+              if (type === "mental") formula = html.find("#mental-duration").val();
+              else if (type === "deep") formula = "4d10";
+              const roll = new Roll(formula);
+              await roll.evaluate();
+              if (game.dice3d) game.dice3d.showForRoll(roll);
+              html.find("#rest-result").val(roll.total);
+              roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor: actor }), flavor: `Refocus Roll (${formula})` });
+          });
+      }
+    });
+    d.render(true);
+  }
+
+  // ... (Keep _onWaningPhase as provided previously) ...
   async _onWaningPhase(event) {
       event.preventDefault();
+      // ... [Code omitted for brevity, copy from previous turn] ...
+      // Ensure the content generation uses the individual roll logic
       const actor = this.actor;
-
       const essenceKeys = ["vitalis", "motus", "sensus", "verbum", "anima"];
-      const essenceLabels = {
-          "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS",
-          "verbum": "VERBUM", "anima": "ANIMA"
-      };
-
+      const essenceLabels = { "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS", "verbum": "VERBUM", "anima": "ANIMA" };
       let essenceDropdown = "";
-      essenceKeys.forEach(key => {
-          essenceDropdown += `<option value="${key}">${essenceLabels[key]}</option>`;
-      });
-
+      essenceKeys.forEach(key => { essenceDropdown += `<option value="${key}">${essenceLabels[key]}</option>`; });
       let rowsHTML = "";
       essenceKeys.forEach(key => {
           rowsHTML += `
-          <tr id="row-${key}">
+          <tr id="row-${key}" class="essence-row-calc">
               <td style="font-weight:bold;">${essenceLabels[key]}</td>
-              <td id="formula-${key}" style="color:#555; font-size:0.8em; text-align:center;">1d6</td>
-              <td><input type="number" id="input-${key}" class="nq-manual" placeholder="Auto"></td>
+              <td id="formula-${key}" class="formula-cell" style="color:#555; text-align:center;">1d6</td>
+              <td><button class="roll-individual-btn" data-key="${key}" style="padding:2px 8px;"><i class="fas fa-dice"></i></button></td>
+              <td><input type="number" id="result-${key}" class="nq-manual" style="width:50px; text-align:center;" readonly></td>
+              <td id="display-${key}" style="font-size:0.8em; color:#666;">-</td>
           </tr>`;
       });
-
-      const content = `
-      <div class="narequenta">
-          <style>
-              .nq-section { margin-bottom: 10px; }
-              .nq-label { font-weight: bold; display: block; margin-bottom: 2px; color: #333; }
-              .nq-manual { width: 100%; text-align: center; }
-              .nq-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-              .nq-table td { padding: 4px; border-bottom: 1px solid #eee; }
-              .nq-focus-highlight { background-color: rgba(0, 100, 0, 0.1); color: #006400; }
-          </style>
-          
-          <p style="font-style:italic; font-size:0.9em; text-align:center;">"End of Chapter: Progression through Loss."</p>
-
-          <div class="nq-section">
-              <label class="nq-label">Select Focus Essence (2d6):</label>
-              <select id="focus-select" style="width:100%">${essenceDropdown}</select>
-          </div>
-
-          <div class="nq-section">
-              <label class="nq-label">Input Loss (Leave Empty to Auto-Roll):</label>
-              <table class="nq-table">
-                  <thead><tr><th style="text-align:left;">Essence</th><th>Dice</th><th>Manual</th></tr></thead>
-                  <tbody>${rowsHTML}</tbody>
-              </table>
-          </div>
-      </div>`;
-
-      // Define Helper for Logic
+      const content = `<div class="narequenta">...<select id="focus-select" style="width:100%">${essenceDropdown}</select>...<table class="nq-table" style="width:100%"><thead><tr><th>Essence</th><th>Dice</th><th>Roll</th><th>Loss</th><th>Info</th></tr></thead><tbody>${rowsHTML}</tbody></table></div></div>`;
+      
       const performWaning = async (html, dialogInstance) => {
+          // ... [Previous logic for apply] ...
           const focusKey = html.find("#focus-select").val();
           const updates = {};
           let chatOutput = "";
-          
           for (const key of essenceKeys) {
-              const isFocus = (key === focusKey);
-              const manualInput = html.find(`#input-${key}`).val();
-              let loss = 0;
-              
-              if (manualInput !== "" && Number(manualInput) > 0) {
-                  loss = parseInt(manualInput);
-              } else {
-                  const formula = isFocus ? "2d6" : "1d6";
-                  const r = new Roll(formula);
-                  await r.evaluate();
-                  loss = r.total;
-                  if (game.dice3d) game.dice3d.showForRoll(r);
-              }
-
+              const resultVal = html.find(`#result-${key}`).val();
+              if (resultVal === "") continue; 
+              const loss = parseInt(resultVal);
               const currentMax = actor.system.essences[key].max;
               let newMax = currentMax - loss;
               if (newMax < 50) newMax = 50;
-
               updates[`system.essences.${key}.max`] = newMax;
-
-              chatOutput += `
-              <div style="display:flex; justify-content:space-between; font-size:0.9em; ${isFocus ? 'font-weight:bold; color:#006400;' : ''}">
-                  <span>${essenceLabels[key]}:</span>
-                  <span>-${loss}% (${newMax}%)</span>
-              </div>`;
+              const isFocus = (key === focusKey);
+              chatOutput += `<div style="display:flex; justify-content:space-between; font-size:0.9em; ${isFocus ? 'font-weight:bold; color:#006400;' : ''}"><span>${essenceLabels[key]}:</span><span>-${loss}% (${newMax}%)</span></div>`;
           }
-
-          await actor.update(updates);
-
-          ChatMessage.create({
-              speaker: ChatMessage.getSpeaker({ actor: actor }),
-              content: `
-              <div class="narequenta chat-card">
-                  <h3>The Waning</h3>
-                  <div style="margin-bottom:5px;"><strong>Focus:</strong> ${essenceLabels[focusKey]}</div>
-                  <hr>${chatOutput}<hr>
-                  <div style="text-align:center; font-style:italic;">Sheet Updated.</div>
-              </div>`
-          });
-          
+          if (Object.keys(updates).length > 0) {
+              await actor.update(updates);
+              ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: actor }), content: `<div class="narequenta chat-card"><h3>The Waning</h3><div style="margin-bottom:5px;"><strong>Focus:</strong> ${essenceLabels[focusKey]}</div><hr>${chatOutput}<hr><div style="text-align:center; font-style:italic;">Sheet Updated.</div></div>` });
+          }
           dialogInstance.close();
       };
 
-      const d = new Dialog({
-          title: `The Waning: ${actor.name}`,
-          content: content,
-          buttons: {
-              roll: {
-                  icon: '<i class="fas fa-dice"></i>',
-                  label: "Process Waning",
-                  callback: (html) => performWaning(html, d)
-              }
-          },
+      const d = new Dialog({ title: `The Waning: ${actor.name}`, content: content, buttons: { apply: { icon: '<i class="fas fa-check"></i>', label: "Apply All Changes", callback: (html) => performWaning(html, d) } },
           render: (html) => {
+              // ... [Highlight and Roll Logic] ...
               const updateHighlights = () => {
                   const focusKey = html.find("#focus-select").val();
-                  essenceKeys.forEach(k => {
-                      html.find(`#row-${k}`).removeClass("nq-focus-highlight");
-                      html.find(`#formula-${k}`).text("1d6");
-                  });
-                  html.find(`#row-${focusKey}`).addClass("nq-focus-highlight");
-                  html.find(`#formula-${focusKey}`).html("<b>2d6</b>");
+                  essenceKeys.forEach(k => { html.find(`#row-${k}`).removeClass("nq-focus-highlight"); html.find(`#formula-${k}`).text("1d6"); });
+                  html.find(`#row-${focusKey}`).addClass("nq-focus-highlight"); html.find(`#formula-${focusKey}`).html("<b>2d6</b>");
               };
-              updateHighlights();
-              html.find("#focus-select").change(updateHighlights);
+              updateHighlights(); html.find("#focus-select").change(updateHighlights);
+              html.find(".roll-individual-btn").click(async (ev) => {
+                  ev.preventDefault(); const btn = $(ev.currentTarget); const key = btn.data("key"); const focusKey = html.find("#focus-select").val(); const isFocus = (key === focusKey);
+                  const formula = isFocus ? "2d6" : "1d6";
+                  const r = new Roll(formula); await r.evaluate(); if (game.dice3d) game.dice3d.showForRoll(r);
+                  let loss = r.total; let displayInfo = `Rolled ${loss}`;
+                  const currentMax = actor.system.essences[key].max;
+                  if (isFocus && currentMax === 100) { const potentialMax = currentMax - loss; if (potentialMax > 90) { loss = 10; displayInfo = `Rolled ${r.total} -> Set 10 (Tier I Guarantee)`; } }
+                  html.find(`#result-${key}`).val(loss); html.find(`#display-${key}`).text(displayInfo);
+                  r.toMessage({ speaker: ChatMessage.getSpeaker({ actor: actor }), flavor: `Waning Roll (${essenceLabels[key]})` });
+              });
           }
       });
       d.render(true);
   }
 
   /* -------------------------------------------- */
-  /* ITEM & CALCULATOR HANDLERS                  */
+  /* CONTESTED ROLL SUITE (Updates Sheet Data)   */
   /* -------------------------------------------- */
+
+  _onLaunchContest(event) {
+      event.preventDefault();
+      const attacker = this.actor;
+      
+      let pcOptions = "";
+      let npcOptions = "";
+      let count = 0;
+
+      canvas.tokens.placeables.forEach(t => {
+          if (!t.actor || t.actor.id === attacker.id) return; 
+          const opt = `<option value="${t.id}">${t.name}</option>`;
+          if (t.actor.type === "character") pcOptions += opt;
+          else npcOptions += opt;
+          count++;
+      });
+
+      if (count === 0) {
+          ui.notifications.warn("No valid targets found on the current scene.");
+          return;
+      }
+
+      const targetList = `
+          <optgroup label="Adversaries (NPCs)">${npcOptions}</optgroup>
+          <optgroup label="Characters (PCs)">${pcOptions}</optgroup>
+      `;
+
+      const essenceOptions = `
+          <option value="vitalis">VITALIS (Force/Body)</option>
+          <option value="motus">MOTUS (Agility/Reflex)</option>
+          <option value="sensus">SENSUS (Instinct/Perception)</option>
+          <option value="verbum">VERBUM (Logic/Magic)</option>
+          <option value="anima">ANIMA (Will/Soul)</option>
+      `;
+
+      new Dialog({
+          title: `⚔️ Select Target`,
+          content: `
+          <form style="margin-bottom:10px;">
+              <div class="form-group">
+                  <label style="font-weight:bold;">Target:</label>
+                  <select id="contest-target" style="width:100%; margin-bottom:10px;">${targetList}</select>
+              </div>
+              <div class="form-group">
+                  <label style="font-weight:bold;">Target Defends With:</label>
+                  <select id="target-essence" style="width:100%;">${essenceOptions}</select>
+                  <p class="notes" style="font-size:0.8em; margin-top:2px;">Select the Essence the enemy uses to resist.</p>
+              </div>
+          </form>
+          `,
+          buttons: {
+              select: {
+                  icon: '<i class="fas fa-crosshairs"></i>',
+                  label: "Lock Target",
+                  callback: async (html) => {
+                      const targetId = html.find("#contest-target").val();
+                      const essenceKey = html.find("#target-essence").val();
+                      
+                      const targetToken = canvas.tokens.get(targetId);
+                      if(!targetToken) return;
+                      
+                      const target = targetToken.actor;
+                      
+                      const dTier = target.system.resources?.action_surges?.max || target.system.tier || 0;
+                      const dEcur = target.system.essences[essenceKey]?.value || 0; 
+                      const essenceLabel = essenceKey.charAt(0).toUpperCase() + essenceKey.slice(1);
+
+                      await attacker.update({
+                          "system.calculator.target_name": `${target.name} (${essenceLabel})`,
+                          "system.calculator.target_id": targetId, // STORE TARGET ID
+                          "system.calculator.target_tier": dTier,
+                          "system.calculator.target_ecur": dEcur,
+                          "system.calculator.defense_roll": 0, 
+                          "system.calculator.output": `Targeting ${essenceLabel}. Roll when ready.`
+                      });
+                  }
+              }
+          },
+          default: "select"
+      }).render(true);
+  }
+
+  /* -------------------------------------------- */
+  /* SHEET CALCULATOR ROLLS                      */
+  /* -------------------------------------------- */
+  // ... (Keep _onRollSheetCalc and _onItemControl etc) ...
+  async _onRollSheetCalc(event) {
+      event.preventDefault();
+      const btn = $(event.currentTarget);
+      const targetField = btn.data("target");
+      const type = btn.data("type");
+      const label = btn.data("label") || "Calculator Roll"; 
+      let formula = "1d100";
+      if (type === "prof") {
+          let tier = 0;
+          if (this.actor.type === 'character') {
+              tier = this.actor.system.resources.action_surges.max || 0;
+          } else {
+              tier = this.actor.system.tier || 0;
+          }
+          if (tier === 0) {
+              await this.actor.update({ [targetField]: 0 });
+              await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), content: `${label}: <strong>0</strong> (No Proficiency)` });
+              return;
+          }
+          formula = `${tier}d10`;
+      }
+      const roll = new Roll(formula);
+      await roll.evaluate();
+      if (game.dice3d) game.dice3d.showForRoll(roll);
+      await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), flavor: label });
+      await this.actor.update({ [targetField]: roll.total });
+  }
 
   _onItemControl(event) {
     event.preventDefault();
     const button = event.currentTarget;
     const li = button.closest(".item");
     const item = this.actor.items.get(li?.dataset.itemId);
-
     switch ( button.dataset.action ) {
-      case "create":
-        const cls = getDocumentClass("Item");
-        return cls.create({name: game.i18n.localize("NAREQUENTA.ItemNew"), type: "item"}, {parent: this.actor});
-      case "edit":
-        return item.sheet.render(true);
-      case "delete":
-        return item.delete();
+      case "create": const cls = getDocumentClass("Item"); return cls.create({name: game.i18n.localize("NAREQUENTA.ItemNew"), type: "item"}, {parent: this.actor});
+      case "edit": return item.sheet.render(true);
+      case "delete": return item.delete();
     }
   }
 
@@ -344,25 +515,27 @@ export class NarequentaActorSheet extends ActorSheet {
     if (item) item.roll(); 
   }
 
+  // --- MODIFIED CALCULATE FUNCTION ---
   async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
+      const targetName = calc.target_name || "Target";
+      const targetId = calc.target_id || ""; // Retrieve stored ID
       
-      const Attacker_d100 = Number(calc.attack_roll);
-      const R_prof = Number(calc.prof_roll);
-      const Defender_d100 = Number(calc.defense_roll);
-      const Defender_Ecur = Number(calc.target_ecur);
-      const Defender_Tier = Number(calc.target_tier);
+      const Attacker_d100 = Number(calc.attack_roll) || 0;
+      const R_prof = Number(calc.prof_roll) || 0;
+      const Defender_d100 = Number(calc.defense_roll) || 0;
+      const Defender_Ecur = Number(calc.target_ecur) || 0;
+      const Defender_Tier = Number(calc.target_tier) || 0;
 
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
-          for (let e of Object.values(this.actor.system.essences)) {
-              if (e.tier > Attacker_Tier) Attacker_Tier = e.tier;
-          }
+          Attacker_Tier = this.actor.system.resources.action_surges.max || 0;
       } else {
           Attacker_Tier = this.actor.system.tier || 0;
       }
 
+      // CALCULATE COMPONENTS
       const A_FP = 100 - (Attacker_d100 - R_prof);
       const D_Margin = Defender_d100 - Defender_Ecur;
       const M_Defense = Defender_Tier * 5.5;
@@ -370,11 +543,13 @@ export class NarequentaActorSheet extends ActorSheet {
       let rawDamage = (A_FP - M_Defense + D_Margin + R_prof);
       if (rawDamage < 0) rawDamage = 0;
 
+      const attrition = Math.max(0, 7 - R_prof);
+
       let multiplier = 1.0;
       const diff = Attacker_Tier - Defender_Tier;
       if (diff === 1) multiplier = 1.25;
       else if (diff === 2) multiplier = 1.50;
-      else if (diff >= 3) multiplier = 1.75; // Simplified
+      else if (diff >= 3) multiplier = 1.75; 
       else if (diff === -1) multiplier = 0.75;
       else if (diff === -2) multiplier = 0.50;
       else if (diff <= -3) multiplier = 0.25;
@@ -382,9 +557,88 @@ export class NarequentaActorSheet extends ActorSheet {
       const finalDamage = Math.floor(rawDamage * multiplier);
       const resultString = `Damage: ${finalDamage} (x${multiplier})`;
       
-      await this.actor.update({"system.calculator.output": resultString});
+      // Update Sheet
+      await this.actor.update({
+          "system.calculator.output": resultString,
+          "system.calculator.last_damage": finalDamage // Store damage for the sheet button
+      });
+
+      // Create Chat Card
+      const breakdownHtml = `
+        <table style="font-size:0.8em; width:100%; border-collapse:collapse; margin:5px 0;">
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>A_FP</strong> (100 - [${Attacker_d100}-${R_prof}]):</td><td style="text-align:right;">${A_FP}</td></tr>
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>D_Margin</strong> (${Defender_d100}-${Defender_Ecur}):</td><td style="text-align:right;">${D_Margin}</td></tr>
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>M_Defense</strong> (${Defender_Tier}*5.5):</td><td style="text-align:right;">-${M_Defense}</td></tr>
+            <tr style="border-bottom:1px solid #ccc;"><td><strong>R_Prof</strong> (Bonus):</td><td style="text-align:right;">+${R_prof}</td></tr>
+            <tr><td><strong>M_DTA</strong> (Tier ${Attacker_Tier} vs ${Defender_Tier}):</td><td style="text-align:right;">x${multiplier}</td></tr>
+        </table>
+      `;
+
+      const content = `
+      <div class="narequenta chat-card" data-defender-token-id="${targetId}" data-damage="${finalDamage}">
+          <header class="card-header flexrow" style="border-bottom: 2px solid #333; margin-bottom: 5px;">
+              <h3>vs ${targetName}</h3>
+          </header>
+          <div class="card-content" style="padding: 5px;">
+              <div style="display: flex; justify-content: space-between;">
+                  <strong>${this.actor.name}</strong> <span>Roll: ${Attacker_d100} (Prof: ${R_prof})</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                  <strong>${targetName}</strong> <span>Roll: ${Defender_d100} (E_cur: ${Defender_Ecur})</span>
+              </div>
+              <hr>
+              ${breakdownHtml}
+              <hr>
+              <div style="font-size: 1.5em; text-align: center; font-weight: bold; margin: 10px 0; color: #8b0000;">
+                  ${finalDamage} Damage
+              </div>
+              <div style="font-size: 0.9em; text-align: center; color: #555;">
+                  <strong>Attrition Cost:</strong> -${attrition}% E_cur (Motor)
+              </div>
+              <div style="text-align:center; margin-top:10px;">
+                  <button class="apply-damage-btn" style="background:#8b0000; color:white; width:90%;" data-defender-token-id="${targetId}" data-damage="${finalDamage}">
+                      <i class="fas fa-heart-broken"></i> Apply Damage
+                  </button>
+              </div>
+          </div>
+      </div>`;
+
+      ChatMessage.create({
+          speaker: ChatMessage.getSpeaker({ actor: this.actor }),
+          content: content
+      });
+  }
+
+  // --- NEW: APPLY DAMAGE FROM SHEET ---
+  async _onApplySheetDamage(event) {
+      event.preventDefault();
+      const calc = this.actor.system.calculator;
+      const targetId = calc.target_id;
+      const damage = Number(calc.last_damage);
+
+      if (!targetId) {
+          ui.notifications.warn("No target selected or ID lost. Please re-select target.");
+          return;
+      }
+      if (!damage || damage <= 0) {
+          ui.notifications.warn("No valid damage calculated to apply.");
+          return;
+      }
+
+      const token = canvas.tokens.get(targetId);
+      if (!token || !token.actor) {
+          ui.notifications.warn("Target token not found on current scene.");
+          return;
+      }
+
+      const currentHP = token.actor.system.resources.hp.value;
+      const newHP = Math.max(0, currentHP - damage);
+
+      await token.actor.update({ "system.resources.hp.value": newHP });
+      ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
   }
 }
+
 https://github.com/cortonemo/narequenta-vtt/blob/main/module/actor.js
 
 import { EntitySheetHelper } from "./helper.js";
@@ -410,36 +664,45 @@ export class NarequentaActor extends Actor {
   _prepareEssenceData() {
       const system = this.system;
       const essences = system.essences || {};
+      
+      // Track highest tier found among essences
+      let maxTier = 0;
 
       for (let [key, essence] of Object.entries(essences)) {
           // A. Enforce Hard Floor (50%)
           if (essence.max < 50) essence.max = 50;
           if (essence.max > 100) essence.max = 100;
 
-          // B. Calculate Tier based on Remaining E_max [cite: 328-341]
+          // B. Calculate Tier based on Remaining E_max
           let tier = 0;
           if (essence.max <= 50) tier = 5;      
           else if (essence.max <= 60) tier = 4; 
           else if (essence.max <= 70) tier = 3; 
-          else if (essence.max <= 80) tier = 2; 
+          else if (essence.max <= 80) tier = 2;
           else if (essence.max <= 90) tier = 1; 
-          else tier = 0;                        
-
+          else tier = 0;
+          
           // C. Derive Dice Pool
           essence.tier = tier;
           essence.diceCount = (tier === 0) ? 0 : tier;
           essence.diceString = (tier > 0) ? `${tier}d10` : "0";
           essence.mitigation = (tier * 5.5); 
+          
+          // Update Max Tier Tracker
+          if (tier > maxTier) maxTier = tier;
       }
 
-      // D. Calculate Action Surges
-      if (system.resources && system.resources.action_surges) {
-          let maxTier = 0;
-          for (let [key, essence] of Object.entries(essences)) {
-              if (essence.tier > maxTier) maxTier = essence.tier;
+      // D. ASSIGN GLOBAL TIER (Fixes NPC Proficiency)
+      // For Characters, this drives Action Surges.
+      if (this.type === "character") {
+          if (system.resources?.action_surges) {
+              system.resources.action_surges.max = maxTier;
           }
-          system.resources.action_surges.max = maxTier;
       }
+      
+      // For NPCs (and generic actors), we must set the system.tier 
+      // so the calculator can read it easily.
+      system.tier = maxTier;
   }
 
   /** @inheritdoc */
@@ -1233,7 +1496,7 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/module/narequenta.js
 
 // Import Modules
 import { NarequentaActor } from "./actor.js";
-import { SimpleItem } from "./item.js"; // We can keep Item simple for now
+import { SimpleItem } from "./item.js"; 
 import { SimpleItemSheet } from "./item-sheet.js";
 import { NarequentaActorSheet } from "./actor-sheet.js";
 import { preloadHandlebarsTemplates } from "./templates.js";
@@ -1241,16 +1504,12 @@ import { createWorldbuildingMacro } from "./macro.js";
 import { SimpleToken, SimpleTokenDocument } from "./token.js";
 
 /* -------------------------------------------- */
-/* Foundry VTT Initialization                  */
+/* Foundry VTT Initialization                   */
 /* -------------------------------------------- */
 
 Hooks.once("init", async function() {
   console.log(`Initializing Nárëquenta System`);
 
-  /**
-   * Set an initiative formula for the system.
-   * @type {String}
-   */
   CONFIG.Combat.initiative = {
     formula: "1d10",
     decimals: 2
@@ -1283,7 +1542,6 @@ Hooks.once("init", async function() {
     config: true
   });
 
-  // Register initiative setting.
   game.settings.register("narequenta", "initFormula", {
     name: "SETTINGS.SimpleInitFormulaN",
     hint: "SETTINGS.SimpleInitFormulaL",
@@ -1314,6 +1572,33 @@ Hooks.once("init", async function() {
 });
 
 Hooks.on("hotbarDrop", (bar, data, slot) => createWorldbuildingMacro(data, slot));
+
+// --- NEW: GLOBAL LISTENER FOR CHAT BUTTONS ---
+Hooks.once("ready", () => {
+    $(document).on("click", ".apply-damage-btn", async (ev) => {
+        ev.preventDefault();
+        const btn = $(ev.currentTarget);
+        // Read data directly from the button element
+        const targetTokenId = btn.data("defender-token-id");
+        const damage = parseInt(btn.data("damage"));
+
+        const token = canvas.tokens.get(targetTokenId);
+        if (!token || !token.actor) {
+            ui.notifications.warn("Target token not found on current scene.");
+            return;
+        }
+
+        const currentHP = token.actor.system.resources.hp.value;
+        const newHP = Math.max(0, currentHP - damage);
+
+        await token.actor.update({ "system.resources.hp.value": newHP });
+
+        ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
+        
+        // Visual feedback on button
+        btn.replaceWith(`<div style="color: #8b0000; font-weight:bold; text-align:center;">Damage Applied</div>`);
+    });
+});
 
 https://github.com/cortonemo/narequenta-vtt/blob/main/module/templates.js
 
@@ -1660,7 +1945,7 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/templates/actor-sheet.html
         <div class="header-fields">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
             
-            {{!-- Resources Row (HP & Action Surges) --}}
+            {{!-- Resources Row (HP & Action Surges & Rests) --}}
             <div class="resource-row">
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
@@ -1678,6 +1963,12 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/templates/actor-sheet.html
                     <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
                 </div>
                 {{/if}}
+
+                {{!-- REST BUTTONS --}}
+                <div class="resource" style="display: flex; gap: 5px; align-items: flex-end;">
+                    <a class="rest-btn short-rest" title="Refocus (Short Rest: Restore 1d6%)"><i class="fas fa-coffee"></i> Short</a>
+                    <a class="rest-btn long-rest" title="Renewal (Long Rest: Full Recovery)"><i class="fas fa-bed"></i> Long</a>
+                </div>
             </div>
             
             {{!-- Final Vow (PC Only) --}}
@@ -1693,14 +1984,13 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/templates/actor-sheet.html
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
         <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
-        <a class="item" data-tab="calculator"><i class="fas fa-calculator"></i> Calc</a>
         <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
     </nav>
 
     {{!-- Sheet Body --}}
     <section class="sheet-body">
 
-        {{!-- 1. ESSENCES TAB --}}
+        {{!-- 1. ESSENCES TAB (Includes Calculator & Waning) --}}
         <div class="tab essences" data-group="primary" data-tab="essences">
             
             {{!-- UNIFIED ESSENCE GRID --}}
@@ -1759,10 +2049,105 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/templates/actor-sheet.html
                 </div>
             </div>
 
-            {{!-- NEW: THE WANING BUTTON (Only for PCs) --}}
+            {{!-- CALCULATOR SECTION (Moved Here) --}}
+            <div class="essence-grid-container" style="background: rgba(255, 255, 255, 0.3); border: 1px solid #999;">
+                <div class="essence-header" style="grid-template-columns: 1fr;">
+                    <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
+                </div>
+                
+                {{!-- SELECT TARGET BUTTON --}}
+                <div style="text-align: center; margin: 10px 0;">
+                    <button class="launch-contest" style="background: #222; color: #fff; width: 90%; padding: 8px;">
+                        <i class="fas fa-crosshairs"></i> SELECT TARGET
+                    </button>
+                </div>
+                
+                <div style="text-align:center; margin-bottom: 5px;">
+                    <strong>Target:</strong> 
+                    <span style="color: #8b0000; font-weight: bold; font-size: 1.1em;">
+                        {{systemData.calculator.target_name}}
+                    </span>
+                </div>
+
+                <hr>
+
+                {{!-- ATTACKER ROW --}}
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">My Roll (d100):</label>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
+                        <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100" data-label="Attacker d100 ({{actor.name}})">
+                            <i class="fas fa-dice-d20"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                {{!-- PROFICIENCY ROW --}}
+                <div class="resource-row" style="padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">My R_Prof (Roll):</label>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
+                        <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof" data-label="Proficiency Roll ({{actor.name}})">
+                            <i class="fas fa-dice-d6"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <hr>
+
+                {{!-- DEFENDER ROW --}}
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy Roll (d100):</label>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="d100">
+                        <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100" data-label="Defender d100 ({{systemData.calculator.target_name}})">
+                            <i class="fas fa-dice-d20"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="resource-row" style="padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy E_CUR:</label>
+                    <input type="number" name="system.calculator.target_ecur" value="{{systemData.calculator.target_ecur}}">
+                </div>
+                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Enemy Tier (0-5):</label>
+                    <input type="number" name="system.calculator.target_tier" value="{{systemData.calculator.target_tier}}" min="0" max="5">
+                </div>
+
+                <hr>
+
+                <div style="text-align: center; margin: 10px;">
+                    <button type="button" class="roll-calculation" style="background: #333; color: white;">
+                        <i class="fas fa-bolt"></i> CALCULATE RESULT
+                    </button>
+                </div>
+
+                <div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; background: #fff;">
+                    {{systemData.calculator.output}}
+                </div>
+				
+				<div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; background: #fff;">
+                    {{systemData.calculator.output}}
+                </div>
+
+                {{!-- NEW: Apply Damage Button on Sheet --}}
+                <div style="text-align: center; margin-top: 5px;">
+                    <button type="button" class="apply-sheet-damage" style="background: #8b0000; color: white; width: 100%;">
+                        <i class="fas fa-skull"></i> APPLY DAMAGE TO TARGET
+                    </button>
+                </div>
+				
+            </div>
+
+            {{!-- WANING SECTION (Toggle + Button) --}}
             {{#if (eq actor.type "character")}}
-            <div style="text-align:center; margin-bottom: 15px;">
-                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333;">
+            <div style="text-align:center; margin-bottom: 15px; margin-top: 20px; border-top: 2px solid #333; padding-top: 10px;">
+                <div style="margin-bottom: 5px;">
+                    <input type="checkbox" class="waning-toggle" id="enable-waning">
+                    <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
+                </div>
+                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
                     <i class="fas fa-skull"></i> Trigger Waning Phase
                 </button>
             </div>
@@ -1795,51 +2180,6 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/templates/actor-sheet.html
                 </li>
                 {{/each}}
             </ol>
-        </div>
-
-        {{!-- 3. CALCULATOR TAB (Optional but Recommended) --}}
-        <div class="tab calculator" data-group="primary" data-tab="calculator">
-            <div class="essence-grid-container">
-                <div class="essence-header" style="grid-template-columns: 1fr;">
-                    <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
-                </div>
-                
-                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
-                    <label style="font-weight:bold; width: 150px;">My Roll (d100):</label>
-                    <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
-                </div>
-                <div class="resource-row" style="padding: 5px;">
-                    <label style="font-weight:bold; width: 150px;">My R_Prof (Roll):</label>
-                    <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
-                </div>
-
-                <hr>
-
-                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
-                    <label style="font-weight:bold; width: 150px;">Enemy Roll (d100):</label>
-                    <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="d100">
-                </div>
-                <div class="resource-row" style="padding: 5px;">
-                    <label style="font-weight:bold; width: 150px;">Enemy E_CUR:</label>
-                    <input type="number" name="system.calculator.target_ecur" value="{{systemData.calculator.target_ecur}}">
-                </div>
-                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
-                    <label style="font-weight:bold; width: 150px;">Enemy Tier (0-5):</label>
-                    <input type="number" name="system.calculator.target_tier" value="{{systemData.calculator.target_tier}}" min="0" max="5">
-                </div>
-
-                <hr>
-
-                <div style="text-align: center; margin: 10px;">
-                    <button type="button" class="roll-calculation" style="background: #333; color: white;">
-                        <i class="fas fa-bolt"></i> CALCULATE RESULT
-                    </button>
-                </div>
-
-                <div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; background: #fff;">
-                    {{systemData.calculator.output}}
-                </div>
-            </div>
         </div>
 
         {{!-- 4. BIOGRAPHY TAB --}}
@@ -2118,14 +2458,14 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/system.json
 {
   "id": "narequenta",
   "title": "Nárëquenta — Tales of the Waning",
-  "version": "v.9.12",
+  "version": "v0.9.28",
   "description": "A TTRPG about Beautiful Erosion. Heroes start at their peak and gradually fade. Power is a finite resource; Proficiency Compensates for Decline.",
   "url": "https://github.com/cortonemo/narequenta-vtt",
   "license": "LICENSE.md",
   "authors": [
     {
       "name": "Serelith Varn",
-      "email": "serelith.varn@proton.me",
+      "email": "serelith.varn@gmail.com",
       "url": "https://github.com/cortonemo"
     }
   ],
@@ -2187,6 +2527,9 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/template.json
         "defense_roll": 50,
         "target_ecur": 100,
         "target_tier": 0,
+        "target_name": "None",
+        "target_id": "", 
+        "last_damage": 0,
         "output": "Waiting for input..."
       },
       "essences": {
@@ -2208,6 +2551,9 @@ https://github.com/cortonemo/narequenta-vtt/blob/main/template.json
         "defense_roll": 50,
         "target_ecur": 100,
         "target_tier": 0,
+        "target_name": "None",
+        "target_id": "", 
+        "last_damage": 0,
         "output": "Waiting for input..."
       },
       "essences": {
