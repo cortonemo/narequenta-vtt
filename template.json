@@ -11,7 +11,7 @@
     },
     "character": {
       "templates": ["base"],
-      "equipped_item_id": "",
+	  "equipped_item_id": "",
       "promise": "",
       "resources": {
         "hp": { "value": 100, "min": 0, "max": 100 },
@@ -24,7 +24,7 @@
         "target_ecur": 100,
         "target_tier": 0,
         "target_name": "None",
-        "target_id": "", 
+        "target_id": "",
         "last_damage": 0,
         "output": "Waiting for input...",
         "quality_synergy": "none"
@@ -41,7 +41,7 @@
     },
     "npc": {
       "templates": ["base"],
-      "equipped_item_id": "",
+	  "equipped_item_id": "",
       "tier": 0,
       "calculator": {
         "attack_roll": 50,
@@ -50,7 +50,7 @@
         "target_ecur": 100,
         "target_tier": 0,
         "target_name": "None",
-        "target_id": "", 
+        "target_id": "",
         "last_damage": 0,
         "output": "Waiting for input...",
         "quality_synergy": "none"
@@ -87,7 +87,6 @@
     },
     "weapon": {
       "description": "",
-      "weight_class": "medium",
       "damage_bonus": 0,
       "cost": {
         "motor": "vitalis",
