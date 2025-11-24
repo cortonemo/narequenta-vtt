@@ -22,21 +22,39 @@ export class SimpleItemSheet extends ItemSheet {
   /* -------------------------------------------- */
 
 /** @inheritdoc */
-  async getData(options) {
-    const context = await super.getData(options);
-    EntitySheetHelper.getAttributeData(context.data);
-    context.systemData = context.data.system;
-    context.dtypes = ATTRIBUTE_TYPES;
-    
-    // ADD THIS BLOCK: Provide Essence Options for Dropdown
-    context.systemData.essencesList = {
-        "vitalis": "NAREQUENTA.Vitalis",
-        "motus": "NAREQUENTA.Motus",
-        "sensus": "NAREQUENTA.Sensus",
-        "verbum": "NAREQUENTA.Verbum",
-        "anima": "NAREQUENTA.Anima"
-    };
+async getData(options) {
+  const context = await super.getData(options);
+  EntitySheetHelper.getAttributeData(context.data);
+  context.systemData = context.data.system;
+  context.dtypes = ATTRIBUTE_TYPES;
+  
+  // Provide Essence Options for Dropdown
+  context.systemData.essencesList = {
+      "vitalis": "NAREQUENTA.Vitalis",
+      "motus": "NAREQUENTA.Motus",
+      "sensus": "NAREQUENTA.Sensus",
+      "verbum": "NAREQUENTA.Verbum",
+      "anima": "NAREQUENTA.Anima"
+  };
 
+  // --- NEW CODE START ---
+  // 1. Check if the item is owned by an Actor
+  const actor = this.item.actor;
+
+  // 2. Prepare Roll Data (variables available to text)
+  // If owned, use the Actor's data. If unowned, use empty object.
+  const rollData = actor ? actor.getRollData() : {};
+
+  // 3. Enrich the HTML, passing the rollData to resolve formulas like [[@essences.vitalis.tier]]
+  context.descriptionHTML = await TextEditor.enrichHTML(context.systemData.description, {
+    secrets: this.document.isOwner,
+    rollData: rollData,     // <--- This enables the math
+    async: true
+  });
+  // --- NEW CODE END ---
+
+  return context;
+}
     context.descriptionHTML = await TextEditor.enrichHTML(context.systemData.description, {
       secrets: this.document.isOwner,
       async: true
