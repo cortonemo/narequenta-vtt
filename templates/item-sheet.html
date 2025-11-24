@@ -7,15 +7,22 @@
             </h1>
             
             <div class="resource-row">
-                <div class="resource">
-                    <label>Quantity</label>
-                    <input type="number" name="system.quantity" value="{{systemData.quantity}}"/>
-                </div>
-                <div class="resource">
-                    <label>Weight</label>
-                    <input type="number" name="system.weight" value="{{systemData.weight}}"/>
-                </div>
-            </div>
+				<div class="resource">
+					<label>Quantity</label>
+					<input type="number" name="system.quantity" value="{{systemData.quantity}}"/>
+				</div>
+
+				<div class="resource">
+					<label>Weight Class</label>
+					<select name="system.weight_class">
+						{{#select systemData.weight_class}}
+						<option value="light">Light (10% Cost)</option>
+						<option value="medium">Medium (15% Cost)</option>
+						<option value="heavy">Heavy (20% Cost)</option>
+						{{/select}}
+					</select>
+				</div>
+			</div>
 
             {{!-- Nárëquenta Specific: Motor & Quality Selection --}}
             {{!-- Only show if this item has a cost defined (Ability/Weapon) --}}
