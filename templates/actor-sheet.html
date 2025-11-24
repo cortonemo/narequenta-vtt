@@ -56,61 +56,87 @@
             
             {{!-- UNIFIED ESSENCE GRID --}}
             <div class="essence-grid-container">
-                <div class="essence-header">
-                    <span>{{localize "NAREQUENTA.TabEssences"}}</span>
-                    <span>E_MAX</span>
-                    <span>E_CUR</span>
-                    <span>TIER</span>
-                    <span>DICE</span>
-                </div>
+                <div class="essence-header" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;"> <span>{{localize "NAREQUENTA.TabEssences"}}</span>
+					<span>E_MAX</span>
+					<span>E_CUR</span>
+					<span>ZONE</span> <span>TIER</span>
+					<span>DICE</span>
+				</div>
 
                 {{!-- VITALIS --}}
-                <div class="essence-row">
-                    <span class="essence-label">{{localize "NAREQUENTA.Vitalis"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.vitalis.max" value="{{systemData.essences.vitalis.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.vitalis.value" value="{{systemData.essences.vitalis.value}}" min="0" max="100">
-                    <span class="derived-stat">{{systemData.essences.vitalis.tier}}</span>
-                    <span class="derived-stat">{{systemData.essences.vitalis.diceString}}</span>
-                </div>
+
+				<div class="essence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;"> <span class="essence-label">{{localize "NAREQUENTA.Vitalis"}}</span>
+					<input class="input-emax" type="number" name="system.essences.vitalis.max" value="{{systemData.essences.vitalis.max}}" min="50" max="100">
+					<input class="input-ecur" type="number" name="system.essences.vitalis.value" value="{{systemData.essences.vitalis.value}}" min="0" max="100">
+					
+					<span class="derived-stat" style="font-size: 0.8em;">
+						{{systemData.essences.vitalis.zoneLabel}}<br>({{systemData.essences.vitalis.zonePenalty}})
+					</span>
+					
+					<span class="derived-stat">{{systemData.essences.vitalis.tier}}</span>
+					<span class="derived-stat">{{systemData.essences.vitalis.diceString}}</span>
+				</div>
+
+
 
                 {{!-- MOTUS --}}
-                <div class="essence-row">
-                    <span class="essence-label">{{localize "NAREQUENTA.Motus"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.motus.max" value="{{systemData.essences.motus.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.motus.value" value="{{systemData.essences.motus.value}}" min="0" max="100">
-                    <span class="derived-stat">{{systemData.essences.motus.tier}}</span>
-                    <span class="derived-stat">{{systemData.essences.motus.diceString}}</span>
-                </div>
+				<div class="essence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;"> <span class="essence-label">{{localize "NAREQUENTA.Motus"}}</span>
+					<input class="input-emax" type="number" name="system.essences.motus.max" value="{{systemData.essences.motus.max}}" min="50" max="100">
+					<input class="input-ecur" type="number" name="system.essences.motus.value" value="{{systemData.essences.motus.value}}" min="0" max="100">
+					
+					<span class="derived-stat" style="font-size: 0.8em;">
+						{{systemData.essences.motus.zoneLabel}}<br>({{systemData.essences.motus.zonePenalty}})
+					</span>
+					
+					<span class="derived-stat">{{systemData.essences.motus.tier}}</span>
+					<span class="derived-stat">{{systemData.essences.motus.diceString}}</span>
+				</div>
+
 
                 {{!-- SENSUS --}}
-                <div class="essence-row">
-                    <span class="essence-label">{{localize "NAREQUENTA.Sensus"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.sensus.max" value="{{systemData.essences.sensus.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.sensus.value" value="{{systemData.essences.sensus.value}}" min="0" max="100">
-                    <span class="derived-stat">{{systemData.essences.sensus.tier}}</span>
-                    <span class="derived-stat">{{systemData.essences.sensus.diceString}}</span>
-                </div>
+				
+				<div class="essence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;"> <span class="essence-label">{{localize "NAREQUENTA.Sensus"}}</span>
+					<input class="input-emax" type="number" name="system.essences.sensus.max" value="{{systemData.essences.sensus.max}}" min="50" max="100">
+					<input class="input-ecur" type="number" name="system.essences.sensus.value" value="{{systemData.essences.sensus.value}}" min="0" max="100">
+					
+					<span class="derived-stat" style="font-size: 0.8em;">
+						{{systemData.essences.sensus.zoneLabel}}<br>({{systemData.essences.sensus.zonePenalty}})
+					</span>
+					
+					<span class="derived-stat">{{systemData.essences.sensus.tier}}</span>
+					<span class="derived-stat">{{systemData.essences.sensus.diceString}}</span>
+				</div>				
+				
 
                 {{!-- VERBUM --}}
-                <div class="essence-row">
-                    <span class="essence-label">{{localize "NAREQUENTA.Verbum"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.verbum.max" value="{{systemData.essences.verbum.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.verbum.value" value="{{systemData.essences.verbum.value}}" min="0" max="100">
-                    <span class="derived-stat">{{systemData.essences.verbum.tier}}</span>
-                    <span class="derived-stat">{{systemData.essences.verbum.diceString}}</span>
-                </div>
+
+				<div class="essence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;"> <span class="essence-label">{{localize "NAREQUENTA.Verbum"}}</span>
+					<input class="input-emax" type="number" name="system.essences.verbum.max" value="{{systemData.essences.verbum.max}}" min="50" max="100">
+					<input class="input-ecur" type="number" name="system.essences.verbum.value" value="{{systemData.essences.verbum.value}}" min="0" max="100">
+					
+					<span class="derived-stat" style="font-size: 0.8em;">
+						{{systemData.essences.verbum.zoneLabel}}<br>({{systemData.essences.verbum.zonePenalty}})
+					</span>
+					
+					<span class="derived-stat">{{systemData.essences.verbum.tier}}</span>
+					<span class="derived-stat">{{systemData.essences.verbum.diceString}}</span>
+				</div>	
 
                 {{!-- ANIMA --}}
-                <div class="essence-row">
-                    <span class="essence-label">{{localize "NAREQUENTA.Anima"}}</span>
-                    <input class="input-emax" type="number" name="system.essences.anima.max" value="{{systemData.essences.anima.max}}" min="50" max="100">
-                    <input class="input-ecur" type="number" name="system.essences.anima.value" value="{{systemData.essences.anima.value}}" min="0" max="100">
-                    <span class="derived-stat">{{systemData.essences.anima.tier}}</span>
-                    <span class="derived-stat">{{systemData.essences.anima.diceString}}</span>
-                </div>
-            </div>
+			
+				<div class="essence-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;"> <span class="essence-label">{{localize "NAREQUENTA.Anima"}}</span>
+					<input class="input-emax" type="number" name="system.essences.anima.max" value="{{systemData.essences.anima.max}}" min="50" max="100">
+					<input class="input-ecur" type="number" name="system.essences.anima.value" value="{{systemData.essences.anima.value}}" min="0" max="100">
+					
+					<span class="derived-stat" style="font-size: 0.8em;">
+						{{systemData.essences.anima.zoneLabel}}<br>({{systemData.essences.anima.zonePenalty}})
+					</span>
+					
+					<span class="derived-stat">{{systemData.essences.anima.tier}}</span>
+					<span class="derived-stat">{{systemData.essences.anima.diceString}}</span>
+				</div>
 
-            {{!-- CALCULATOR SECTION (Moved Here) --}}
+            {{!-- CALCULATOR SECTION --}}
             <div class="essence-grid-container" style="background: rgba(255, 255, 255, 0.3); border: 1px solid #999;">
                 <div class="essence-header" style="grid-template-columns: 1fr;">
                     <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
@@ -128,6 +154,21 @@
                     <span style="color: #8b0000; font-weight: bold; font-size: 1.1em;">
                         {{systemData.calculator.target_name}}
                     </span>
+                </div>
+
+                {{!-- SYNERGY DROPDOWN --}}
+                <div class="resource-row" style="padding: 5px; background: rgba(0,0,0,0.05); margin-top: 5px;">
+                    <label style="font-weight:bold; width: 150px;">Quality Synergy:</label>
+                    <select name="system.calculator.quality_synergy">
+                        {{#select systemData.calculator.quality_synergy}}
+                        <option value="none">None</option>
+                        <option value="vitalis">VITALIS (+Tier Dmg)</option>
+                        <option value="motus">MOTUS (+2 Accuracy)</option>
+                        <option value="sensus">SENSUS (Crit 1-15)</option>
+                        <option value="verbum">VERBUM (Ignore Tier Disadv)</option>
+                        <option value="anima">ANIMA (Recover 1% Motor)</option>
+                        {{/select}}
+                    </select>
                 </div>
 
                 <hr>
@@ -187,10 +228,6 @@
                 <div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; background: #fff;">
                     {{systemData.calculator.output}}
                 </div>
-				
-				<div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; background: #fff;">
-                    {{systemData.calculator.output}}
-                </div>
 
                 {{!-- NEW: Apply Damage Button on Sheet --}}
                 <div style="text-align: center; margin-top: 5px;">
@@ -198,7 +235,6 @@
                         <i class="fas fa-skull"></i> APPLY DAMAGE TO TARGET
                     </button>
                 </div>
-				
             </div>
 
             {{!-- WANING SECTION (Toggle + Button) --}}
@@ -221,6 +257,7 @@
         {{!-- 2. ITEMS TAB --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <ol class="items-list">
+                
                 <li class="item flexrow item-header">
                     <div class="item-image"></div>
                     <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
@@ -228,19 +265,37 @@
                         <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
                     </div>
                 </li>
+
                 {{#each items as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
-                    <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                    <div class="item-image">
+                        <img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/>
+                    </div>
+                    
                     <h4 class="item-name mb-0">
                         <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
+                        {{!-- Visual Indicator if Equipped --}}
+                        {{#if (eq item._id ../systemData.equipped_item_id)}}
+                            <span style="font-size: 0.8em; color: #8b0000; font-weight: bold;">[EQUIPPED]</span>
+                        {{/if}}
                     </h4>
+
                     <div class="item-controls">
+                        {{!-- Equip Button --}}
+                        <a class="item-control item-equip" title="Equip Weapon">
+                            {{#if (eq item._id ../systemData.equipped_item_id)}}
+                                <i class="fas fa-check-circle" style="color:green;"></i>
+                            {{else}}
+                                <i class="far fa-circle"></i>
+                            {{/if}}
+                        </a>
+                        
                         <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
                         <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
                     </div>
                 </li>
                 {{/each}}
-            </ol>
+                </ol>
         </div>
 
         {{!-- 4. BIOGRAPHY TAB --}}
