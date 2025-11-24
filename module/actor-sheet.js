@@ -383,12 +383,12 @@ export class NarequentaActorSheet extends ActorSheet {
     if (item) item.roll(); 
   }
 
-  // --- MODIFIED CALCULATE FUNCTION ---
+// --- MODIFIED CALCULATE FUNCTION (v0.9.3 Compliance) ---
   async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
       const targetName = calc.target_name || "Target";
-      const targetId = calc.target_id || ""; // Retrieve stored ID
+      const targetId = calc.target_id || ""; 
       
       const Attacker_d100 = Number(calc.attack_roll) || 0;
       const R_prof = Number(calc.prof_roll) || 0;
@@ -403,32 +403,40 @@ export class NarequentaActorSheet extends ActorSheet {
           Attacker_Tier = this.actor.system.tier || 0;
       }
 
-      // CALCULATE COMPONENTS
+      // 1. CALCULATE DAMAGE COMPONENTS
+      // A_FP (Half-Potential) is now used in v0.9.3, but the standard A_FP formula 
+      // is 100 - (Roll - R_prof). For Damage calculation we use the raw values.
       const A_FP = 100 - (Attacker_d100 - R_prof);
       const D_Margin = Defender_d100 - Defender_Ecur;
       const M_Defense = Defender_Tier * 5.5;
 
       let rawDamage = (A_FP - M_Defense + D_Margin + R_prof);
-      if (rawDamage < 0) rawDamage = 0;
+      if (rawDamage < 1) rawDamage = 1; // Minimum damage is 1
 
-      const attrition = Math.max(0, 7 - R_prof);
-
+      // 2. CALCULATE TIER MULTIPLIER (M_DTA)
       let multiplier = 1.0;
       const diff = Attacker_Tier - Defender_Tier;
-      if (diff === 1) multiplier = 1.25;
-      else if (diff === 2) multiplier = 1.50;
-      else if (diff >= 3) multiplier = 1.75; 
-      else if (diff === -1) multiplier = 0.75;
-      else if (diff === -2) multiplier = 0.50;
-      else if (diff <= -3) multiplier = 0.25;
+      
+      if (diff >= 1) multiplier = 1.25;      // +1 Tier
+      if (diff >= 2) multiplier = 1.50;      // +2 Tier (Optional scaling)
+      if (diff === 0) multiplier = 1.00;     // Equal
+      if (diff === -1) multiplier = 0.75;    // -1 Tier
+      if (diff <= -2) multiplier = 0.50;     // -2 Tier
 
       const finalDamage = Math.floor(rawDamage * multiplier);
       const resultString = `Damage: ${finalDamage} (x${multiplier})`;
       
+      // 3. CALCULATE ATTRITION (v0.9.3 Rule: Base - floor(R_prof/2))
+      // We calculate all three since the calculator doesn't know the weapon weight.
+      const attritionReduction = Math.floor(R_prof / 2);
+      const attLight = Math.max(0, 10 - attritionReduction);
+      const attMed   = Math.max(0, 15 - attritionReduction);
+      const attHeavy = Math.max(0, 20 - attritionReduction);
+
       // Update Sheet
       await this.actor.update({
           "system.calculator.output": resultString,
-          "system.calculator.last_damage": finalDamage // Store damage for the sheet button
+          "system.calculator.last_damage": finalDamage 
       });
 
       // Create Chat Card
@@ -460,9 +468,17 @@ export class NarequentaActorSheet extends ActorSheet {
               <div style="font-size: 1.5em; text-align: center; font-weight: bold; margin: 10px 0; color: #8b0000;">
                   ${finalDamage} Damage
               </div>
-              <div style="font-size: 0.9em; text-align: center; color: #555;">
-                  <strong>Attrition Cost:</strong> -${attrition}% E_cur (Motor)
+              
+              <div style="background: rgba(0,0,0,0.05); padding: 5px; border-radius: 4px; font-size: 0.9em; color: #333;">
+                  <div style="font-weight:bold; text-align:center; margin-bottom:2px;">Attrition Cost (Motor)</div>
+                  <div style="display:flex; justify-content:space-between; text-align:center;">
+                      <div><span style="font-size:0.8em">Light (10)</span><br><strong>-${attLight}%</strong></div>
+                      <div><span style="font-size:0.8em">Med (15)</span><br><strong>-${attMed}%</strong></div>
+                      <div><span style="font-size:0.8em">Hvy (20)</span><br><strong>-${attHeavy}%</strong></div>
+                  </div>
+                  <div style="text-align:center; font-size: 0.8em; margin-top:2px; font-style:italic;">Formula: Base - floor(${R_prof}/2)</div>
               </div>
+
               <div style="text-align:center; margin-top:10px;">
                   <button class="apply-damage-btn" style="background:#8b0000; color:white; width:90%;" data-defender-token-id="${targetId}" data-damage="${finalDamage}">
                       <i class="fas fa-heart-broken"></i> Apply Damage
