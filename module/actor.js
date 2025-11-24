@@ -47,6 +47,28 @@ export class NarequentaActor extends Actor {
           
           // Update Max Tier Tracker
           if (tier > maxTier) maxTier = tier;
+		  // --- v0.9.3 ZONE CALCULATION ---
+		  // Calculate percentage of Current vs Max (Absolute 100 scale based on rules)
+		  const eCur = essence.value; 
+
+		  let zonePenalty = 0;
+		  let zoneLabel = "Peak"; // 100% - 76%
+
+		  if (eCur <= 25) { 
+			  zoneLabel = "Hollow"; 
+			  zonePenalty = -30; 
+		  } else if (eCur <= 50) { 
+			  zoneLabel = "Fading"; 
+			  zonePenalty = -20; 
+		  } else if (eCur <= 75) { 
+			  zoneLabel = "Waning"; 
+			  zonePenalty = -10; 
+		  }
+
+		  essence.zonePenalty = zonePenalty;
+		  essence.zoneLabel = zoneLabel;
+		  // This allows you to reference @essences.vitalis.zonePenalty in rolls		  
+		  
       }
 
       // D. ASSIGN GLOBAL TIER (Fixes NPC Proficiency)
@@ -64,12 +86,12 @@ export class NarequentaActor extends Actor {
 
   /** @inheritdoc */
   async rollInitiative(createCombatants=true, context={}) {
-    const parts = ["1d10"];
+    const parts = ["1d20"];
     // Tie-breaker: Sensus Tier as decimal
     if (this.system.essences?.sensus) {
         parts.push(String(this.system.essences.sensus.tier / 10));
     }
-    const formula = parts.join("+") || "1d10";
+    const formula = parts.join("+") || "1d20";
 
     await new Roll(formula, this.getRollData()).toMessage({
         speaker: ChatMessage.getSpeaker({actor: this}),
