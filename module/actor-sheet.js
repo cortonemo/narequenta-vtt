@@ -14,6 +14,34 @@ export class NarequentaActorSheet extends ActorSheet {
     });
   }
 
+	async _onEquipItem(event) {
+      event.preventDefault();
+      const li = $(event.currentTarget).closest(".item");
+      const itemId = li.data("itemId");
+      const item = this.actor.items.get(itemId);
+
+      // Toggle Logic: If already equipped, unequip it.
+      const currentEquipped = this.actor.system.equipped_item_id;
+      let newEquipped = itemId;
+      
+      if (currentEquipped === itemId) {
+          newEquipped = ""; // Unequip
+      }
+
+      // If equipping a weapon, automatically update the Calculator Synergy to match!
+      if (newEquipped !== "") {
+          const synergy = item.system.cost?.quality || "none";
+          await this.actor.update({
+              "system.equipped_item_id": newEquipped,
+              "system.calculator.quality_synergy": synergy
+          });
+          ui.notifications.info(`Equipped ${item.name}. Calculator updated to ${synergy.toUpperCase()} synergy.`);
+      } else {
+          await this.actor.update({ "system.equipped_item_id": "" });
+      }
+  }
+
+
   /** @inheritdoc */
   async getData(options) {
     const context = await super.getData(options);
@@ -39,6 +67,9 @@ export class NarequentaActorSheet extends ActorSheet {
   activateListeners(html) {
     super.activateListeners(html);
     if ( !this.isEditable ) return;
+	
+	// Inside activateListeners
+	html.find(".item-equip").click(this._onEquipItem.bind(this));
 
     // Items
     html.find(".item-control").click(this._onItemControl.bind(this));
@@ -384,18 +415,24 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
 // --- MODIFIED CALCULATE FUNCTION (v0.9.3 Compliance) ---
-  async _onCalculate(event) {
+async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
       const targetName = calc.target_name || "Target";
       const targetId = calc.target_id || ""; 
       
-      const Attacker_d100 = Number(calc.attack_roll) || 0;
-      const R_prof = Number(calc.prof_roll) || 0;
+      // 1. GET INPUTS
+      let Attacker_d100 = Number(calc.attack_roll) || 0;
+      let R_prof = Number(calc.prof_roll) || 0; // Raw roll result
+      
       const Defender_d100 = Number(calc.defense_roll) || 0;
       const Defender_Ecur = Number(calc.target_ecur) || 0;
       const Defender_Tier = Number(calc.target_tier) || 0;
+      
+      // Get Synergy Selection (Ensure you added the dropdown to HTML)
+      const Synergy = calc.quality_synergy || "none";
 
+      // 2. DETERMINE ATTACKER TIER
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
           Attacker_Tier = this.actor.system.resources.action_surges.max || 0;
@@ -403,64 +440,122 @@ export class NarequentaActorSheet extends ActorSheet {
           Attacker_Tier = this.actor.system.tier || 0;
       }
 
-      // 1. CALCULATE DAMAGE COMPONENTS
-      // A_FP (Half-Potential) is now used in v0.9.3, but the standard A_FP formula 
-      // is 100 - (Roll - R_prof). For Damage calculation we use the raw values.
-      const A_FP = 100 - (Attacker_d100 - R_prof);
+      // 3. APPLY SYNERGIES (PRE-CALCULATION)
+      // Motus: Adds +2 to the Proficiency Result (Accuracy)
+      let effectiveProf = R_prof;
+      if (Synergy === "motus") effectiveProf += 2;
+
+      // Sensus: Expands Critical Range from 1-5 to 1-15
+      let critThreshold = 5; 
+      if (Synergy === "sensus") critThreshold = 15;
+
+      // 4. CHECK CRITICAL (THE SPARK)
+      // v0.9.3: If Crit, treat the d100 roll as a "1" for calculation purposes.
+      let isCrit = false;
+      let effectiveRoll = Attacker_d100;
+      
+      if (Attacker_d100 <= critThreshold) {
+          isCrit = true;
+          effectiveRoll = 1; 
+      }
+
+      // 5. CALCULATE A_FP (HALF-POTENTIAL)
+      // v0.9.3 Formula: floor( (100 - (Roll - R_prof)) / 2 )
+      // We use effectiveRoll (1 if Crit) and effectiveProf (Motus bonus included)
+      const rawPotential = 100 - (effectiveRoll - effectiveProf);
+      const A_FP = Math.floor(rawPotential / 2);
+
       const D_Margin = Defender_d100 - Defender_Ecur;
       const M_Defense = Defender_Tier * 5.5;
 
-      let rawDamage = (A_FP - M_Defense + D_Margin + R_prof);
-      if (rawDamage < 1) rawDamage = 1; // Minimum damage is 1
-
-      // 2. CALCULATE TIER MULTIPLIER (M_DTA)
-      let multiplier = 1.0;
-      const diff = Attacker_Tier - Defender_Tier;
+      // 6. BASE DAMAGE CALCULATION
+      // D_Final = (A_FP - M_Def + D_Margin + R_prof)
+      let rawDamage = (A_FP - M_Defense + D_Margin + effectiveProf);
       
-      if (diff >= 1) multiplier = 1.25;      // +1 Tier
-      if (diff >= 2) multiplier = 1.50;      // +2 Tier (Optional scaling)
-      if (diff === 0) multiplier = 1.00;     // Equal
-      if (diff === -1) multiplier = 0.75;    // -1 Tier
-      if (diff <= -2) multiplier = 0.50;     // -2 Tier
+      // Vitalis Synergy: Add Tier Value to Damage
+      if (Synergy === "vitalis") {
+          rawDamage += Attacker_Tier;
+      }
+
+      // Floor damage at 1 before multiplier
+      if (rawDamage < 1) rawDamage = 1; 
+
+      // 7. CALCULATE TIER MULTIPLIER (M_DTA)
+      let multiplier = 1.0;
+      let tierDiff = Attacker_Tier - Defender_Tier;
+      
+      // Verbum Synergy: Ignore one step of Tier Disadvantage
+      // (Only helps if you are lower tier than opponent)
+      if (Synergy === "verbum" && tierDiff < 0) {
+          tierDiff += 1; 
+      }
+
+      if (tierDiff >= 1) multiplier = 1.25;      
+      if (tierDiff >= 2) multiplier = 1.50;      
+      if (tierDiff === 0) multiplier = 1.00;
+      if (tierDiff === -1) multiplier = 0.75;
+      if (tierDiff <= -2) multiplier = 0.50;
 
       const finalDamage = Math.floor(rawDamage * multiplier);
-      const resultString = `Damage: ${finalDamage} (x${multiplier})`;
       
-      // 3. CALCULATE ATTRITION (v0.9.3 Rule: Base - floor(R_prof/2))
-      // We calculate all three since the calculator doesn't know the weapon weight.
-      const attritionReduction = Math.floor(R_prof / 2);
-      const attLight = Math.max(0, 10 - attritionReduction);
-      const attMed   = Math.max(0, 15 - attritionReduction);
-      const attHeavy = Math.max(0, 20 - attritionReduction);
+      // 8. ATTRITION CALCULATION (Updated for Equipped Weapon)
+      const equippedId = this.actor.system.equipped_item_id;
+      const equippedItem = this.actor.items.get(equippedId);
+      
+      let weightClass = "medium"; // Default
+      if (equippedItem) {
+          weightClass = equippedItem.system.weight_class || "medium";
+      }
 
-      // Update Sheet
+      // Base Costs: Light=10, Medium=15, Heavy=20
+      let baseCost = 15;
+      if (weightClass === "light") baseCost = 10;
+      if (weightClass === "heavy") baseCost = 20;
+
+      // Formula: Base Cost - floor(R_prof/2)
+      const attritionReduction = Math.floor(effectiveProf / 2);
+      let calculatedAttrition = Math.max(0, baseCost - attritionReduction);
+
+      // Crit Success halves the Attrition Cost
+      if (isCrit) {
+          calculatedAttrition = Math.floor(calculatedAttrition / 2);
+      }
+
+      // 9. UPDATE SHEET DISPLAY
+      const critText = isCrit ? " (CRIT!)" : "";
+      const resultString = `Damage: ${finalDamage} (x${multiplier})${critText}`;
+
       await this.actor.update({
           "system.calculator.output": resultString,
           "system.calculator.last_damage": finalDamage 
       });
 
-      // Create Chat Card
-      const breakdownHtml = `
-        <table style="font-size:0.8em; width:100%; border-collapse:collapse; margin:5px 0;">
-            <tr style="border-bottom:1px solid #ccc;"><td><strong>A_FP</strong> (100 - [${Attacker_d100}-${R_prof}]):</td><td style="text-align:right;">${A_FP}</td></tr>
-            <tr style="border-bottom:1px solid #ccc;"><td><strong>D_Margin</strong> (${Defender_d100}-${Defender_Ecur}):</td><td style="text-align:right;">${D_Margin}</td></tr>
-            <tr style="border-bottom:1px solid #ccc;"><td><strong>M_Defense</strong> (${Defender_Tier}*5.5):</td><td style="text-align:right;">-${M_Defense}</td></tr>
-            <tr style="border-bottom:1px solid #ccc;"><td><strong>R_Prof</strong> (Bonus):</td><td style="text-align:right;">+${R_prof}</td></tr>
-            <tr><td><strong>M_DTA</strong> (Tier ${Attacker_Tier} vs ${Defender_Tier}):</td><td style="text-align:right;">x${multiplier}</td></tr>
-        </table>
+      // 10. GENERATE CHAT CARD (Update the Attrition section)
+      // We now show the SPECIFIC calculated cost for the equipped weapon
+      const attritionHtml = `
+          <div style="background: rgba(0,0,0,0.05); padding: 5px; border-radius: 4px; font-size: 0.9em; color: #333; margin-top: 10px;">
+              <div style="font-weight:bold; text-align:center; margin-bottom:2px;">
+                Attrition Cost ${equippedItem ? `(${equippedItem.name})` : ''}
+                ${isCrit ? '<br><span style="color:green;">(HALVED BY CRIT)</span>' : ''}
+              </div>
+              <div style="text-align:center; font-size: 1.2em; font-weight: bold; color: #8b0000;">
+                  -${calculatedAttrition}% E_cur
+              </div>
+              <div style="text-align:center; font-size: 0.8em; margin-top:2px; font-style:italic;">
+                ${weightClass.charAt(0).toUpperCase() + weightClass.slice(1)} (${baseCost}) - floor(${effectiveProf}/2)
+              </div>
+          </div>
       `;
 
       const content = `
       <div class="narequenta chat-card" data-defender-token-id="${targetId}" data-damage="${finalDamage}">
           <header class="card-header flexrow" style="border-bottom: 2px solid #333; margin-bottom: 5px;">
-              <h3>vs ${targetName}</h3>
+              <h3>vs ${targetName} <span style="color:#8b0000;">${critText}</span></h3>
           </header>
           <div class="card-content" style="padding: 5px;">
-              <div style="display: flex; justify-content: space-between;">
-                  <strong>${this.actor.name}</strong> <span>Roll: ${Attacker_d100} (Prof: ${R_prof})</span>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                  <strong>${targetName}</strong> <span>Roll: ${Defender_d100} (E_cur: ${Defender_Ecur})</span>
+              <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
+                 <span><strong>Roll:</strong> ${Attacker_d100} ${isCrit ? '(Treat as 1)' : ''}</span>
+                 <span><strong>Prof:</strong> ${R_prof} ${Synergy === 'motus' ? '(+2)' : ''}</span>
               </div>
               <hr>
               ${breakdownHtml}
@@ -469,17 +564,7 @@ export class NarequentaActorSheet extends ActorSheet {
                   ${finalDamage} Damage
               </div>
               
-              <div style="background: rgba(0,0,0,0.05); padding: 5px; border-radius: 4px; font-size: 0.9em; color: #333;">
-                  <div style="font-weight:bold; text-align:center; margin-bottom:2px;">Attrition Cost (Motor)</div>
-                  <div style="display:flex; justify-content:space-between; text-align:center;">
-                      <div><span style="font-size:0.8em">Light (10)</span><br><strong>-${attLight}%</strong></div>
-                      <div><span style="font-size:0.8em">Med (15)</span><br><strong>-${attMed}%</strong></div>
-                      <div><span style="font-size:0.8em">Hvy (20)</span><br><strong>-${attHeavy}%</strong></div>
-                  </div>
-                  <div style="text-align:center; font-size: 0.8em; margin-top:2px; font-style:italic;">Formula: Base - floor(${R_prof}/2)</div>
-              </div>
-
-              <div style="text-align:center; margin-top:10px;">
+              ${attritionHtml} <div style="text-align:center; margin-top:10px;">
                   <button class="apply-damage-btn" style="background:#8b0000; color:white; width:90%;" data-defender-token-id="${targetId}" data-damage="${finalDamage}">
                       <i class="fas fa-heart-broken"></i> Apply Damage
                   </button>
