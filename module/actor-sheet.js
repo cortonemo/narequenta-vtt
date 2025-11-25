@@ -14,34 +14,6 @@ export class NarequentaActorSheet extends ActorSheet {
     });
   }
 
-	async _onEquipItem(event) {
-      event.preventDefault();
-      const li = $(event.currentTarget).closest(".item");
-      const itemId = li.data("itemId");
-      const item = this.actor.items.get(itemId);
-
-      // Toggle Logic: If already equipped, unequip it.
-      const currentEquipped = this.actor.system.equipped_item_id;
-      let newEquipped = itemId;
-      
-      if (currentEquipped === itemId) {
-          newEquipped = ""; // Unequip
-      }
-
-      // If equipping a weapon, automatically update the Calculator Synergy to match!
-      if (newEquipped !== "") {
-          const synergy = item.system.cost?.quality || "none";
-          await this.actor.update({
-              "system.equipped_item_id": newEquipped,
-              "system.calculator.quality_synergy": synergy
-          });
-          ui.notifications.info(`Equipped ${item.name}. Calculator updated to ${synergy.toUpperCase()} synergy.`);
-      } else {
-          await this.actor.update({ "system.equipped_item_id": "" });
-      }
-  }
-
-
   /** @inheritdoc */
   async getData(options) {
     const context = await super.getData(options);
@@ -67,9 +39,6 @@ export class NarequentaActorSheet extends ActorSheet {
   activateListeners(html) {
     super.activateListeners(html);
     if ( !this.isEditable ) return;
-	
-	// Inside activateListeners
-	html.find(".item-equip").click(this._onEquipItem.bind(this));
 
     // Items
     html.find(".item-control").click(this._onItemControl.bind(this));
@@ -77,7 +46,7 @@ export class NarequentaActorSheet extends ActorSheet {
 
     // Calculator
     html.find(".roll-calculation").click(this._onCalculate.bind(this));
-    html.find(".apply-sheet-damage").click(this._onApplySheetDamage.bind(this)); // NEW LISTENER
+    html.find(".apply-sheet-damage").click(this._onApplySheetDamage.bind(this));
 
     // Waning Toggle & Button
     html.find(".waning-toggle").change(ev => {
@@ -101,7 +70,7 @@ export class NarequentaActorSheet extends ActorSheet {
   /* -------------------------------------------- */
   /* REST & RECOVERY LOGIC                       */
   /* -------------------------------------------- */
-  // ... (Keep existing _onLongRest and _onShortRest same as before) ...
+  
   async _onLongRest(event) {
     event.preventDefault();
     const actor = this.actor;
@@ -130,7 +99,6 @@ export class NarequentaActorSheet extends ActorSheet {
   async _onShortRest(event) {
     event.preventDefault();
     const actor = this.actor;
-    // ... (Copy the previously provided _onShortRest function here) ...
     const content = `
     <div class="narequenta">
         <div class="form-group">
@@ -209,11 +177,8 @@ export class NarequentaActorSheet extends ActorSheet {
     d.render(true);
   }
 
-  // ... (Keep _onWaningPhase as provided previously) ...
   async _onWaningPhase(event) {
       event.preventDefault();
-      // ... [Code omitted for brevity, copy from previous turn] ...
-      // Ensure the content generation uses the individual roll logic
       const actor = this.actor;
       const essenceKeys = ["vitalis", "motus", "sensus", "verbum", "anima"];
       const essenceLabels = { "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS", "verbum": "VERBUM", "anima": "ANIMA" };
@@ -230,10 +195,20 @@ export class NarequentaActorSheet extends ActorSheet {
               <td id="display-${key}" style="font-size:0.8em; color:#666;">-</td>
           </tr>`;
       });
-      const content = `<div class="narequenta">...<select id="focus-select" style="width:100%">${essenceDropdown}</select>...<table class="nq-table" style="width:100%"><thead><tr><th>Essence</th><th>Dice</th><th>Roll</th><th>Loss</th><th>Info</th></tr></thead><tbody>${rowsHTML}</tbody></table></div></div>`;
+      const content = `<div class="narequenta">
+      <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-weight:bold;">Select Refinement Focus (Higher Risk/Reward):</label>
+          <select id="focus-select" style="width:100%">${essenceDropdown}</select>
+          <p style="font-size:0.8em; margin-top:5px;">The Focus Essence rolls <strong>2d6</strong>. Others roll <strong>1d6</strong>.</p>
+      </div>
+      <hr>
+      <table class="nq-table" style="width:100%">
+          <thead><tr><th>Essence</th><th>Dice</th><th>Roll</th><th>Loss</th><th>Info</th></tr></thead>
+          <tbody>${rowsHTML}</tbody>
+      </table>
+      </div>`;
       
       const performWaning = async (html, dialogInstance) => {
-          // ... [Previous logic for apply] ...
           const focusKey = html.find("#focus-select").val();
           const updates = {};
           let chatOutput = "";
@@ -257,7 +232,6 @@ export class NarequentaActorSheet extends ActorSheet {
 
       const d = new Dialog({ title: `The Waning: ${actor.name}`, content: content, buttons: { apply: { icon: '<i class="fas fa-check"></i>', label: "Apply All Changes", callback: (html) => performWaning(html, d) } },
           render: (html) => {
-              // ... [Highlight and Roll Logic] ...
               const updateHighlights = () => {
                   const focusKey = html.find("#focus-select").val();
                   essenceKeys.forEach(k => { html.find(`#row-${k}`).removeClass("nq-focus-highlight"); html.find(`#formula-${k}`).text("1d6"); });
@@ -280,7 +254,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* CONTESTED ROLL SUITE (Updates Sheet Data)   */
+  /* CONTESTED ROLL SUITE                        */
   /* -------------------------------------------- */
 
   _onLaunchContest(event) {
@@ -292,14 +266,12 @@ export class NarequentaActorSheet extends ActorSheet {
       let count = 0;
 
       canvas.tokens.placeables.forEach(t => {
-          // 1. Basic Checks: Must have actor, must not be self
           if (!t.actor || t.actor.id === attacker.id) return; 
-
-          // 2. NEW CHECK: Skip if HP is 0 or less
+          
+          // FILTER: Skip dead targets (HP <= 0)
           const hp = t.actor.system.resources?.hp?.value || 0;
           if (hp <= 0) return;
 
-          // 3. Build Option HTML
           const opt = `<option value="${t.id}">${t.name}</option>`;
           if (t.actor.type === "character") pcOptions += opt;
           else npcOptions += opt;
@@ -307,7 +279,7 @@ export class NarequentaActorSheet extends ActorSheet {
       });
 
       if (count === 0) {
-          ui.notifications.warn("No valid targets found (Dead actors excluded).");
+          ui.notifications.warn("No valid (alive) targets found on the current scene.");
           return;
       }
 
@@ -329,7 +301,7 @@ export class NarequentaActorSheet extends ActorSheet {
           content: `
           <form style="margin-bottom:10px;">
               <div class="form-group">
-                  <label style="font-weight:bold;">Target:</label>
+                  <label style="font-weight:bold;">Target (Alive):</label>
                   <select id="contest-target" style="width:100%; margin-bottom:10px;">${targetList}</select>
               </div>
               <div class="form-group">
@@ -352,13 +324,19 @@ export class NarequentaActorSheet extends ActorSheet {
                       
                       const target = targetToken.actor;
                       
-                      const dTier = target.system.resources?.action_surges?.max || target.system.tier || 0;
+                      let dTier = 0;
+                      if (target.type === 'character') {
+                           dTier = target.system.resources?.action_surges?.max || 0;
+                      } else {
+                           dTier = target.system.tier || 0;
+                      }
+
                       const dEcur = target.system.essences[essenceKey]?.value || 0; 
                       const essenceLabel = essenceKey.charAt(0).toUpperCase() + essenceKey.slice(1);
 
                       await attacker.update({
                           "system.calculator.target_name": `${target.name} (${essenceLabel})`,
-                          "system.calculator.target_id": targetId, // STORE TARGET ID
+                          "system.calculator.target_id": targetId, 
                           "system.calculator.target_tier": dTier,
                           "system.calculator.target_ecur": dEcur,
                           "system.calculator.defense_roll": 0, 
@@ -374,7 +352,7 @@ export class NarequentaActorSheet extends ActorSheet {
   /* -------------------------------------------- */
   /* SHEET CALCULATOR ROLLS                      */
   /* -------------------------------------------- */
-  // ... (Keep _onRollSheetCalc and _onItemControl etc) ...
+  
   async _onRollSheetCalc(event) {
       event.preventDefault();
       const btn = $(event.currentTarget);
@@ -421,8 +399,8 @@ export class NarequentaActorSheet extends ActorSheet {
     if (item) item.roll(); 
   }
 
-// --- MODIFIED CALCULATE FUNCTION (v0.9.3 Compliance) ---
-async _onCalculate(event) {
+  // --- MODIFIED CALCULATE FUNCTION (With Visible Formulas & reset) ---
+  async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
       const targetName = calc.target_name || "Target";
@@ -434,7 +412,6 @@ async _onCalculate(event) {
       const Defender_Ecur = Number(calc.target_ecur) || 0;
       const Defender_Tier = Number(calc.target_tier) || 0;
 
-      // Determine Attacker Tier for DTA
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
           Attacker_Tier = this.actor.system.resources.action_surges.max || 0;
@@ -442,22 +419,14 @@ async _onCalculate(event) {
           Attacker_Tier = this.actor.system.tier || 0;
       }
 
-      // --- 1. CALCULATIONS (Fixed A_FP Logic) ---
-      
-      // A_FP: 100 - (Roll - Prof). No division.
+      // --- 1. CALCULATIONS ---
       const A_FP = 100 - (Attacker_d100 - R_prof);
-      
-      // D_Margin: Defender Roll - E_cur
       const D_Margin = Defender_d100 - Defender_Ecur;
-      
-      // M_Defense: Tier * 5.5
       const M_Defense = Defender_Tier * 5.5;
 
-      // Raw Damage Summation
       let rawDamage = (A_FP + D_Margin - M_Defense + R_prof);
       if (rawDamage < 1) rawDamage = 1;
 
-      // Tier Multiplier (M_DTA)
       let multiplier = 1.0;
       const diff = Attacker_Tier - Defender_Tier;
       if (diff >= 1) multiplier = 1.25;
@@ -467,8 +436,6 @@ async _onCalculate(event) {
       if (diff <= -2) multiplier = 0.50;
 
       const finalDamage = Math.floor(rawDamage * multiplier);
-
-      // Attrition (Medium Weight default: 15 - floor(R_prof/2))
       const attritionCost = Math.max(0, 15 - Math.floor(R_prof / 2));
 
       // --- 2. UPDATE SHEET ---
@@ -477,14 +444,12 @@ async _onCalculate(event) {
           "system.calculator.last_damage": finalDamage 
       });
 
-      // --- 3. CONSTRUCT CHAT HTML (With Visible Formulas) ---
-      
-      // Styles for the table look
+      // --- 3. CONSTRUCT CHAT HTML ---
       const containerStyle = "font-family: 'Signika', sans-serif; color: #191813; background: #e8e8e3; border: 1px solid #999; padding: 5px;";
       const headerStyle = "font-weight: bold; font-size: 1.5em; border-bottom: 2px solid #333; margin-bottom: 5px; line-height: 1.2;";
       const rowStyle = "display: flex; justify-content: space-between; padding: 4px 8px; font-size: 0.95em;";
-      const greyRow = "background-color: rgba(0, 0, 0, 0.06);"; // The grey bar
-      const formulaStyle = "font-size: 0.85em; color: #444; margin-left: 5px;"; // Style for the (100 - [33-23]) text
+      const greyRow = "background-color: rgba(0, 0, 0, 0.06);";
+      const formulaStyle = "font-size: 0.85em; color: #444; margin-left: 5px;"; 
 
       const content = `
       <div class="narequenta chat-card" data-defender-token-id="${targetId}" data-damage="${finalDamage}" style="${containerStyle}">
@@ -537,7 +502,8 @@ async _onCalculate(event) {
                   style="background: #8b0000; color: white; border: 1px solid #333; width: 100%; font-weight: bold; padding: 6px;" 
                   data-defender-token-id="${targetId}" 
                   data-damage="${finalDamage}"
-                  data-attacker-uuid="${this.actor.uuid}"> <i class="fas fa-heart-broken"></i> Apply Damage
+                  data-attacker-uuid="${this.actor.uuid}">
+                  <i class="fas fa-heart-broken"></i> Apply Damage
               </button>
           </div>
       </div>`;
@@ -548,9 +514,41 @@ async _onCalculate(event) {
       });
   }
 
-      // 4. SYNC: Update YOUR calculator to show the new HP
-      await this.actor.update({ "system.calculator.target_ecur": newHP });
+  async _onApplySheetDamage(event) {
+      event.preventDefault();
+      const calc = this.actor.system.calculator;
+      const targetId = calc.target_id;
+      const damage = Number(calc.last_damage);
 
+      if (!targetId) {
+          ui.notifications.warn("No target selected or ID lost. Please re-select target.");
+          return;
+      }
+      if (!damage || damage <= 0) {
+          ui.notifications.warn("No valid damage calculated to apply.");
+          return;
+      }
+
+      const token = canvas.tokens.get(targetId);
+      if (!token || !token.actor) {
+          ui.notifications.warn("Target token not found on current scene.");
+          return;
+      }
+
+      const currentHP = Number(token.actor.system.resources.hp.value) || 0;
+      const newHP = Math.max(0, currentHP - damage);
+
+      await token.actor.update({ "system.resources.hp.value": newHP });
+      
+      if (newHP === 0 && currentHP > 0) {
+          const isDead = token.actor.effects.some(e => e.statusId === "dead");
+          if (!isDead) {
+              await token.actor.toggleStatusEffect("dead", { overlay: true });
+              ChatMessage.create({ content: `<strong>${token.name}</strong> has been defeated!` });
+          }
+      }
+
+      await this.actor.update({ "system.calculator.target_ecur": newHP });
       ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
   }
 }
