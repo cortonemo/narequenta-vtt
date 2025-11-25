@@ -4,6 +4,7 @@
  */
 
 // Import Modules
+
 import { NarequentaActor } from "./actor.js";
 import { SimpleItem } from "./item.js"; 
 import { SimpleItemSheet } from "./item-sheet.js";
@@ -22,9 +23,8 @@ Hooks.once("ready", () => {
         const btn = $(ev.currentTarget);
         const targetTokenId = btn.data("defender-token-id");
         const damage = parseInt(btn.data("damage"));
-        const attackerUuid = btn.data("attacker-uuid"); // 1. Get the Attacker ID
+        const attackerUuid = btn.data("attacker-uuid");
 
-        // --- Apply Damage to Target ---
         const token = canvas.tokens.get(targetTokenId);
         if (!token || !token.actor) {
             ui.notifications.warn("Target token not found on current scene.");
@@ -48,7 +48,6 @@ Hooks.once("ready", () => {
         ui.notifications.info(`Applied ${damage} damage to ${token.name}.`);
         btn.replaceWith(`<div style="color: #8b0000; font-weight:bold; text-align:center;">Damage Applied</div>`);
 
-        // --- NEW: Reset Attacker Rolls ---
         if (attackerUuid) {
             const attacker = await fromUuid(attackerUuid);
             if (attacker) {
@@ -56,7 +55,6 @@ Hooks.once("ready", () => {
                     "system.calculator.attack_roll": 0,
                     "system.calculator.prof_roll": 0,
                     "system.calculator.defense_roll": 0
-                    // We keep target info (E_cur/Tier) so you can attack again if needed
                 });
             }
         }
