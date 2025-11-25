@@ -524,9 +524,9 @@ export class NarequentaActorSheet extends ActorSheet {
           ui.notifications.warn("No target selected or ID lost. Please re-select target.");
           return;
       }
-      if (!damage || damage <= 0) {
-          ui.notifications.warn("No valid damage calculated to apply.");
-          return;
+      if (damage === undefined || damage < 0) { // Allow 0 damage, just warn if undefined
+           ui.notifications.warn("No valid damage calculated.");
+           return;
       }
 
       const token = canvas.tokens.get(targetId);
@@ -535,20 +535,33 @@ export class NarequentaActorSheet extends ActorSheet {
           return;
       }
 
+      // 1. Calculate New HP
       const currentHP = Number(token.actor.system.resources.hp.value) || 0;
       const newHP = Math.max(0, currentHP - damage);
 
+      // 2. Update Target Actor
       await token.actor.update({ "system.resources.hp.value": newHP });
       
-      if (newHP === 0 && currentHP > 0) {
-          const isDead = token.actor.effects.some(e => e.statusId === "dead");
+      // 3. Apply Dead Status (Improved Check)
+      if (newHP <= 0) {
+          // Check if effect already exists to prevent toggling it OFF
+          const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
+          
           if (!isDead) {
               await token.actor.toggleStatusEffect("dead", { overlay: true });
               ChatMessage.create({ content: `<strong>${token.name}</strong> has been defeated!` });
           }
       }
 
-      await this.actor.update({ "system.calculator.target_ecur": newHP });
+      // 4. Update Calculator: Sync HP and RESET ROLLS
+      await this.actor.update({ 
+          "system.calculator.target_ecur": newHP, // Sync HP to show current state
+          "system.calculator.attack_roll": 0,     // Reset
+          "system.calculator.prof_roll": 0,       // Reset
+          "system.calculator.defense_roll": 0,    // Reset
+          "system.calculator.output": `Applied ${damage} Dmg. Rolls Reset.` // Feedback
+      });
+
       ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
   }
 }
