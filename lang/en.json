@@ -14,8 +14,9 @@
   "NAREQUENTA.NotifyInitFormulaUpdated": "Initiative formula updated to",
   "NAREQUENTA.NotifyInitFormulaInvalid": "Initiative formula was invalid",
 
-  "NAREQUENTA.EssenceMax": "Soul's Peak (E_max) [50% Floor]",
-  "NAREQUENTA.EssenceCur": "Active Vigor (E_cur)",
+  "NAREQUENTA.Health": "Hit Points",
+  "NAREQUENTA.EssenceMax": "Soul's Peak",
+  "NAREQUENTA.EssenceCur": "Active Vigor",
   "NAREQUENTA.EssenceTier": "Tier / Waning Yield",
   "NAREQUENTA.ActionSurges": "Surges of Intent",
 

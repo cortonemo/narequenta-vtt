@@ -9,7 +9,7 @@
             {{!-- Resources Row (HP & Action Surges & Rests) --}}
             <div class="resource-row">
                 <div class="resource">
-                    <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
+                    <label>{{localize "NAREQUENTA.Health"}}</label>
                     <input type="number" name="system.resources.hp.value" value="{{systemData.resources.hp.value}}" style="width: 50px;">
                     <span> / </span>
                     <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
@@ -56,10 +56,12 @@
             
             {{!-- UNIFIED ESSENCE GRID --}}
             <div class="essence-grid-container">
-                <div class="essence-header" style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;"> <span>{{localize "NAREQUENTA.TabEssences"}}</span>
-					<span>E_MAX</span>
-					<span>E_CUR</span>
-					<span>ZONE</span> <span>TIER</span>
+                <div class="essence-header">
+					<span>{{localize "NAREQUENTA.TabEssences"}}</span>
+					<span style="font-size: 0.8em;">{{localize "NAREQUENTA.EssenceMax"}}</span>
+					<span style="font-size: 0.8em;">{{localize "NAREQUENTA.EssenceCur"}}</span>
+					
+					<span>{{localize "NAREQUENTA.EssenceTier"}}</span>
 					<span>DICE</span>
 				</div>
 

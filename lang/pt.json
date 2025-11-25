@@ -14,8 +14,9 @@
   "NAREQUENTA.NotifyInitFormulaUpdated": "Fórmula de iniciativa atualizada para",
   "NAREQUENTA.NotifyInitFormulaInvalid": "Fórmula de iniciativa inválida",
 
-  "NAREQUENTA.EssenceMax": "Auge da Alma (E_max) [Mínimo 50%]",
-  "NAREQUENTA.EssenceCur": "Vigor Ativo (E_cur)",
+  "NAREQUENTA.Health": "Hit Points",
+  "NAREQUENTA.EssenceMax": "Auge da Alma",
+  "NAREQUENTA.EssenceCur": "Vigor Ativo",
   "NAREQUENTA.EssenceTier": "Nível / Rendimento do Declínio",
   "NAREQUENTA.ActionSurges": "Surtos de Intenção",
 
