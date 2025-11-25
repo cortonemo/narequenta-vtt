@@ -93,7 +93,7 @@ Hooks.once("ready", () => {
         const btn = $(ev.currentTarget);
         const targetTokenId = btn.data("defender-token-id");
         const damage = parseInt(btn.data("damage"));
-        const attackerUuid = btn.data("attacker-uuid"); // Get Attacker ID to reset rolls
+        const attackerUuid = btn.data("attacker-uuid"); 
 
         // 1. Locate Target
         const token = canvas.tokens.get(targetTokenId);
@@ -102,7 +102,7 @@ Hooks.once("ready", () => {
             return;
         }
 
-        // 2. Permission Check for NPCs
+        // 2. Permission Check for NPCs (Players can't delete NPCs unless GM)
         if (!game.user.isGM && token.actor.type === "npc") {
              ui.notifications.warn("You do not have permission to update this Adversary.");
              return;
@@ -113,25 +113,30 @@ Hooks.once("ready", () => {
         const newHP = Math.max(0, currentHP - damage);
         await token.actor.update({ "system.resources.hp.value": newHP });
 
-        // 4. Apply Dead Status if HP hits 0
-        if (newHP === 0 && currentHP > 0) {
-            const isDead = token.actor.effects.some(e => e.statusId === "dead");
-            if (!isDead) await token.actor.toggleStatusEffect("dead", { overlay: true });
+        // 4. Apply Dead Status (Fixed Logic)
+        if (newHP <= 0) {
+            // Check via statusId OR statuses set (V11+ compatibility)
+            const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
+            
+            if (!isDead) {
+                await token.actor.toggleStatusEffect("dead", { overlay: true });
+            }
         }
 
         // 5. Update Chat UI
         ui.notifications.info(`Applied ${damage} damage to ${token.name}.`);
         btn.replaceWith(`<div style="color: #8b0000; font-weight:bold; text-align:center;">Damage Applied</div>`);
 
-        // 6. RESET ATTACKER ROLLS (The new feature)
+        // 6. RESET ATTACKER ROLLS
         if (attackerUuid) {
             const attacker = await fromUuid(attackerUuid);
             if (attacker) {
                 await attacker.update({
                     "system.calculator.attack_roll": 0,
                     "system.calculator.prof_roll": 0,
-                    "system.calculator.defense_roll": 0
-                    // Note: We intentionally leave target_ecur/tier so you can attack again if needed
+                    "system.calculator.defense_roll": 0,
+                    // Sync the target's new HP to the attacker's calculator so they see the result immediately
+                    "system.calculator.target_ecur": newHP 
                 });
             }
         }
