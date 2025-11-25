@@ -292,7 +292,14 @@ export class NarequentaActorSheet extends ActorSheet {
       let count = 0;
 
       canvas.tokens.placeables.forEach(t => {
+          // 1. Basic Checks: Must have actor, must not be self
           if (!t.actor || t.actor.id === attacker.id) return; 
+
+          // 2. NEW CHECK: Skip if HP is 0 or less
+          const hp = t.actor.system.resources?.hp?.value || 0;
+          if (hp <= 0) return;
+
+          // 3. Build Option HTML
           const opt = `<option value="${t.id}">${t.name}</option>`;
           if (t.actor.type === "character") pcOptions += opt;
           else npcOptions += opt;
@@ -300,7 +307,7 @@ export class NarequentaActorSheet extends ActorSheet {
       });
 
       if (count === 0) {
-          ui.notifications.warn("No valid targets found on the current scene.");
+          ui.notifications.warn("No valid targets found (Dead actors excluded).");
           return;
       }
 
@@ -421,18 +428,13 @@ async _onCalculate(event) {
       const targetName = calc.target_name || "Target";
       const targetId = calc.target_id || ""; 
       
-      // 1. GET INPUTS
-      let Attacker_d100 = Number(calc.attack_roll) || 0;
-      let R_prof = Number(calc.prof_roll) || 0; // Raw roll result
-      
+      const Attacker_d100 = Number(calc.attack_roll) || 0;
+      const R_prof = Number(calc.prof_roll) || 0;
       const Defender_d100 = Number(calc.defense_roll) || 0;
       const Defender_Ecur = Number(calc.target_ecur) || 0;
       const Defender_Tier = Number(calc.target_tier) || 0;
-      
-      // Get Synergy Selection (Ensure you added the dropdown to HTML)
-      const Synergy = calc.quality_synergy || "none";
 
-      // 2. DETERMINE ATTACKER TIER
+      // Determine Attacker Tier for DTA
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
           Attacker_Tier = this.actor.system.resources.action_surges.max || 0;
@@ -440,135 +442,103 @@ async _onCalculate(event) {
           Attacker_Tier = this.actor.system.tier || 0;
       }
 
-      // 3. APPLY SYNERGIES (PRE-CALCULATION)
-      // Motus: Adds +2 to the Proficiency Result (Accuracy)
-      let effectiveProf = R_prof;
-      if (Synergy === "motus") effectiveProf += 2;
-
-      // Sensus: Expands Critical Range from 1-5 to 1-15
-      let critThreshold = 5; 
-      if (Synergy === "sensus") critThreshold = 15;
-
-      // 4. CHECK CRITICAL (THE SPARK)
-      // v0.9.3: If Crit, treat the d100 roll as a "1" for calculation purposes.
-      let isCrit = false;
-      let effectiveRoll = Attacker_d100;
+      // --- 1. CALCULATIONS (Fixed A_FP Logic) ---
       
-      if (Attacker_d100 <= critThreshold) {
-          isCrit = true;
-          effectiveRoll = 1; 
-      }
-
-      // 5. CALCULATE A_FP (HALF-POTENTIAL)
-      // v0.9.3 Formula: floor( (100 - (Roll - R_prof)) / 2 )
-      // We use effectiveRoll (1 if Crit) and effectiveProf (Motus bonus included)
-      const rawPotential = 100 - (effectiveRoll - effectiveProf);
-      const A_FP = Math.floor(rawPotential / 2);
-
+      // A_FP: 100 - (Roll - Prof). No division.
+      const A_FP = 100 - (Attacker_d100 - R_prof);
+      
+      // D_Margin: Defender Roll - E_cur
       const D_Margin = Defender_d100 - Defender_Ecur;
+      
+      // M_Defense: Tier * 5.5
       const M_Defense = Defender_Tier * 5.5;
 
-      // 6. BASE DAMAGE CALCULATION
-      // D_Final = (A_FP - M_Def + D_Margin + R_prof)
-      let rawDamage = (A_FP - M_Defense + D_Margin + effectiveProf);
-      
-      // Vitalis Synergy: Add Tier Value to Damage
-      if (Synergy === "vitalis") {
-          rawDamage += Attacker_Tier;
-      }
+      // Raw Damage Summation
+      let rawDamage = (A_FP + D_Margin - M_Defense + R_prof);
+      if (rawDamage < 1) rawDamage = 1;
 
-      // Floor damage at 1 before multiplier
-      if (rawDamage < 1) rawDamage = 1; 
-
-      // 7. CALCULATE TIER MULTIPLIER (M_DTA)
+      // Tier Multiplier (M_DTA)
       let multiplier = 1.0;
-      let tierDiff = Attacker_Tier - Defender_Tier;
-      
-      // Verbum Synergy: Ignore one step of Tier Disadvantage
-      // (Only helps if you are lower tier than opponent)
-      if (Synergy === "verbum" && tierDiff < 0) {
-          tierDiff += 1; 
-      }
-
-      if (tierDiff >= 1) multiplier = 1.25;      
-      if (tierDiff >= 2) multiplier = 1.50;      
-      if (tierDiff === 0) multiplier = 1.00;
-      if (tierDiff === -1) multiplier = 0.75;
-      if (tierDiff <= -2) multiplier = 0.50;
+      const diff = Attacker_Tier - Defender_Tier;
+      if (diff >= 1) multiplier = 1.25;
+      if (diff >= 2) multiplier = 1.50;
+      if (diff === 0) multiplier = 1.00;
+      if (diff === -1) multiplier = 0.75;
+      if (diff <= -2) multiplier = 0.50;
 
       const finalDamage = Math.floor(rawDamage * multiplier);
-      
-      // 8. ATTRITION CALCULATION (Updated for Equipped Weapon)
-      const equippedId = this.actor.system.equipped_item_id;
-      const equippedItem = this.actor.items.get(equippedId);
-      
-      let weightClass = "medium"; // Default
-      if (equippedItem) {
-          weightClass = equippedItem.system.weight_class || "medium";
-      }
 
-      // Base Costs: Light=10, Medium=15, Heavy=20
-      let baseCost = 15;
-      if (weightClass === "light") baseCost = 10;
-      if (weightClass === "heavy") baseCost = 20;
+      // Attrition (Medium Weight default: 15 - floor(R_prof/2))
+      const attritionCost = Math.max(0, 15 - Math.floor(R_prof / 2));
 
-      // Formula: Base Cost - floor(R_prof/2)
-      const attritionReduction = Math.floor(effectiveProf / 2);
-      let calculatedAttrition = Math.max(0, baseCost - attritionReduction);
-
-      // Crit Success halves the Attrition Cost
-      if (isCrit) {
-          calculatedAttrition = Math.floor(calculatedAttrition / 2);
-      }
-
-      // 9. UPDATE SHEET DISPLAY
-      const critText = isCrit ? " (CRIT!)" : "";
-      const resultString = `Damage: ${finalDamage} (x${multiplier})${critText}`;
-
+      // --- 2. UPDATE SHEET ---
       await this.actor.update({
-          "system.calculator.output": resultString,
+          "system.calculator.output": `${finalDamage} Damage (x${multiplier})`,
           "system.calculator.last_damage": finalDamage 
       });
 
-      // 10. GENERATE CHAT CARD (Update the Attrition section)
-      // We now show the SPECIFIC calculated cost for the equipped weapon
-      const attritionHtml = `
-          <div style="background: rgba(0,0,0,0.05); padding: 5px; border-radius: 4px; font-size: 0.9em; color: #333; margin-top: 10px;">
-              <div style="font-weight:bold; text-align:center; margin-bottom:2px;">
-                Attrition Cost ${equippedItem ? `(${equippedItem.name})` : ''}
-                ${isCrit ? '<br><span style="color:green;">(HALVED BY CRIT)</span>' : ''}
-              </div>
-              <div style="text-align:center; font-size: 1.2em; font-weight: bold; color: #8b0000;">
-                  -${calculatedAttrition}% E_cur
-              </div>
-              <div style="text-align:center; font-size: 0.8em; margin-top:2px; font-style:italic;">
-                ${weightClass.charAt(0).toUpperCase() + weightClass.slice(1)} (${baseCost}) - floor(${effectiveProf}/2)
-              </div>
-          </div>
-      `;
+      // --- 3. CONSTRUCT CHAT HTML (With Visible Formulas) ---
+      
+      // Styles for the table look
+      const containerStyle = "font-family: 'Signika', sans-serif; color: #191813; background: #e8e8e3; border: 1px solid #999; padding: 5px;";
+      const headerStyle = "font-weight: bold; font-size: 1.5em; border-bottom: 2px solid #333; margin-bottom: 5px; line-height: 1.2;";
+      const rowStyle = "display: flex; justify-content: space-between; padding: 4px 8px; font-size: 0.95em;";
+      const greyRow = "background-color: rgba(0, 0, 0, 0.06);"; // The grey bar
+      const formulaStyle = "font-size: 0.85em; color: #444; margin-left: 5px;"; // Style for the (100 - [33-23]) text
 
       const content = `
-      <div class="narequenta chat-card" data-defender-token-id="${targetId}" data-damage="${finalDamage}">
-          <header class="card-header flexrow" style="border-bottom: 2px solid #333; margin-bottom: 5px;">
-              <h3>vs ${targetName} <span style="color:#8b0000;">${critText}</span></h3>
-          </header>
-          <div class="card-content" style="padding: 5px;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
-                 <span><strong>Roll:</strong> ${Attacker_d100} ${isCrit ? '(Treat as 1)' : ''}</span>
-                 <span><strong>Prof:</strong> ${R_prof} ${Synergy === 'motus' ? '(+2)' : ''}</span>
-              </div>
-              <hr>
-              ${breakdownHtml}
-              <hr>
-              <div style="font-size: 1.5em; text-align: center; font-weight: bold; margin: 10px 0; color: #8b0000;">
-                  ${finalDamage} Damage
-              </div>
+      <div class="narequenta chat-card" data-defender-token-id="${targetId}" data-damage="${finalDamage}" style="${containerStyle}">
+          
+          <div style="${headerStyle}">
+              vs ${targetName}
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr auto; margin-bottom: 15px; font-size: 0.9em; padding: 0 5px;">
+              <div style="font-weight: bold;">${this.actor.name}</div>
+              <div style="text-align: right;">Roll: ${Attacker_d100} (Prof: ${R_prof})</div>
               
-              ${attritionHtml} <div style="text-align:center; margin-top:10px;">
-                  <button class="apply-damage-btn" style="background:#8b0000; color:white; width:90%;" data-defender-token-id="${targetId}" data-damage="${finalDamage}">
-                      <i class="fas fa-heart-broken"></i> Apply Damage
-                  </button>
+              <div style="font-weight: bold;">${targetName}</div>
+              <div style="text-align: right;">Roll: ${Defender_d100} (E_cur: ${Defender_Ecur})</div>
+          </div>
+          
+          <div style="border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; margin-bottom: 15px; padding: 5px 0;">
+              <div style="${rowStyle}">
+                  <div><strong>A_FP</strong> <span style="${formulaStyle}">(100 - [${Attacker_d100}-${R_prof}]):</span></div>
+                  <span>${A_FP}</span>
               </div>
+              <div style="${rowStyle} ${greyRow}">
+                  <div><strong>D_Margin</strong> <span style="${formulaStyle}">(${Defender_d100}-${Defender_Ecur}):</span></div>
+                  <span>${D_Margin}</span>
+              </div>
+              <div style="${rowStyle}">
+                  <div><strong>M_Defense</strong> <span style="${formulaStyle}">(${Defender_Tier}*5.5):</span></div>
+                  <span>-${M_Defense}</span>
+              </div>
+              <div style="${rowStyle} ${greyRow}">
+                  <div><strong>R_Prof</strong> <span style="${formulaStyle}">(Bonus):</span></div>
+                  <span>+${R_prof}</span>
+              </div>
+              <div style="${rowStyle}">
+                  <div><strong>M_DTA</strong> <span style="${formulaStyle}">(Tier ${Attacker_Tier} vs ${Defender_Tier}):</span></div>
+                  <span>x${multiplier}</span>
+              </div>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 5px;">
+              <span style="font-size: 2.0em; font-weight: bold; color: #8b0000; text-shadow: 1px 1px 0px rgba(0,0,0,0.1);">${finalDamage} Damage</span>
+          </div>
+
+          <div style="text-align: center; color: #555; font-size: 0.9em; font-weight: bold; margin-bottom: 15px;">
+              Attrition Cost: -${attritionCost}% E_cur (Motor)
+          </div>
+
+          <div style="text-align:center;">
+              <button class="apply-damage-btn" 
+                  style="background: #8b0000; color: white; border: 1px solid #333; width: 100%; font-weight: bold; padding: 6px;" 
+                  data-defender-token-id="${targetId}" 
+                  data-damage="${finalDamage}"
+                  data-attacker-uuid="${this.actor.uuid}"> <i class="fas fa-heart-broken"></i> Apply Damage
+              </button>
           </div>
       </div>`;
 
@@ -577,49 +547,6 @@ async _onCalculate(event) {
           content: content
       });
   }
-
-  // --- NEW: APPLY DAMAGE FROM SHEET (Fixed Dead Status) ---
-  async _onApplySheetDamage(event) {
-      event.preventDefault();
-      const calc = this.actor.system.calculator;
-      const targetId = calc.target_id;
-      const damage = Number(calc.last_damage);
-
-      if (!targetId) {
-          ui.notifications.warn("No target selected or ID lost. Please re-select target.");
-          return;
-      }
-      if (!damage || damage <= 0) {
-          ui.notifications.warn("No valid damage calculated to apply.");
-          return;
-      }
-
-      const token = canvas.tokens.get(targetId);
-      if (!token || !token.actor) {
-          ui.notifications.warn("Target token not found on current scene.");
-          return;
-      }
-
-      // 1. Calculate New HP
-      const currentHP = Number(token.actor.system.resources.hp.value) || 0;
-      const newHP = Math.max(0, currentHP - damage);
-
-      // 2. Update the Target Actor
-      await token.actor.update({ "system.resources.hp.value": newHP });
-      
-      // 3. Check for "Down/Dead" Status
-      if (newHP === 0 && currentHP > 0) {
-          // Use the ACTOR method to toggle the effect. This is the most robust way.
-          const isDead = token.actor.effects.some(e => e.statusId === "dead");
-          if (!isDead) {
-              await token.actor.toggleStatusEffect("dead", { overlay: true });
-              
-              // Optional: Send chat notification
-              ChatMessage.create({
-                  content: `<strong>${token.name}</strong> has been defeated!`
-              });
-          }
-      }
 
       // 4. SYNC: Update YOUR calculator to show the new HP
       await this.actor.update({ "system.calculator.target_ecur": newHP });
