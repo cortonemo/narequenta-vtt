@@ -1,3 +1,22 @@
+Here is the updated **`module/actor-sheet.js`**.
+
+### 🛠️ Changes Implemented
+
+1.  **Long Rest Reset:**
+    Inside `_onLongRest`, I added lines to wipe the `system.calculator` target data (`target_id`, `target_name`, etc.). Now, when you sleep, you "forget" your enemy.
+
+2.  **Full Debug Log in Chat:**
+    Inside `_onCalculate`, I overhauled the Chat Card output. It now includes a **"DEBUG MATH"** section at the bottom of the card.
+
+      * It shows every variable: `A_FP`, `M_Defense`, `D_Margin`, `ItemBonus`, etc.
+      * It shows the **Raw Formula** results before and after the "Hard Floor" check.
+      * It shows the **Attrition** math.
+
+-----
+
+### 📂 Full Script (`module/actor-sheet.js`)
+
+```javascript
 import { EntitySheetHelper } from "./helper.js";
 import { ATTRIBUTE_TYPES } from "./constants.js";
 
@@ -68,7 +87,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* REST & RECOVERY LOGIC                        */
+  /* REST & RECOVERY LOGIC (UPDATED: Unlocks Target) */
   /* -------------------------------------------- */
   
   async _onLongRest(event) {
@@ -76,22 +95,37 @@ export class NarequentaActorSheet extends ActorSheet {
     const actor = this.actor;
     const confirmed = await Dialog.confirm({
       title: "Renewal (Long Rest)",
-      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to <strong>100%</strong>.</p>"
+      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to <strong>100%</strong>.<br><strong>Target Lock will be cleared.</strong></p>"
     });
     if (confirmed) {
       const updates = {};
       const essences = actor.system.essences;
+      
+      // 1. Restore Essences
       for (const [key, essence] of Object.entries(essences)) {
         updates[`system.essences.${key}.value`] = 100;
       }
+      
+      // 2. Restore Action Surges (PC Only)
       if (actor.type === "character") {
         updates[`system.resources.action_surges.value`] = actor.system.resources.action_surges.max;
       }
+      
+      // 3. Restore HP
       updates[`system.resources.hp.value`] = actor.system.resources.hp.max;
+
+      // 4. CLEAR TARGET LOCK (Debug/Reset)
+      updates[`system.calculator.target_id`] = "";
+      updates[`system.calculator.target_name`] = "None";
+      updates[`system.calculator.target_tier`] = 0;
+      updates[`system.calculator.target_ecur`] = 0;
+      updates[`system.calculator.defense_roll`] = 0;
+      updates[`system.calculator.output`] = "Rest Complete. Target Unlocked.";
+
       await actor.update(updates);
       ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: actor }),
-        content: `<div class="narequenta chat-card"><h3>Renewal</h3><p>Fully Restored.</p></div>`
+        content: `<div class="narequenta chat-card"><h3>Renewal</h3><p>Fully Restored & Targets Cleared.</p></div>`
       });
     }
   }
@@ -394,7 +428,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* ITEM ROLL -> CALCULATOR LOADER (NEW)         */
+  /* ITEM ROLL -> CALCULATOR LOADER               */
   /* -------------------------------------------- */
   async _onItemRoll(event) {
     event.preventDefault();
@@ -437,7 +471,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* CALCULATE LOGIC (UPDATED: Hit Check + Item)  */
+  /* CALCULATE LOGIC (UPDATED: DEBUG LOG)         */
   /* -------------------------------------------- */
   async _onCalculate(event) {
       event.preventDefault();
@@ -455,7 +489,6 @@ export class NarequentaActorSheet extends ActorSheet {
       const itemBonus = Number(calc.item_bonus) || 0;
       const itemWeight = Number(calc.item_weight) || 15; 
       const itemName = calc.item_name || "Improvised Action";
-      // If no item loaded, default to 100% threshold (Always Hit) unless manually set
       const activeMotorVal = (calc.active_motor_val !== undefined) ? Number(calc.active_motor_val) : 100;
 
       let Attacker_Tier = 0;
@@ -498,24 +531,30 @@ export class NarequentaActorSheet extends ActorSheet {
       let finalDamage = 0;
       let multiplier = 1.0;
       let baseDamage = 0;
+      // Debug Variables
+      let A_FP = 0;
+      let D_Margin = 0;
+      let M_Defense = 0;
+      let rawCalc = 0;
+      let diff = 0;
       
       if (isHit) {
           // A_FP (Half-Potential)
-          let A_FP = 100 - effectiveRoll;
+          A_FP = 100 - effectiveRoll;
           if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof); // Crit treats d100 as 1
 
-          const D_Margin = Defender_d100 - Defender_Ecur;
-          const M_Defense = Defender_Tier * 5.5;
+          D_Margin = Defender_d100 - Defender_Ecur;
+          M_Defense = Defender_Tier * 5.5;
 
           // Raw Calculation + ITEM BONUS
-          let rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
+          rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
 
           // Hard Floor (v0.9.4): Damage cannot be lower than Proficiency Roll
           baseDamage = Math.max(R_prof, rawCalc);
           if (baseDamage < 1) baseDamage = 1;
 
           // Tier Multiplier
-          const diff = Attacker_Tier - Defender_Tier;
+          diff = Attacker_Tier - Defender_Tier;
           if (diff >= 1) multiplier = 1.25;      
           if (diff >= 2) multiplier = 1.50;      
           if (diff === 0) multiplier = 1.00;     
@@ -538,7 +577,7 @@ export class NarequentaActorSheet extends ActorSheet {
           "system.calculator.last_damage": finalDamage 
       });
 
-      // --- 5. CHAT OUTPUT ---
+      // --- 5. CHAT OUTPUT (WITH DEBUG LOG) ---
       const containerStyle = "font-family: 'Signika', sans-serif; color: #191813; background: #e8e8e3; border: 1px solid #999; padding: 5px;";
       
       const content = `
@@ -556,11 +595,6 @@ export class NarequentaActorSheet extends ActorSheet {
           </div>
 
           ${isHit ? `
-          <div style="background:rgba(0,0,0,0.05); padding:5px; font-size:0.85em;">
-             <strong>Item Bonus:</strong> +${itemBonus}<br>
-             <strong>Tier Mult:</strong> x${multiplier}<br>
-             <strong>Hard Floor Used:</strong> ${baseDamage === R_prof ? "Yes" : "No"} (${R_prof})
-          </div>
           <div style="text-align: center; margin: 10px 0;">
               <span style="font-size: 1.8em; font-weight: bold; color: #8b0000;">${finalDamage} Damage</span>
           </div>
@@ -575,6 +609,30 @@ export class NarequentaActorSheet extends ActorSheet {
              data-defender-token-id="${targetId}" data-damage="${finalDamage}">
              Apply Damage
           </button>` : ``}
+
+          <div style="font-family: monospace; font-size: 0.8em; background: #f0f0f0; border: 1px dashed #666; margin-top: 10px; padding: 5px;">
+             <strong>DEBUG MATH LOG</strong><br>
+             ------------------<br>
+             <strong>Hit Logic:</strong><br>
+             Attacker Roll: ${Attacker_d100}<br>
+             Prof Roll (R_prof): ${R_prof}<br>
+             Effective: ${effectiveRoll} (Needs <= ${activeMotorVal})<br>
+             <br>
+             <strong>Damage Logic:</strong><br>
+             A_FP (100 - Eff): ${A_FP}<br>
+             M_Defense (Tier*5.5): ${M_Defense}<br>
+             D_Margin: ${D_Margin}<br>
+             Item Bonus: ${itemBonus}<br>
+             Raw: ${A_FP.toFixed(1)} - ${M_Defense.toFixed(1)} + ${D_Margin} + ${R_prof} + ${itemBonus} = <strong>${rawCalc.toFixed(2)}</strong><br>
+             <br>
+             <strong>Floor Check:</strong><br>
+             Max(${R_prof}, ${rawCalc.toFixed(2)}) = ${baseDamage.toFixed(2)}<br>
+             <br>
+             <strong>Multiplier:</strong><br>
+             Tiers: Att(${Attacker_Tier}) vs Def(${Defender_Tier}) = Diff ${diff}<br>
+             Mult: x${multiplier}<br>
+             Final: ${baseDamage.toFixed(2)} * ${multiplier} = <strong>${finalDamage}</strong>
+          </div>
       </div>`;
 
       ChatMessage.create({
@@ -633,3 +691,4 @@ export class NarequentaActorSheet extends ActorSheet {
       ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
   }
 }
+```
