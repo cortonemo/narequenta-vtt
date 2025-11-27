@@ -1,22 +1,3 @@
-Here is the updated **`module/actor-sheet.js`**.
-
-### 🛠️ Changes Implemented
-
-1.  **Long Rest Reset:**
-    Inside `_onLongRest`, I added lines to wipe the `system.calculator` target data (`target_id`, `target_name`, etc.). Now, when you sleep, you "forget" your enemy.
-
-2.  **Full Debug Log in Chat:**
-    Inside `_onCalculate`, I overhauled the Chat Card output. It now includes a **"DEBUG MATH"** section at the bottom of the card.
-
-      * It shows every variable: `A_FP`, `M_Defense`, `D_Margin`, `ItemBonus`, etc.
-      * It shows the **Raw Formula** results before and after the "Hard Floor" check.
-      * It shows the **Attrition** math.
-
------
-
-### 📂 Full Script (`module/actor-sheet.js`)
-
-```javascript
 import { EntitySheetHelper } from "./helper.js";
 import { ATTRIBUTE_TYPES } from "./constants.js";
 
