@@ -7,22 +7,19 @@
             </h1>
             
             <div class="resource-row">
-				<div class="resource">
-					<label>Quantity</label>
-					<input type="number" name="system.quantity" value="{{systemData.quantity}}"/>
-				</div>
-
-				<div class="resource">
-					<label>Weight Class</label>
-					<select name="system.weight_class">
-						{{#select systemData.weight_class}}
-						<option value="light">Light (10% Cost)</option>
-						<option value="medium">Medium (15% Cost)</option>
-						<option value="heavy">Heavy (20% Cost)</option>
-						{{/select}}
-					</select>
-				</div>
-			</div>
+                <div class="resource">
+                    <label>Quantity</label>
+                    <input type="number" name="system.quantity" value="{{systemData.quantity}}"/>
+                </div>
+                <div class="resource">
+                    <label>Weight</label>
+                    <input type="number" name="system.weight" value="{{systemData.weight}}"/>
+                </div>
+                <div class="resource">
+                    <label>Range (m)</label>
+                    <input type="number" name="system.range" value="{{systemData.range}}" placeholder="2"/>
+                </div>
+            </div>
 
             {{!-- Nárëquenta Specific: Motor & Quality Selection --}}
             {{!-- Only show if this item has a cost defined (Ability/Weapon) --}}
@@ -70,10 +67,10 @@
                 <a class="attribute-control" data-action="create" data-group="{{group}}"><i class="fas fa-plus"></i></a>
             </header>
 
-            {{!-- Render the attribute list partial. Note the path fix! --}}
+            {{!-- Render the attribute list partial --}}
             {{> "systems/narequenta/templates/parts/sheet-attributes.html" attributes=systemData.ungroupedAttributes dtypes=dtypes}}
 
-            {{!-- Render the grouped attributes partial. Note the path fix! --}}
+            {{!-- Render the grouped attributes partial --}}
             <div class="groups">
                 {{> "systems/narequenta/templates/parts/sheet-groups.html" attributes=systemData.groupedAttributes groups=systemData.groups dtypes=dtypes}}
                 <div class="group-controls flexrow">
