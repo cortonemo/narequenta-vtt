@@ -420,22 +420,33 @@ export class NarequentaActorSheet extends ActorSheet {
       }
 
       // --- 1. CALCULATIONS ---
+      // A_FP (Half-Potential) calculation
       const A_FP = 100 - (Attacker_d100 - R_prof);
       const D_Margin = Defender_d100 - Defender_Ecur;
       const M_Defense = Defender_Tier * 5.5;
 
-      let rawDamage = (A_FP + D_Margin - M_Defense + R_prof);
-      if (rawDamage < 1) rawDamage = 1;
+      // Calculate the Raw Calculation first
+      let rawCalc = (A_FP - M_Defense + D_Margin + R_prof);
+
+      // v0.9.4 RULE: The Proficiency Roll (R_prof) is the Hard Floor.
+      // If the calculated damage is lower than the force of the blow (R_prof),
+      // we use R_prof instead.
+      let baseDamage = Math.max(R_prof, rawCalc);
+      
+      // Safety catch: Absolute minimum is 1 (in case R_prof is 0/undefined)
+      if (baseDamage < 1) baseDamage = 1;
 
       let multiplier = 1.0;
       const diff = Attacker_Tier - Defender_Tier;
-      if (diff >= 1) multiplier = 1.25;
-      if (diff >= 2) multiplier = 1.50;
-      if (diff === 0) multiplier = 1.00;
-      if (diff === -1) multiplier = 0.75;
-      if (diff <= -2) multiplier = 0.50;
+      
+      if (diff >= 1) multiplier = 1.25;      // +1 Tier
+      if (diff >= 2) multiplier = 1.50;      // +2 Tier 
+      if (diff === 0) multiplier = 1.00;     // Equal
+      if (diff === -1) multiplier = 0.75;    // -1 Tier
+      if (diff <= -2) multiplier = 0.50;     // -2 Tier
 
-      const finalDamage = Math.floor(rawDamage * multiplier);
+      // Final Floor check ensures M_DTA doesn't reduce damage to 0
+      const finalDamage = Math.max(1, Math.floor(baseDamage * multiplier));
       const attritionCost = Math.max(0, 15 - Math.floor(R_prof / 2));
 
       // --- 2. UPDATE SHEET ---
