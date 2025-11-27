@@ -67,62 +67,79 @@
                 {{/each}}
             </div>
 
-            {{!-- CALCULATOR SECTION --}}
-            <div class="essence-grid-container" style="background: rgba(255, 255, 255, 0.3); border: 1px solid #999;">
-                <div class="essence-header" style="grid-template-columns: 1fr;">
-                    <span style="text-align: center;">INTERACTIVE RESOLUTION</span>
-                </div>
+            {{!-- RESOLUTION CONTEXT PANEL --}}
+            <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
                 
-                <div style="text-align: center; margin: 10px 0;">
-                    <button class="launch-contest" style="background: #222; color: #fff; width: 90%; padding: 8px;">
-                        <i class="fas fa-crosshairs"></i> SELECT TARGETS
-                    </button>
-                </div>
-                
-                <div style="text-align:center; margin-bottom: 5px;">
-                    <strong>Targets:</strong> 
-                    <span style="color: #8b0000; font-weight: bold; font-size: 1.1em;">
-                        {{systemData.calculator.target_name}}
-                    </span>
-                </div>
-
-                <hr>
-
-                <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px;">
-                    <label style="font-weight:bold; width: 150px;">My Roll (d100):</label>
-                    <div style="display:flex; align-items:center; gap:5px;">
-                        <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="d100">
-                        <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                {{!-- 1. CONTEXT HEADER (Info Display) --}}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em;">
+                    <div style="border-right: 1px solid #666; padding-right: 5px;">
+                        <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span><br>
+                        {{#if systemData.calculator.item_name}}
+                            {{systemData.calculator.item_name}} ({{systemData.calculator.item_weight}}%)
+                        {{else}}
+                            <em style="color:#999">Select Item...</em>
+                        {{/if}}
                     </div>
-                </div>
-                
-                <div class="resource-row" style="padding: 5px;">
-                    <label style="font-weight:bold; width: 150px;">My R_Prof (Roll):</label>
-                    <div style="display:flex; align-items:center; gap:5px;">
-                        <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="d10">
-                        <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof"><i class="fas fa-dice-d6"></i></a>
+                    <div style="padding-left: 5px;">
+                        <span style="font-weight: bold; color: #ccc;">TARGET:</span><br>
+                        {{#if systemData.calculator.target_name}}
+                            {{systemData.calculator.target_name}}
+                        {{else}}
+                            <button class="launch-contest" style="background: #555; border: 1px solid #777; color: white; font-size: 0.8em; padding: 1px 6px; cursor: pointer;">
+                                <i class="fas fa-crosshairs"></i> Select
+                            </button>
+                        {{/if}}
                     </div>
                 </div>
 
-                <hr>
+                {{!-- 2. INPUT GRID --}}
+                <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
+                    
+                    {{!-- ATTACKER COLUMN --}}
+                    <div style="text-align: center;">
+                        <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">ATTACK (d100)</label>
+                        <div style="display: flex; justify-content: center; gap: 2px;">
+                            <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="Roll" style="width: 50px; text-align: center;">
+                            <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                        </div>
+                        <div style="margin-top: 5px;">
+                            <label style="font-size: 0.8em;">Prof ({{systemData.calculator.prof_roll}})</label>
+                            <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof" style="font-size: 0.8em;"><i class="fas fa-dice-d6"></i> Roll</a>
+                        </div>
+                    </div>
 
-                <div style="text-align: center; margin: 10px;">
-                    <button type="button" class="roll-calculation" style="background: #333; color: white;">
-                        <i class="fas fa-bolt"></i> CALCULATE RESULT
+                    {{!-- DIVIDER --}}
+                    <div style="background: #ccc; height: 100%;"></div>
+
+                    {{!-- DEFENDER COLUMN --}}
+                    <div style="text-align: center;">
+                        <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">DEFENSE (d100)</label>
+                        <div style="display: flex; justify-content: center; gap: 2px;">
+                            <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="Auto" style="width: 50px; text-align: center; border: 1px dashed #666;">
+                        </div>
+                        <p style="font-size: 0.7em; color: #555; margin-top: 2px;">
+                            (Leave 0 to Auto-Roll)
+                        </p>
+                    </div>
+                </div>
+
+                {{!-- 3. ACTION BAR --}}
+                <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
+                    <button type="button" class="roll-calculation" style="background: #222; color: white; border: 1px solid #000; width: 90%;">
+                        <i class="fas fa-calculator"></i> PREVIEW RESULT
                     </button>
                 </div>
 
-                {{!-- RESULTS OUTPUT (Using Triple Stash for HTML) --}}
-                <div class="resource-row" style="border: 2px solid #8b0000; padding: 10px; text-align: center; font-weight: bold; font-size: 1.1em; background: #fff; min-height: 40px;">
+                {{!-- 4. OUTPUT & EXECUTION --}}
+                {{#if systemData.calculator.output}}
+                <div style="padding: 10px; background: #fff;">
                     {{{systemData.calculator.output}}}
-                </div>
-
-                {{!-- EXECUTE BUTTON (Only appears if data is pending) --}}
-                {{#if systemData.calculator.batch_data}}
-                <div style="text-align: center; margin-top: 5px;">
-                    <button type="button" class="execute-batch" style="background: #8b0000; color: white; width: 100%;">
-                        <i class="fas fa-skull"></i> APPLY DAMAGE & ATTRITION
+                    
+                    {{#if systemData.calculator.batch_data}}
+                    <button type="button" class="execute-batch" style="background: #8b0000; color: white; width: 100%; margin-top: 5px; font-weight: bold;">
+                        <i class="fas fa-skull"></i> EXECUTE
                     </button>
+                    {{/if}}
                 </div>
                 {{/if}}
 				
