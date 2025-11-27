@@ -8,7 +8,7 @@ export class NarequentaActorSheet extends ActorSheet {
     return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["narequenta", "sheet", "actor"],
       template: "systems/narequenta/templates/actor-sheet.html",
-      width: 720, // Widened slightly for the Tactical UI
+      width: 720,
       height: 1125,
       tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "essences"}]
     });
@@ -39,7 +39,7 @@ export class NarequentaActorSheet extends ActorSheet {
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
     html.find(".roll-calculation").click(this._onCalculate.bind(this));
     
-    // Manual Sheet Apply (Legacy single target support)
+    // Legacy single target apply
     html.find(".apply-sheet-damage").click(this._onApplySheetDamage.bind(this));
 
     html.find(".waning-toggle").change(ev => {
@@ -50,8 +50,6 @@ export class NarequentaActorSheet extends ActorSheet {
     html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
     html.find(".short-rest").click(this._onShortRest.bind(this));
     html.find(".long-rest").click(this._onLongRest.bind(this));
-    
-    // Targeting
     html.find(".launch-contest").click(this._onLaunchContest.bind(this));
     html.find(".roll-calc-btn").click(this._onRollSheetCalc.bind(this));    
   }
@@ -78,7 +76,8 @@ export class NarequentaActorSheet extends ActorSheet {
       updates[`system.resources.hp.value`] = actor.system.resources.hp.max;
 
       // CLEAR TARGETS
-      updates[`system.calculator.target_ids`] = []; // Clear Array
+      updates[`system.calculator.target_ids`] = [];
+      updates[`system.calculator.target_id`] = "";
       updates[`system.calculator.target_name`] = "None";
       updates[`system.calculator.output`] = "Rest Complete. Targets Cleared.";
 
@@ -169,21 +168,79 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   async _onWaningPhase(event) {
-     // ... (Keep existing Waning logic, heavily abbreviated for length here, ensure full function is preserved) ...
-     this._renderWaningDialog(); // Refactored slightly to save space, assume standard implementation
-  }
-  
-  // Helper for Waning (Standard implementation from previous steps)
-  async _renderWaningDialog() {
-      // Re-paste the waning function from previous instructions if needed, 
-      // or ensure it matches the existing codebase. 
-      // For brevity in this "whole file" request, I'll invoke the original logic.
+      event.preventDefault();
       const actor = this.actor;
       const essenceKeys = ["vitalis", "motus", "sensus", "verbum", "anima"];
-      // ... (Standard Waning Logic) ...
-      // If you need the full text of Waning again, I can provide, but it's unchanged.
-      // Assuming standard implementation is present.
-      ui.notifications.info("Waning Phase triggered (Standard Logic).");
+      const essenceLabels = { "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS", "verbum": "VERBUM", "anima": "ANIMA" };
+      let essenceDropdown = "";
+      essenceKeys.forEach(key => { essenceDropdown += `<option value="${key}">${essenceLabels[key]}</option>`; });
+      let rowsHTML = "";
+      essenceKeys.forEach(key => {
+          rowsHTML += `
+          <tr id="row-${key}" class="essence-row-calc">
+              <td style="font-weight:bold;">${essenceLabels[key]}</td>
+              <td id="formula-${key}" class="formula-cell" style="color:#555; text-align:center;">1d6</td>
+              <td><button class="roll-individual-btn" data-key="${key}" style="padding:2px 8px;"><i class="fas fa-dice"></i></button></td>
+              <td><input type="number" id="result-${key}" class="nq-manual" style="width:50px; text-align:center;" readonly></td>
+              <td id="display-${key}" style="font-size:0.8em; color:#666;">-</td>
+          </tr>`;
+      });
+      const content = `<div class="narequenta">
+      <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-weight:bold;">Select Refinement Focus (Higher Risk/Reward):</label>
+          <select id="focus-select" style="width:100%">${essenceDropdown}</select>
+          <p style="font-size:0.8em; margin-top:5px;">The Focus Essence rolls <strong>2d6</strong>. Others roll <strong>1d6</strong>.</p>
+      </div>
+      <hr>
+      <table class="nq-table" style="width:100%">
+          <thead><tr><th>Essence</th><th>Dice</th><th>Roll</th><th>Loss</th><th>Info</th></tr></thead>
+          <tbody>${rowsHTML}</tbody>
+      </table>
+      </div>`;
+      
+      const performWaning = async (html, dialogInstance) => {
+          const focusKey = html.find("#focus-select").val();
+          const updates = {};
+          let chatOutput = "";
+          for (const key of essenceKeys) {
+              const resultVal = html.find(`#result-${key}`).val();
+              if (resultVal === "") continue; 
+              const loss = parseInt(resultVal);
+              const currentMax = actor.system.essences[key].max;
+              let newMax = currentMax - loss;
+              if (newMax < 50) newMax = 50;
+              updates[`system.essences.${key}.max`] = newMax;
+              const isFocus = (key === focusKey);
+              chatOutput += `<div style="display:flex; justify-content:space-between; font-size:0.9em; ${isFocus ? 'font-weight:bold; color:#006400;' : ''}"><span>${essenceLabels[key]}:</span><span>-${loss}% (${newMax}%)</span></div>`;
+          }
+          if (Object.keys(updates).length > 0) {
+              await actor.update(updates);
+              ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: actor }), content: `<div class="narequenta chat-card"><h3>The Waning</h3><div style="margin-bottom:5px;"><strong>Focus:</strong> ${essenceLabels[focusKey]}</div><hr>${chatOutput}<hr><div style="text-align:center; font-style:italic;">Sheet Updated.</div></div>` });
+          }
+          dialogInstance.close();
+      };
+
+      const d = new Dialog({ title: `The Waning: ${actor.name}`, content: content, buttons: { apply: { icon: '<i class="fas fa-check"></i>', label: "Apply All Changes", callback: (html) => performWaning(html, d) } },
+          render: (html) => {
+              const updateHighlights = () => {
+                  const focusKey = html.find("#focus-select").val();
+                  essenceKeys.forEach(k => { html.find(`#row-${k}`).removeClass("nq-focus-highlight"); html.find(`#formula-${k}`).text("1d6"); });
+                  html.find(`#row-${focusKey}`).addClass("nq-focus-highlight"); html.find(`#formula-${focusKey}`).html("<b>2d6</b>");
+              };
+              updateHighlights(); html.find("#focus-select").change(updateHighlights);
+              html.find(".roll-individual-btn").click(async (ev) => {
+                  ev.preventDefault(); const btn = $(ev.currentTarget); const key = btn.data("key"); const focusKey = html.find("#focus-select").val(); const isFocus = (key === focusKey);
+                  const formula = isFocus ? "2d6" : "1d6";
+                  const r = new Roll(formula); await r.evaluate(); if (game.dice3d) game.dice3d.showForRoll(r);
+                  let loss = r.total; let displayInfo = `Rolled ${loss}`;
+                  const currentMax = actor.system.essences[key].max;
+                  if (isFocus && currentMax === 100) { const potentialMax = currentMax - loss; if (potentialMax > 90) { loss = 10; displayInfo = `Rolled ${r.total} -> Set 10 (Tier I Guarantee)`; } }
+                  html.find(`#result-${key}`).val(loss); html.find(`#display-${key}`).text(displayInfo);
+                  r.toMessage({ speaker: ChatMessage.getSpeaker({ actor: actor }), flavor: `Waning Roll (${essenceLabels[key]})` });
+              });
+          }
+      });
+      d.render(true);
   }
 
 
@@ -206,15 +263,8 @@ export class NarequentaActorSheet extends ActorSheet {
     const weight = Number(sys.weight) || 15; 
     const dmgBonus = Number(sys.damage_bonus) || 0;
     
-    // 2. DETECT RANGE (Look for attributes named 'Range')
-    let range = 2; // Default Melee
-    if (sys.attributes) {
-        // Iterate numeric keys or property keys
-        for (const val of Object.values(sys.attributes)) {
-             if (val.key && val.key.toLowerCase() === "range") range = parseFloat(val.value) || 2;
-             if (val.label && val.label.toLowerCase() === "range") range = parseFloat(val.value) || 2;
-        }
-    }
+    // 2. DETECT RANGE (Native Field)
+    const range = Number(sys.range) || 2; // Default 2m
 
     // 3. Update Calculator
     await this.actor.update({
@@ -224,7 +274,7 @@ export class NarequentaActorSheet extends ActorSheet {
         "system.calculator.item_bonus": dmgBonus,
         "system.calculator.active_motor": motorKey,
         "system.calculator.active_motor_val": motorVal,
-        "system.calculator.item_range": range // Store for targeting
+        "system.calculator.item_range": range 
     });
 
     ui.notifications.info(`Loaded ${item.name}. Range: ${range}m. Opening Targeting...`);
@@ -344,10 +394,9 @@ export class NarequentaActorSheet extends ActorSheet {
                       const essenceKey = html.find("#target-essence").val();
                       const essenceLabel = essenceKey.toUpperCase();
 
-                      // Store Array of IDs in Calculator (Requires manual flag handling if not in template, but we assume template supports flexible data or we stick to update)
-                      // Since 'target_id' is scalar in template.json, we will store the list in 'target_ids' (plural) which will be created ad-hoc.
                       await attacker.update({
                           "system.calculator.target_ids": selectedIds, // Store Array
+                          "system.calculator.target_id": selectedIds[0], // Keep legacy field populated
                           "system.calculator.target_name": `${selectedIds.length} Target(s) (${essenceLabel})`,
                           "system.calculator.target_def_stat": essenceKey,
                           "system.calculator.output": `Targeting ${selectedIds.length} enemies. Roll Attack.`
@@ -439,7 +488,7 @@ export class NarequentaActorSheet extends ActorSheet {
               let mult = 1.0;
               const diff = Attacker_Tier - Def_Tier;
               if (diff >= 1) mult = 1.25; if (diff >= 2) mult = 1.50;
-              if (diff === -1) mult = 0.75; if (diff <= -2) mult = 0.50;
+              if (diff === 0) mult = 1.00; if (diff === -1) mult = 0.75; if (diff <= -2) mult = 0.50;
 
               finalDamage = Math.max(1, Math.floor(baseDamage * mult));
               
@@ -475,7 +524,6 @@ export class NarequentaActorSheet extends ActorSheet {
           targets: payloadTargets // Array of {id, damage, name}
       };
       
-      // We stringify the payload to put in data attribute
       const payloadString = JSON.stringify(resolutionPayload).replace(/"/g, '&quot;');
 
       // --- 5. CHAT OUTPUT ---
@@ -505,7 +553,6 @@ export class NarequentaActorSheet extends ActorSheet {
       ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), content: content });
   }
 
-  // ... [Keep _onItemControl, _onRollSheetCalc, _onApplySheetDamage legacy if desired] ...
   _onItemControl(event) {
     event.preventDefault();
     const button = event.currentTarget;
@@ -518,7 +565,7 @@ export class NarequentaActorSheet extends ActorSheet {
     }
   }
   
-  _onRollSheetCalc(event) { /* ... same as before ... */ 
+  _onRollSheetCalc(event) {
       event.preventDefault();
       const btn = $(event.currentTarget);
       const targetField = btn.data("target");
@@ -541,7 +588,6 @@ export class NarequentaActorSheet extends ActorSheet {
       });
   }
 
-  // Legacy manual Apply
   async _onApplySheetDamage(event) {
      ui.notifications.info("Please use the Chat Card button for Batch Resolution.");
   }
