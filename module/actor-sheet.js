@@ -672,4 +672,3 @@ export class NarequentaActorSheet extends ActorSheet {
       ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
   }
 }
-```
