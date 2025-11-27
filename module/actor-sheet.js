@@ -39,8 +39,8 @@ export class NarequentaActorSheet extends ActorSheet {
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
     html.find(".roll-calculation").click(this._onCalculate.bind(this));
     
-    // Legacy single target apply
-    html.find(".apply-sheet-damage").click(this._onApplySheetDamage.bind(this));
+    // NEW: Execute Batch directly from sheet
+    html.find(".execute-batch").click(this._onExecuteBatch.bind(this));
 
     html.find(".waning-toggle").change(ev => {
         const isChecked = ev.target.checked;
@@ -77,8 +77,8 @@ export class NarequentaActorSheet extends ActorSheet {
 
       // CLEAR TARGETS
       updates[`system.calculator.target_ids`] = [];
-      updates[`system.calculator.target_id`] = "";
       updates[`system.calculator.target_name`] = "None";
+      updates[`system.calculator.batch_data`] = "";
       updates[`system.calculator.output`] = "Rest Complete. Targets Cleared.";
 
       await actor.update(updates);
@@ -264,7 +264,7 @@ export class NarequentaActorSheet extends ActorSheet {
     const dmgBonus = Number(sys.damage_bonus) || 0;
     
     // 2. DETECT RANGE (Native Field)
-    const range = Number(sys.range) || 2; // Default 2m
+    const range = Number(sys.range) || 2; 
 
     // 3. Update Calculator
     await this.actor.update({
@@ -383,7 +383,6 @@ export class NarequentaActorSheet extends ActorSheet {
                   icon: '<i class="fas fa-crosshairs"></i>',
                   label: "Lock Targets",
                   callback: async (html) => {
-                      // Collect IDs
                       const selectedIds = [];
                       html.find("input[name='target']:checked").each(function() {
                           selectedIds.push($(this).val());
@@ -395,11 +394,11 @@ export class NarequentaActorSheet extends ActorSheet {
                       const essenceLabel = essenceKey.toUpperCase();
 
                       await attacker.update({
-                          "system.calculator.target_ids": selectedIds, // Store Array
-                          "system.calculator.target_id": selectedIds[0], // Keep legacy field populated
+                          "system.calculator.target_ids": selectedIds, 
                           "system.calculator.target_name": `${selectedIds.length} Target(s) (${essenceLabel})`,
                           "system.calculator.target_def_stat": essenceKey,
-                          "system.calculator.output": `Targeting ${selectedIds.length} enemies. Roll Attack.`
+                          "system.calculator.output": `Targeting ${selectedIds.length} enemies. Roll Attack.`,
+                          "system.calculator.batch_data": "" // Reset batch data
                       });
                   }
               }
@@ -409,7 +408,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* BATCH CALCULATE LOGIC (Multi-Target)         */
+  /* BATCH CALCULATE LOGIC (Sheet-Based)          */
   /* -------------------------------------------- */
   async _onCalculate(event) {
       event.preventDefault();
@@ -417,7 +416,6 @@ export class NarequentaActorSheet extends ActorSheet {
       
       const targetIds = calc.target_ids || [];
       if (!Array.isArray(targetIds) || targetIds.length === 0) {
-          // Fallback to single ID if array empty
           if (calc.target_id) targetIds.push(calc.target_id);
           else { ui.notifications.warn("No targets selected."); return; }
       }
@@ -427,14 +425,13 @@ export class NarequentaActorSheet extends ActorSheet {
       const R_prof = Number(calc.prof_roll) || 0;
       const itemBonus = Number(calc.item_bonus) || 0;
       const itemWeight = Number(calc.item_weight) || 15; 
-      const itemName = calc.item_name || "Action";
       
       // Essence Logic
       const motorKey = calc.active_motor || "vitalis"; 
       const motorData = this.actor.system.essences[motorKey] || { max: 100, value: 100 };
       const E_max = motorData.max;
       const E_cur = motorData.value;
-      const defStat = calc.target_def_stat || "vitalis"; // What they defend with
+      const defStat = calc.target_def_stat || "vitalis";
 
       let Attacker_Tier = (this.actor.type === 'character') 
           ? (this.actor.system.resources.action_surges.max || 0) 
@@ -455,9 +452,9 @@ export class NarequentaActorSheet extends ActorSheet {
       else if (Attacker_d100 <= 5) { attackerSuccess = true; hitLabel = "CRIT SUCCESS"; }
       else if (effectiveRoll > successThreshold) { attackerSuccess = false; hitLabel = "MISS"; }
 
-      // --- 2. LOOP TARGETS ---
-      let resultsHtml = "";
-      let payloadTargets = []; // Data for the button
+      // --- 2. LOOP TARGETS & BUILD SHEET HTML ---
+      let sheetListHtml = `<div style="text-align:left; font-size:0.9em; margin-bottom:5px;"><strong>${hitLabel}</strong> vs ${successThreshold}</div>`;
+      let payloadTargets = []; 
 
       for (const tid of targetIds) {
           const tToken = canvas.tokens.get(tid);
@@ -467,16 +464,12 @@ export class NarequentaActorSheet extends ActorSheet {
           const Def_Ecur = tActor.system.essences[defStat]?.value || 50;
           const Def_Tier = (tActor.type==='character') ? (tActor.system.resources.action_surges.max||0) : (tActor.system.tier||0);
           
-          // Auto-Roll Defense for Speed
           const Def_Roll = Math.floor(Math.random() * 100) + 1;
           const D_Margin = Def_Roll - Def_Ecur; 
           
           let finalDamage = 0;
-          let rowColor = "#fee";
           
           if (attackerSuccess) {
-              rowColor = "#efe";
-              // Calculate Damage
               let A_FP = 100 - effectiveRoll;
               if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
 
@@ -495,13 +488,10 @@ export class NarequentaActorSheet extends ActorSheet {
               payloadTargets.push({ id: tid, damage: finalDamage, name: tToken.name });
           }
 
-          resultsHtml += `
-          <div style="display:flex; justify-content:space-between; font-size:0.9em; padding:3px; border-bottom:1px solid #ddd; background:${rowColor};">
-              <span><strong>${tToken.name}</strong></span>
-              <span>
-                  <span style="font-size:0.8em; color:#555;">(Def: ${Def_Roll})</span> 
-                  <strong>${finalDamage} Dmg</strong>
-              </span>
+          sheetListHtml += `
+          <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #ccc;">
+              <span>${tToken.name}</span>
+              <span style="font-weight:bold; color:#8b0000;">${finalDamage}</span>
           </div>`;
       }
 
@@ -510,49 +500,74 @@ export class NarequentaActorSheet extends ActorSheet {
       if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2);
       if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
 
-      // Update Sheet
-      await this.actor.update({
-          "system.calculator.output": `${hitLabel}. ${payloadTargets.length} Hit(s). Cost -${attritionCost}%`,
-          "system.calculator.last_damage": 0 // Legacy field reset
-      });
+      sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#555;">Cost: -${attritionCost}%</div>`;
 
-      // --- 4. PREPARE PAYLOAD FOR BUTTON ---
+      // --- 4. PREPARE PAYLOAD & UPDATE ACTOR ---
       const resolutionPayload = {
-          attackerUuid: this.actor.uuid,
           essenceKey: motorKey,
           attritionCost: attritionCost,
-          targets: payloadTargets // Array of {id, damage, name}
+          targets: payloadTargets 
       };
       
-      const payloadString = JSON.stringify(resolutionPayload).replace(/"/g, '&quot;');
+      await this.actor.update({
+          "system.calculator.output": sheetListHtml,
+          "system.calculator.batch_data": JSON.stringify(resolutionPayload) // Enable Execute Button
+      });
 
-      // --- 5. CHAT OUTPUT ---
-      const content = `
-      <div class="narequenta chat-card" style="font-family:'Signika'; background:#e8e8e3; border:1px solid #999; padding:5px;">
-          <h3 style="border-bottom:2px solid #333; margin-bottom:5px;">${itemName} (Batch)</h3>
-          
-          <div style="background:#fff; border:1px solid #ccc; padding:4px; margin-bottom:10px;">
-             <strong>Check:</strong> ${effectiveRoll} vs ${successThreshold} <br>
-             <strong>Result:</strong> ${hitLabel}
-          </div>
-
-          <div style="max-height:150px; overflow-y:auto; margin-bottom:10px; border:1px solid #999;">
-              ${resultsHtml || "<div style='padding:5px;'>No Targets Hit</div>"}
-          </div>
-
-          <div style="text-align:center; font-size:0.9em; margin-bottom:5px;">
-             <strong>Attrition:</strong> -${attritionCost}% ${motorKey.toUpperCase()}
-          </div>
-
-          <button class="execute-batch-resolution-btn" style="background:#222; color:#fff; width:100%; border:1px solid #000;"
-             data-payload="${payloadString}">
-             ${attackerSuccess ? "⚔️ APPLY ALL DAMAGE & ATTRITION" : "❌ APPLY ATTRITION ONLY"}
-          </button>
-      </div>`;
-
-      ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), content: content });
+      // Simple Log to Chat (Informational only)
+      ChatMessage.create({ 
+          speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
+          content: `<div class="narequenta chat-card"><strong>Calculated Attack</strong><br>${hitLabel}<br>Cost: ${attritionCost}%<br><em>See sheet to apply.</em></div>` 
+      });
   }
 
+  /* -------------------------------------------- */
+  /* EXECUTE BATCH (From Sheet Button)            */
+  /* -------------------------------------------- */
+  async _onExecuteBatch(event) {
+      event.preventDefault();
+      
+      const rawData = this.actor.system.calculator.batch_data;
+      if (!rawData) return;
+
+      const { essenceKey, attritionCost, targets } = JSON.parse(rawData);
+
+      // 1. Apply Attrition
+      const currentVal = this.actor.system.essences[essenceKey].value;
+      const newVal = Math.max(0, currentVal - attritionCost);
+      await this.actor.update({ [`system.essences.${essenceKey}.value`]: newVal });
+
+      // 2. Apply Damage to Targets
+      let dmgCount = 0;
+      if (targets && targets.length > 0) {
+          for (const tData of targets) {
+              const token = canvas.tokens.get(tData.id);
+              if (token && token.actor) {
+                  const currentHP = Number(token.actor.system.resources.hp.value) || 0;
+                  const newHP = Math.max(0, currentHP - tData.damage);
+                  await token.actor.update({ "system.resources.hp.value": newHP });
+                  
+                  if (newHP <= 0) {
+                       const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
+                       if (!isDead) await token.actor.toggleStatusEffect("dead", { overlay: true });
+                  }
+                  dmgCount++;
+              }
+          }
+      }
+
+      // 3. Reset Calculator
+      await this.actor.update({
+          "system.calculator.attack_roll": 0,
+          "system.calculator.prof_roll": 0,
+          "system.calculator.batch_data": "", // Hides button
+          "system.calculator.output": `Applied. -${attritionCost}% Attrition. ${dmgCount} Targets Damaged.`
+      });
+
+      ui.notifications.info("Resolution Complete.");
+  }
+
+  // Legacy Helpers
   _onItemControl(event) {
     event.preventDefault();
     const button = event.currentTarget;
@@ -586,9 +601,5 @@ export class NarequentaActorSheet extends ActorSheet {
         r.toMessage({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), flavor: label });
         this.actor.update({ [targetField]: r.total });
       });
-  }
-
-  async _onApplySheetDamage(event) {
-     ui.notifications.info("Please use the Chat Card button for Batch Resolution.");
   }
 }
