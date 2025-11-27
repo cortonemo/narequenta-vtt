@@ -68,7 +68,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* REST & RECOVERY LOGIC (UPDATED: Unlocks Target) */
+  /* REST & RECOVERY LOGIC                        */
   /* -------------------------------------------- */
   
   async _onLongRest(event) {
@@ -452,7 +452,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* CALCULATE LOGIC (UPDATED: DEBUG LOG)         */
+  /* CALCULATE LOGIC (UNIFIED BUTTON)             */
   /* -------------------------------------------- */
   async _onCalculate(event) {
       event.preventDefault();
@@ -466,12 +466,19 @@ export class NarequentaActorSheet extends ActorSheet {
       const Defender_Ecur = Number(calc.target_ecur) || 0;
       const Defender_Tier = Number(calc.target_tier) || 0;
       
-      // ITEM MODIFIERS (from _onItemRoll)
+      // ITEM MODIFIERS
       const itemBonus = Number(calc.item_bonus) || 0;
       const itemWeight = Number(calc.item_weight) || 15; 
-      const itemName = calc.item_name || "Improvised Action";
-      const activeMotorVal = (calc.active_motor_val !== undefined) ? Number(calc.active_motor_val) : 100;
+      const itemName = calc.item_name || "Action";
+      
+      // ESSENCE DATA (v0.9.5 Fix)
+      // We need the specific Essence MAX to check success, and CUR for Zones.
+      const motorKey = calc.active_motor || "vitalis"; // Default if not loaded
+      const motorData = this.actor.system.essences[motorKey] || { max: 100, value: 100 };
+      const E_max = motorData.max;
+      const E_cur = motorData.value;
 
+      // ATTACKER TIER
       let Attacker_Tier = 0;
       if (this.actor.type === 'character') {
           Attacker_Tier = this.actor.system.resources.action_surges.max || 0;
@@ -480,11 +487,17 @@ export class NarequentaActorSheet extends ActorSheet {
       }
 
       // --- 1. SUCCESS CHECK (The Hit) ---
-      // Rule: (d100 - R_prof) <= E_cur (Active Essence)
-      // Exception: Nat 1-5 is Auto-Hit. Nat 96-100 is Auto-Fail.
-      
+      // Rule: (d100 - R_prof) <= (E_max - ZonePenalty)
       const effectiveRoll = Attacker_d100 - R_prof;
       
+      // Calculate Zone Penalty based on E_cur
+      let zonePenalty = 0;
+      if (E_cur <= 75 && E_cur > 50) zonePenalty = 10;
+      if (E_cur <= 50 && E_cur > 25) zonePenalty = 20;
+      if (E_cur <= 25) zonePenalty = 30;
+
+      const successThreshold = E_max - zonePenalty;
+
       let isHit = true;
       let hitLabel = "HIT";
       let hitColor = "green";
@@ -495,14 +508,14 @@ export class NarequentaActorSheet extends ActorSheet {
           hitLabel = "CRITICAL FAILURE";
           hitColor = "red";
       }
-      // Auto Hit
+      // Auto Hit (Nat 1-5 ignores Threshold)
       else if (Attacker_d100 <= 5) {
           isHit = true;
           hitLabel = "CRITICAL SUCCESS";
           hitColor = "gold";
       }
-      // Standard Threshold Check
-      else if (effectiveRoll > activeMotorVal) {
+      // Standard Threshold Check (The Fix)
+      else if (effectiveRoll > successThreshold) {
           isHit = false;
           hitLabel = "MISS";
           hitColor = "red";
@@ -512,13 +525,13 @@ export class NarequentaActorSheet extends ActorSheet {
       let finalDamage = 0;
       let multiplier = 1.0;
       let baseDamage = 0;
-      // Debug Variables
-      let A_FP = 0;
-      let D_Margin = 0;
-      let M_Defense = 0;
-      let rawCalc = 0;
-      let diff = 0;
       
+      // Debug placeholders
+      let A_FP = 0; 
+      let M_Defense = 0;
+      let D_Margin = 0;
+      let rawCalc = 0;
+
       if (isHit) {
           // A_FP (Half-Potential)
           A_FP = 100 - effectiveRoll;
@@ -530,12 +543,12 @@ export class NarequentaActorSheet extends ActorSheet {
           // Raw Calculation + ITEM BONUS
           rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
 
-          // Hard Floor (v0.9.4): Damage cannot be lower than Proficiency Roll
+          // Hard Floor: Damage cannot be lower than Proficiency Roll
           baseDamage = Math.max(R_prof, rawCalc);
           if (baseDamage < 1) baseDamage = 1;
 
           // Tier Multiplier
-          diff = Attacker_Tier - Defender_Tier;
+          const diff = Attacker_Tier - Defender_Tier;
           if (diff >= 1) multiplier = 1.25;      
           if (diff >= 2) multiplier = 1.50;      
           if (diff === 0) multiplier = 1.00;     
@@ -552,68 +565,58 @@ export class NarequentaActorSheet extends ActorSheet {
       if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2); // Crit Halves Cost
       if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;            // Fail Doubles Cost
 
-      // --- 4. UPDATE SHEET & FEEDBACK ---
+      // --- 4. UPDATE SHEET ---
       await this.actor.update({
           "system.calculator.output": `${hitLabel}: ${finalDamage} Dmg`,
           "system.calculator.last_damage": finalDamage 
       });
 
-      // --- 5. CHAT OUTPUT (WITH DEBUG LOG) ---
+      // --- 5. CHAT OUTPUT (UNIFIED BUTTON) ---
       const containerStyle = "font-family: 'Signika', sans-serif; color: #191813; background: #e8e8e3; border: 1px solid #999; padding: 5px;";
       
       const content = `
-      <div class="narequenta chat-card" data-defender-token-id="${targetId}" data-damage="${finalDamage}" style="${containerStyle}">
+      <div class="narequenta chat-card" style="${containerStyle}">
           <h3 style="border-bottom: 2px solid #333; margin-bottom:5px;">${itemName} vs ${targetName}</h3>
           
-          <div style="font-size:0.9em; margin-bottom:10px;">
+          <div style="font-size:0.9em; margin-bottom:10px; background:#fff; border:1px solid #ccc; padding:4px;">
              <div style="display:flex; justify-content:space-between;">
-                <span><strong>Check:</strong> ${Attacker_d100} - ${R_prof} = <strong>${effectiveRoll}</strong></span>
-                <span>vs <strong>${activeMotorVal}%</strong></span>
+                <span><strong>Roll:</strong> ${Attacker_d100} - ${R_prof} = <strong>${effectiveRoll}</strong></span>
+                <span>vs</span>
+                <span><strong>${successThreshold}</strong> (${E_max} Max - ${zonePenalty} Zone)</span>
              </div>
-             <div style="text-align:center; margin-top:5px; font-weight:bold; color:${hitColor}; border:1px solid ${hitColor}; background:rgba(255,255,255,0.5);">
+             <div style="text-align:center; margin-top:5px; font-weight:bold; color:${hitColor}; background:${hitColor === 'gold' ? '#333' : 'transparent'};">
                 ${hitLabel}
              </div>
           </div>
 
-          ${isHit ? `
-          <div style="text-align: center; margin: 10px 0;">
-              <span style="font-size: 1.8em; font-weight: bold; color: #8b0000;">${finalDamage} Damage</span>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; text-align:center; margin-bottom:10px;">
+              <div style="background:rgba(139,0,0,0.1); padding:5px; border-radius:4px;">
+                  <div style="font-size:0.8em; font-weight:bold; color:#8b0000;">DAMAGE</div>
+                  <div style="font-size:1.4em; font-weight:bold;">${finalDamage}</div>
+              </div>
+              <div style="background:rgba(0,0,0,0.1); padding:5px; border-radius:4px;">
+                  <div style="font-size:0.8em; font-weight:bold; color:#333;">ATTRITION</div>
+                  <div style="font-size:1.4em; font-weight:bold;">-${attritionCost}%</div>
+                  <div style="font-size:0.7em;">(${motorKey})</div>
+              </div>
           </div>
-          ` : ``}
 
-          <div style="text-align: center; font-size: 0.9em; margin-bottom: 10px;">
-              <strong>Attrition:</strong> -${attritionCost}% (Base ${itemWeight})
-          </div>
+          <button class="execute-resolution-btn" style="background: #222; color: white; width: 100%; margin-bottom:5px; border: 1px solid #000;" 
+             data-attacker-id="${this.actor.id}"
+             data-essence="${motorKey}" 
+             data-cost="${attritionCost}"
+             data-target-id="${targetId}" 
+             data-damage="${finalDamage}"
+             data-is-hit="${isHit}">
+             ${isHit ? "⚔️ APPLY DAMAGE & ATTRITION" : "❌ APPLY ATTRITION ONLY (MISS)"}
+          </button>
 
-          ${isHit ? `
-          <button class="apply-damage-btn" style="background: #8b0000; color: white; width: 100%;" 
-             data-defender-token-id="${targetId}" data-damage="${finalDamage}">
-             Apply Damage
-          </button>` : ``}
-
-          <div style="font-family: monospace; font-size: 0.8em; background: #f0f0f0; border: 1px dashed #666; margin-top: 10px; padding: 5px;">
-             <strong>DEBUG MATH LOG</strong><br>
-             ------------------<br>
-             <strong>Hit Logic:</strong><br>
-             Attacker Roll: ${Attacker_d100}<br>
-             Prof Roll (R_prof): ${R_prof}<br>
-             Effective: ${effectiveRoll} (Needs <= ${activeMotorVal})<br>
-             <br>
-             <strong>Damage Logic:</strong><br>
-             A_FP (100 - Eff): ${A_FP}<br>
-             M_Defense (Tier*5.5): ${M_Defense}<br>
-             D_Margin: ${D_Margin}<br>
-             Item Bonus: ${itemBonus}<br>
-             Raw: ${A_FP.toFixed(1)} - ${M_Defense.toFixed(1)} + ${D_Margin} + ${R_prof} + ${itemBonus} = <strong>${rawCalc.toFixed(2)}</strong><br>
-             <br>
-             <strong>Floor Check:</strong><br>
-             Max(${R_prof}, ${rawCalc.toFixed(2)}) = ${baseDamage.toFixed(2)}<br>
-             <br>
-             <strong>Multiplier:</strong><br>
-             Tiers: Att(${Attacker_Tier}) vs Def(${Defender_Tier}) = Diff ${diff}<br>
-             Mult: x${multiplier}<br>
-             Final: ${baseDamage.toFixed(2)} * ${multiplier} = <strong>${finalDamage}</strong>
-          </div>
+          <details style="margin-top:5px; font-size:0.8em; color:#555; cursor:pointer;">
+             <summary>Debug Formula</summary>
+             A_FP: ${A_FP.toFixed(1)} | M_Def: ${M_Defense.toFixed(1)} | D_Marg: ${D_Margin}<br>
+             Raw: ${rawCalc.toFixed(2)} | Floor: ${R_prof}<br>
+             Mult: x${multiplier} | Base Cost: ${itemWeight}
+          </details>
       </div>`;
 
       ChatMessage.create({
@@ -622,53 +625,29 @@ export class NarequentaActorSheet extends ActorSheet {
       });
   }
 
+  // --- MANUAL SHEET BUTTON (LEGACY SUPPORT) ---
   async _onApplySheetDamage(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
       const targetId = calc.target_id;
       const damage = Number(calc.last_damage);
 
-      if (!targetId) {
-          ui.notifications.warn("No target selected or ID lost. Please re-select target.");
-          return;
-      }
-      if (damage === undefined || damage < 0) { 
-           ui.notifications.warn("No valid damage calculated.");
-           return;
-      }
-
+      if (!targetId) { ui.notifications.warn("No target."); return; }
+      
       const token = canvas.tokens.get(targetId);
-      if (!token || !token.actor) {
-          ui.notifications.warn("Target token not found on current scene.");
-          return;
-      }
+      if (!token) return;
 
-      // 1. Calculate New HP
       const currentHP = Number(token.actor.system.resources.hp.value) || 0;
       const newHP = Math.max(0, currentHP - damage);
 
-      // 2. Update Target Actor
       await token.actor.update({ "system.resources.hp.value": newHP });
       
-      // 3. Apply Dead Status (Improved Check)
       if (newHP <= 0) {
           const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
-          
-          if (!isDead) {
-              await token.actor.toggleStatusEffect("dead", { overlay: true });
-              ChatMessage.create({ content: `<strong>${token.name}</strong> has been defeated!` });
-          }
+          if (!isDead) await token.actor.toggleStatusEffect("dead", { overlay: true });
       }
 
-      // 4. Update Calculator: Sync HP and RESET ROLLS
-      await this.actor.update({ 
-          "system.calculator.target_ecur": newHP, 
-          "system.calculator.attack_roll": 0,      
-          "system.calculator.prof_roll": 0,        
-          "system.calculator.defense_roll": 0,     
-          "system.calculator.output": `Applied ${damage} Dmg. Rolls Reset.` 
-      });
-
-      ui.notifications.info(`Applied ${damage} damage to ${token.name}. HP: ${currentHP} -> ${newHP}`);
+      await this.actor.update({ "system.calculator.target_ecur": newHP });
+      ui.notifications.info(`Manual Apply: ${damage} damage.`);
   }
 }
