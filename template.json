@@ -26,6 +26,7 @@
         "target_id": "", 
         "target_ids": [],
         "last_damage": 0,
+        "batch_data": "",
         "output": "Waiting for input..."
       },
       "essences": {
@@ -51,6 +52,7 @@
         "target_id": "", 
         "target_ids": [],
         "last_damage": 0,
+        "batch_data": "",
         "output": "Waiting for input..."
       },
       "essences": {
