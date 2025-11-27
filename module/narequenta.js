@@ -19,11 +19,13 @@ import { SimpleToken, SimpleTokenDocument } from "./token.js";
 Hooks.once("init", async function() {
   console.log(`Initializing Nárëquenta System`);
 
+  // Default Initiative Formula
   CONFIG.Combat.initiative = {
     formula: "1d10",
     decimals: 2
   };
 
+  // Assign Custom Classes
   game.narequenta = {
     NarequentaActor,
     createWorldbuildingMacro
@@ -73,6 +75,7 @@ Hooks.once("init", async function() {
     CONFIG.Combat.initiative.formula = formula;
   }
 
+  // Handlebars Helper for Slugify
   Handlebars.registerHelper('slugify', function(value) {
     return value.slugify({strict: true});
   });
@@ -80,65 +83,72 @@ Hooks.once("init", async function() {
   await preloadHandlebarsTemplates();
 });
 
+// Macro Drop Hook
 Hooks.on("hotbarDrop", (bar, data, slot) => createWorldbuildingMacro(data, slot));
 
 /* -------------------------------------------- */
-/* GLOBAL CHAT LISTENERS                        */
+/* READY HOOK: GLOBAL LISTENERS                 */
 /* -------------------------------------------- */
 
 Hooks.once("ready", () => {
-    // Listener for the "Apply Damage" button in Chat Cards
-    $(document).on("click", ".apply-damage-btn", async (ev) => {
+    
+    // --- UNIFIED RESOLUTION LISTENER (Damage + Attrition) ---
+    $(document).on("click", ".execute-resolution-btn", async (ev) => {
         ev.preventDefault();
         const btn = $(ev.currentTarget);
-        const targetTokenId = btn.data("defender-token-id");
-        const damage = parseInt(btn.data("damage"));
-        const attackerUuid = btn.data("attacker-uuid"); 
+        
+        // 1. DATA EXTRACTION
+        const attackerId = btn.data("attacker-id");
+        const essenceKey = btn.data("essence");
+        const cost = parseInt(btn.data("cost")) || 0;
+        
+        const targetTokenId = btn.data("target-id");
+        const damage = parseInt(btn.data("damage")) || 0;
+        // Check if the attack was a Hit (bool)
+        const isHit = btn.data("is-hit"); 
 
-        // 1. Locate Target
-        const token = canvas.tokens.get(targetTokenId);
-        if (!token || !token.actor) {
-            ui.notifications.warn("Target token not found on current scene.");
-            return;
-        }
-
-        // 2. Permission Check for NPCs (Players can't delete NPCs unless GM)
-        if (!game.user.isGM && token.actor.type === "npc") {
-             ui.notifications.warn("You do not have permission to update this Adversary.");
-             return;
-        }
-
-        // 3. Apply Damage
-        const currentHP = Number(token.actor.system.resources.hp.value) || 0;
-        const newHP = Math.max(0, currentHP - damage);
-        await token.actor.update({ "system.resources.hp.value": newHP });
-
-        // 4. Apply Dead Status (Fixed Logic)
-        if (newHP <= 0) {
-            // Check via statusId OR statuses set (V11+ compatibility)
-            const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
+        // 2. ATTRITION APPLICATION (Attacker Side)
+        const attacker = game.actors.get(attackerId);
+        if (attacker) {
+            const currentVal = attacker.system.essences[essenceKey].value;
+            const newVal = Math.max(0, currentVal - cost);
             
-            if (!isDead) {
-                await token.actor.toggleStatusEffect("dead", { overlay: true });
-            }
+            await attacker.update({ [`system.essences.${essenceKey}.value`]: newVal });
+            
+            ui.notifications.info(`ATTRITION: ${attacker.name} spent ${cost}% ${essenceKey}.`);
+        } else {
+            ui.notifications.warn("Original Attacker not found for Attrition.");
         }
 
-        // 5. Update Chat UI
-        ui.notifications.info(`Applied ${damage} damage to ${token.name}.`);
-        btn.replaceWith(`<div style="color: #8b0000; font-weight:bold; text-align:center;">Damage Applied</div>`);
-
-        // 6. RESET ATTACKER ROLLS
-        if (attackerUuid) {
-            const attacker = await fromUuid(attackerUuid);
-            if (attacker) {
-                await attacker.update({
-                    "system.calculator.attack_roll": 0,
-                    "system.calculator.prof_roll": 0,
-                    "system.calculator.defense_roll": 0,
-                    // Sync the target's new HP to the attacker's calculator so they see the result immediately
-                    "system.calculator.target_ecur": newHP 
-                });
+        // 3. DAMAGE APPLICATION (Target Side)
+        // Only apply if it was a HIT and we have a valid target
+        if (isHit && targetTokenId) {
+            const token = canvas.tokens.get(targetTokenId);
+            
+            if (token && token.actor) {
+                // Determine current HP
+                const currentHP = Number(token.actor.system.resources.hp.value) || 0;
+                const newHP = Math.max(0, currentHP - damage);
+                
+                // Update HP
+                await token.actor.update({ "system.resources.hp.value": newHP });
+                
+                // Check for Death (HP <= 0)
+                if (newHP <= 0) {
+                     const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
+                     
+                     if (!isDead) {
+                         await token.actor.toggleStatusEffect("dead", { overlay: true });
+                         ChatMessage.create({ content: `<strong>${token.name}</strong> has been defeated!` });
+                     }
+                }
+                ui.notifications.info(`DAMAGE: Applied ${damage} to ${token.name}.`);
+            } else {
+                ui.notifications.warn("Target token not found on scene.");
             }
         }
+        
+        // 4. DISABLE BUTTON (Visual Feedback)
+        btn.replaceWith(`<div style="color:#333; font-weight:bold; text-align:center; background:#ccc; padding:5px; border-radius:3px;">RESOLUTION COMPLETE</div>`);
     });
 });
