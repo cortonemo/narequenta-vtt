@@ -86,24 +86,30 @@ export class NarequentaActorSheet extends ActorSheet {
       
       // Get Values
       const motorVal = this.actor.system.essences[motorKey]?.value || 0;
-      const weight = Number(sys.weight) || 15; 
+      
+      // [UPDATED] Pull weight from new template field (Default 15/Medium)
+      const weight = (typeof sys.weight !== "undefined") ? Number(sys.weight) : 15; 
+      
       const dmgBonus = Number(sys.damage_bonus) || 0;
-      const range = Number(sys.range) || 2; 
+      
+      // [UPDATED] Default range to 5ft (Melee standard)
+      const range = Number(sys.range) || 5;
 
       // Update Calculator State
       await this.actor.update({
-          "system.calculator.selected_item_id": itemId, // Persist selection
+          "system.calculator.selected_item_id": itemId,
           "system.calculator.item_name": item.name,
           "system.calculator.item_weight": weight,
           "system.calculator.item_bonus": dmgBonus,
           "system.calculator.active_motor": motorKey,
           "system.calculator.active_motor_val": motorVal,
           "system.calculator.item_range": range,
-          "system.calculator.output": "" // Reset results
+          "system.calculator.output": "" 
       });
 
-      ui.notifications.info(`Active: ${item.name} (${range}m). Motor: ${motorKey.toUpperCase()}.`);
-  }
+      // [UPDATED] Notification in feet (ft)
+      ui.notifications.info(`Active: ${item.name} (${range}ft). Motor: ${motorKey.toUpperCase()}.`);
+}
 
   /* -------------------------------------------- */
   /* LEGACY: ITEM ROLL (Kept for Click-to-Load)   */
