@@ -1,445 +1,202 @@
-import { EntitySheetHelper } from "./helper.js";
-import { ATTRIBUTE_TYPES } from "./constants.js";
+<form class="{{cssClass}} {{actor.type}}" autocomplete="off">
 
-export class NarequentaActorSheet extends ActorSheet {
+    {{!-- Sheet Header --}}
+    <header class="sheet-header">
+        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
+        <div class="header-fields">
+            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+            
+            <div class="resource-row">
+                <div class="resource">
+                    <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
+                    <input type="number" name="system.resources.hp.value" value="{{systemData.resources.hp.value}}" style="width: 50px;">
+                    <span> / </span>
+                    <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
+                </div>
 
-  /** @inheritdoc */
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ["narequenta", "sheet", "actor"],
-      template: "systems/narequenta/templates/actor-sheet.html",
-      width: 720,
-      height: 1125,
-      tabs: [{navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "essences"}]
-    });
-  }
+                {{#if (eq actor.type "character")}}
+                <div class="resource">
+                    <label>{{localize "NAREQUENTA.ActionSurges"}}</label>
+                    <input type="number" name="system.resources.action_surges.value" value="{{systemData.resources.action_surges.value}}" style="width: 40px;">
+                    <span> / </span>
+                    <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
+                </div>
+                {{/if}}
 
-  /** @inheritdoc */
-  async getData(options) {
-    const context = await super.getData(options);
-    const actorData = this.actor.toObject(false);
-    context.systemData = this.actor.system; 
-    context.system = this.actor.system; 
-    EntitySheetHelper.getAttributeData(actorData);
-    context.shorthand = !!game.settings.get("narequenta", "macroShorthand");
-    context.dtypes = ATTRIBUTE_TYPES;
-    context.biographyHTML = await TextEditor.enrichHTML(context.systemData.biography, {
-      secrets: this.document.isOwner,
-      async: true
-    });
+                <div class="resource" style="display: flex; gap: 5px; align-items: flex-end;">
+                    <a class="rest-btn short-rest" title="Refocus"><i class="fas fa-coffee"></i> Short</a>
+                    <a class="rest-btn long-rest" title="Renewal"><i class="fas fa-bed"></i> Long</a>
+                </div>
+            </div>
+            
+            {{#if (eq actor.type "character")}}
+            <div class="resource-row">
+                <input type="text" name="system.promise" value="{{systemData.promise}}" placeholder="{{localize 'NAREQUENTA.TabPromise'}}" style="font-style: italic; width: 100%;">
+            </div>
+            {{/if}}
+        </div>
+    </header>
 
-    // NEW: Prepare Combat Items List for Dropdown
-    context.combatItems = this.actor.items.filter(i => ["weapon", "ability"].includes(i.type))
-        .map(i => ({
-            id: i.id,
-            name: i.name,
-            range: i.system.range || 2,
-            type: i.type.toUpperCase()
-        }));
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
+        <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
+        <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
+    </nav>
 
-    return context;
-  }
+    <section class="sheet-body">
 
-  /** @inheritdoc */
-  activateListeners(html) {
-    super.activateListeners(html);
-    if ( !this.isEditable ) return;
+        {{!-- 1. ESSENCES TAB --}}
+        <div class="tab essences" data-group="primary" data-tab="essences">
+            
+            <div class="essence-grid-container">
+                <div class="essence-header">
+                    <span>{{localize "NAREQUENTA.TabEssences"}}</span>
+                    <span>E_MAX</span>
+                    <span>E_CUR</span>
+                    <span>TIER</span>
+                    <span>DICE</span>
+                </div>
+                {{#each systemData.essences as |essence key|}}
+                <div class="essence-row">
+                    <span class="essence-label">{{essence.label}}</span>
+                    <input class="input-emax" type="number" name="system.essences.{{key}}.max" value="{{essence.max}}" min="50" max="100">
+                    <input class="input-ecur" type="number" name="system.essences.{{key}}.value" value="{{essence.value}}" min="0" max="100">
+                    <span class="derived-stat">{{essence.tier}}</span>
+                    <span class="derived-stat">{{essence.diceString}}</span>
+                </div>
+                {{/each}}
+            </div>
 
-    // Standard Listeners
-    html.find(".item-control").click(this._onItemControl.bind(this));
-    html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
-    
-    // CALCULATOR LISTENERS
-    html.find(".roll-calculation").click(this._onCalculate.bind(this));
-    html.find(".execute-batch").click(this._onExecuteBatch.bind(this));
-    
-    // NEW: Active Item Dropdown Listener
-    html.find(".active-item-select").change(this._onSelectActiveItem.bind(this));
+            {{!-- RESOLUTION CONTEXT PANEL --}}
+            <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
+                
+                {{!-- 1. CONTEXT HEADER --}}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em; align-items: center;">
+                    <div style="border-right: 1px solid #666; padding-right: 5px;">
+                        <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span><br>
+                        <select class="active-item-select" name="system.calculator.selected_item_id" style="width: 100%; font-size: 0.9em; background: #444; color: white; border: none;">
+                            <option value="">-- Select Item --</option>
+                            {{#each combatItems}}
+                                <option value="{{this.id}}" {{#if (eq this.id ../systemData.calculator.selected_item_id)}}selected{{/if}}>
+                                    {{this.name}} ({{this.range}}m)
+                                </option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div style="padding-left: 5px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight: bold; color: #ccc;">TARGET:</span><br>
+                            {{#if systemData.calculator.target_name}}
+                                {{systemData.calculator.target_name}}
+                            {{else}}
+                                <em style="color:#999">None</em>
+                            {{/if}}
+                        </div>
+                        <button class="launch-contest" title="Select Targets" style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                    </div>
+                </div>
 
-    // Targeting & Dice
-    html.find(".launch-contest").click(this._onLaunchContest.bind(this));
-    html.find(".roll-calc-btn").click(this._onRollSheetCalc.bind(this));    
+                {{!-- 2. INPUT GRID --}}
+                <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
+                    
+                    {{!-- ATTACKER --}}
+                    <div style="text-align: center;">
+                        <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">ATTACK (d100)</label>
+                        <div style="display: flex; justify-content: center; gap: 2px;">
+                            <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="Roll" style="width: 50px; text-align: center;">
+                            <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                        </div>
+                        <div style="margin-top: 5px;">
+                            <label style="font-size: 0.8em;">Prof ({{systemData.calculator.prof_roll}})</label>
+                            <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof" style="font-size: 0.8em;"><i class="fas fa-dice-d6"></i> Roll</a>
+                        </div>
+                    </div>
 
-    // Phase & Rest
-    html.find(".waning-toggle").change(ev => {
-        const isChecked = ev.target.checked;
-        if (isChecked) html.find(".waning-roll-btn").slideDown();
-        else html.find(".waning-roll-btn").slideUp();
-    });
-    html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
-    html.find(".short-rest").click(this._onShortRest.bind(this));
-    html.find(".long-rest").click(this._onLongRest.bind(this));
-  }
+                    {{!-- DIVIDER --}}
+                    <div style="background: #ccc; height: 100%;"></div>
 
-  /* -------------------------------------------- */
-  /* NEW: DROPDOWN ITEM SELECTION                 */
-  /* -------------------------------------------- */
-  async _onSelectActiveItem(event) {
-      event.preventDefault();
-      const itemId = event.target.value;
-      const item = this.actor.items.get(itemId);
+                    {{!-- DEFENDER --}}
+                    <div style="text-align: center;">
+                        <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">DEFENSE (d100)</label>
+                        <div style="display: flex; justify-content: center; gap: 2px;">
+                            <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="Auto" style="width: 50px; text-align: center; border: 1px dashed #666;">
+                            <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                        </div>
+                        <p style="font-size: 0.7em; color: #555; margin-top: 2px;">
+                            (Leave 0 for Auto-Roll)
+                        </p>
+                    </div>
+                </div>
 
-      if (!item) return;
+                {{!-- 3. ACTION BAR --}}
+                <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
+                    <button type="button" class="roll-calculation" style="background: #222; color: white; border: 1px solid #000; width: 90%;">
+                        <i class="fas fa-calculator"></i> PREVIEW RESULT
+                    </button>
+                </div>
 
-      const sys = item.system;
-      const motorKey = sys.cost?.motor || "vitalis";
-      
-      // Get Values
-      const motorVal = this.actor.system.essences[motorKey]?.value || 0;
-      const weight = Number(sys.weight) || 15; 
-      const dmgBonus = Number(sys.damage_bonus) || 0;
-      const range = Number(sys.range) || 2; 
+                {{!-- 4. OUTPUT & EXECUTION --}}
+                {{#if systemData.calculator.output}}
+                <div style="padding: 10px; background: #fff;">
+                    {{{systemData.calculator.output}}}
+                    
+                    {{#if systemData.calculator.batch_data}}
+                    <button type="button" class="execute-batch" style="background: #8b0000; color: white; width: 100%; margin-top: 5px; font-weight: bold;">
+                        <i class="fas fa-skull"></i> EXECUTE
+                    </button>
+                    {{/if}}
+                </div>
+                {{/if}}
+				
+            </div>
 
-      // Update Calculator State
-      await this.actor.update({
-          "system.calculator.selected_item_id": itemId, // Persist selection
-          "system.calculator.item_name": item.name,
-          "system.calculator.item_weight": weight,
-          "system.calculator.item_bonus": dmgBonus,
-          "system.calculator.active_motor": motorKey,
-          "system.calculator.active_motor_val": motorVal,
-          "system.calculator.item_range": range,
-          "system.calculator.output": "" // Reset results
-      });
+            {{!-- WANING SECTION --}}
+            {{#if (eq actor.type "character")}}
+            <div style="text-align:center; margin-bottom: 15px; margin-top: 20px; border-top: 2px solid #333; padding-top: 10px;">
+                <div style="margin-bottom: 5px;">
+                    <input type="checkbox" class="waning-toggle" id="enable-waning">
+                    <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
+                </div>
+                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
+                    <i class="fas fa-skull"></i> Trigger Waning Phase
+                </button>
+            </div>
+            {{/if}}
 
-      ui.notifications.info(`Active: ${item.name} (${range}m). Motor: ${motorKey.toUpperCase()}.`);
-  }
+            {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
+        </div>
 
-  /* -------------------------------------------- */
-  /* LEGACY: ITEM ROLL (Kept for Click-to-Load)   */
-  /* -------------------------------------------- */
-  async _onItemRoll(event) {
-    event.preventDefault();
-    const button = $(event.currentTarget);
-    const li = button.parents(".item");
-    const itemId = li.data("itemId");
-    
-    // Simulate selection event
-    // We update the dropdown visually and trigger logic
-    const dropdown = this.element.find(".active-item-select");
-    if(dropdown.length) {
-        dropdown.val(itemId).change(); 
-    } else {
-        // Fallback if sheet not rendered
-        const dummyEvent = { target: { value: itemId }, preventDefault: () => {} };
-        this._onSelectActiveItem(dummyEvent);
-    }
-  }
+        {{!-- 2. ITEMS TAB --}}
+        <div class="tab items" data-group="primary" data-tab="items">
+            <ol class="items-list">
+                <li class="item flexrow item-header">
+                    <div class="item-image"></div>
+                    <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
+                    <div class="item-controls">
+                        <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
+                    </div>
+                </li>
+                {{#each items as |item id|}}
+                <li class="item flexrow" data-item-id="{{item._id}}">
+                    <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                    <h4 class="item-name mb-0">
+                        <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
+                    </h4>
+                    <div class="item-controls">
+                        <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
+                        <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
+                    </div>
+                </li>
+                {{/each}}
+            </ol>
+        </div>
 
-  /* -------------------------------------------- */
-  /* TACTICAL TARGETING UI                        */
-  /* -------------------------------------------- */
-  _onLaunchContest(event) {
-      if(event) event.preventDefault();
-      const attacker = this.actor;
-      
-      // Use currently loaded range
-      let maxDist = this.actor.system.calculator.item_range || 2;
-      
-      const tokens = attacker.getActiveTokens();
-      const attackerToken = tokens.length > 0 ? tokens[0] : null;
+        {{!-- 4. BIOGRAPHY TAB --}}
+        <div class="tab biography" data-group="primary" data-tab="biography">
+            {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
+        </div>
 
-      if (!attackerToken) {
-          ui.notifications.warn("Place character on scene to calculate range.");
-          return;
-      }
-
-      let pcHtml = "";
-      let npcHtml = "";
-      let count = 0;
-
-      canvas.tokens.placeables.forEach(t => {
-          if (t.id === attackerToken.id) return; 
-          
-          const dist = canvas.grid.measureDistance(attackerToken, t);
-          const hp = t.actor?.system.resources?.hp?.value || 0;
-          
-          if (dist <= maxDist && hp > 0) {
-              const isPC = t.actor.type === "character";
-              const entry = `
-              <div style="margin-bottom:4px; padding:4px; background:rgba(0,0,0,0.05); border-radius:4px; display:flex; align-items:center;">
-                  <input type="checkbox" name="target" value="${t.id}" id="chk_${t.id}" style="margin-right:8px;">
-                  <label for="chk_${t.id}" style="cursor:pointer; flex:1;">
-                      <strong>${t.name}</strong> <span style="font-size:0.8em; color:#555;">(${Math.round(dist)}m)</span>
-                  </label>
-              </div>`;
-              
-              if (isPC) pcHtml += entry;
-              else npcHtml += entry;
-              count++;
-          }
-      });
-
-      if (count === 0) {
-          ui.notifications.warn(`No targets within ${maxDist}m.`);
-          return;
-      }
-
-      const essenceOptions = `
-          <option value="vitalis">VITALIS (Force)</option>
-          <option value="motus">MOTUS (Reflex)</option>
-          <option value="sensus">SENSUS (Instinct)</option>
-          <option value="verbum">VERBUM (Logic)</option>
-          <option value="anima">ANIMA (Will)</option>
-      `;
-
-      const content = `
-      <form id="targeting-form">
-          <div style="text-align:center; margin-bottom:10px; font-style:italic;">
-             Range: <strong>${maxDist}m</strong>
-          </div>
-          <div style="display:flex; gap:10px; margin-bottom:10px;">
-              <div style="flex:1; border:1px solid #ccc; padding:5px; background:#eef;">
-                  <h4 style="text-align:center; border-bottom:1px solid #999;">PCs</h4>
-                  ${pcHtml || "<em style='font-size:0.8em'>None</em>"}
-              </div>
-              <div style="flex:1; border:1px solid #ccc; padding:5px; background:#fee;">
-                  <h4 style="text-align:center; border-bottom:1px solid #999;">NPCs</h4>
-                  ${npcHtml || "<em style='font-size:0.8em'>None</em>"}
-              </div>
-          </div>
-          <div class="form-group">
-              <label><strong>Defensive Stat:</strong></label>
-              <select id="target-essence" style="width:100%;">${essenceOptions}</select>
-          </div>
-      </form>
-      `;
-
-      new Dialog({
-          title: `Select Targets`,
-          content: content,
-          buttons: {
-              confirm: {
-                  icon: '<i class="fas fa-crosshairs"></i>',
-                  label: "Lock Targets",
-                  callback: async (html) => {
-                      const selectedIds = [];
-                      html.find("input[name='target']:checked").each(function() {
-                          selectedIds.push($(this).val());
-                      });
-
-                      if (selectedIds.length === 0) return;
-
-                      const essenceKey = html.find("#target-essence").val();
-                      const essenceLabel = essenceKey.toUpperCase();
-
-                      await attacker.update({
-                          "system.calculator.target_ids": selectedIds, 
-                          "system.calculator.target_name": `${selectedIds.length} Target(s) (${essenceLabel})`,
-                          "system.calculator.target_def_stat": essenceKey,
-                          "system.calculator.batch_data": "",
-                          "system.calculator.output": ""
-                      });
-                  }
-              }
-          },
-          default: "confirm"
-      }).render(true);
-  }
-
-  // ... [RETAIN ALL OTHER EXISTING METHODS: _onCalculate, _onExecuteBatch, _onRollSheetCalc, Rest Logic] ...
-  // (Paste previous versions of _onCalculate, _onExecuteBatch, _onLongRest, _onShortRest, _onWaningPhase here)
-  
-  /* -------------------------------------------- */
-  /* BATCH CALCULATE LOGIC (Sheet-Based)          */
-  /* -------------------------------------------- */
-  async _onCalculate(event) {
-      event.preventDefault();
-      const calc = this.actor.system.calculator;
-      const targetIds = calc.target_ids || [];
-      
-      if (!Array.isArray(targetIds) || targetIds.length === 0) {
-          ui.notifications.warn("No targets selected.");
-          return;
-      }
-
-      // Inputs
-      const Attacker_d100 = Number(calc.attack_roll) || 0;
-      const R_prof = Number(calc.prof_roll) || 0;
-      const Manual_Def = Number(calc.defense_roll) || 0;
-      const itemBonus = Number(calc.item_bonus) || 0;
-      const itemWeight = Number(calc.item_weight) || 15; 
-      
-      const motorKey = calc.active_motor || "vitalis"; 
-      const motorData = this.actor.system.essences[motorKey] || { max: 100, value: 100 };
-      const E_max = motorData.max;
-      const E_cur = motorData.value;
-      const defStat = calc.target_def_stat || "vitalis";
-
-      let Attacker_Tier = (this.actor.type === 'character') 
-          ? (this.actor.system.resources.action_surges.max || 0) 
-          : (this.actor.system.tier || 0);
-
-      // --- 1. ATTACKER HIT CHECK ---
-      const effectiveRoll = Attacker_d100 - R_prof;
-      let zonePenalty = 0;
-      if (E_cur <= 75) zonePenalty = 10;
-      if (E_cur <= 50) zonePenalty = 20;
-      if (E_cur <= 25) zonePenalty = 30;
-
-      const successThreshold = E_max - zonePenalty;
-      let attackerSuccess = true;
-      let hitLabel = "SUCCESS";
-
-      if (Attacker_d100 >= 96) { attackerSuccess = false; hitLabel = "CRIT FAIL"; }
-      else if (Attacker_d100 <= 5) { attackerSuccess = true; hitLabel = "CRIT SUCCESS"; }
-      else if (effectiveRoll > successThreshold) { attackerSuccess = false; hitLabel = "MISS"; }
-
-      // --- 2. LOOP TARGETS ---
-      let sheetListHtml = `<div style="font-size:0.85em; color:#555; margin-bottom:5px; border-bottom:1px solid #ccc;">
-          Attack Roll: <strong>${effectiveRoll}</strong> vs <strong>${successThreshold}</strong> (${hitLabel})
-      </div>`;
-      
-      let payloadTargets = []; 
-
-      for (const tid of targetIds) {
-          const tToken = canvas.tokens.get(tid);
-          if (!tToken) continue;
-          
-          const tActor = tToken.actor;
-          const Def_Ecur = tActor.system.essences[defStat]?.value || 50;
-          const Def_Tier = (tActor.type==='character') ? (tActor.system.resources.action_surges.max||0) : (tActor.system.tier||0);
-          
-          let Def_Roll = 0;
-          let isAuto = false;
-          
-          // Use manual if single target and value > 0
-          if (targetIds.length === 1 && Manual_Def > 0) {
-              Def_Roll = Manual_Def;
-          } else {
-              Def_Roll = Math.floor(Math.random() * 100) + 1;
-              isAuto = true;
-          }
-
-          const D_Margin = Def_Roll - Def_Ecur; 
-          let finalDamage = 0;
-          let details = "";
-          
-          if (attackerSuccess) {
-              let A_FP = 100 - effectiveRoll;
-              if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
-
-              const M_Defense = Def_Tier * 5.5;
-              let rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
-              let baseDamage = Math.max(R_prof, rawCalc); 
-              if (baseDamage < 1) baseDamage = 1;
-
-              let mult = 1.0;
-              const diff = Attacker_Tier - Def_Tier;
-              if (diff >= 1) mult = 1.25; if (diff >= 2) mult = 1.50;
-              if (diff === 0) mult = 1.00; if (diff === -1) mult = 0.75; if (diff <= -2) mult = 0.50;
-
-              finalDamage = Math.max(1, Math.floor(baseDamage * mult));
-              
-              payloadTargets.push({ id: tid, damage: finalDamage, name: tToken.name });
-              
-              details = `<span style="font-size:0.8em; color:#555;">(Def:${Def_Roll}${isAuto?"A":""} | Tier ${Def_Tier} [x${mult}])</span>`;
-          } else {
-              details = `<span style="font-size:0.8em; color:#999;">(Missed)</span>`;
-          }
-
-          sheetListHtml += `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0;">
-              <div><strong>${tToken.name}</strong> ${details}</div>
-              <div style="font-weight:bold; color:#8b0000; font-size:1.1em;">${finalDamage}</div>
-          </div>`;
-      }
-
-      let attritionCost = Math.max(0, itemWeight - Math.floor(R_prof / 2));
-      if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2);
-      if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
-
-      sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">Self Attrition: -${attritionCost}%</div>`;
-
-      const resolutionPayload = { essenceKey: motorKey, attritionCost: attritionCost, targets: payloadTargets };
-      
-      await this.actor.update({
-          "system.calculator.output": sheetListHtml,
-          "system.calculator.batch_data": JSON.stringify(resolutionPayload) 
-      });
-  }
-
-  async _onExecuteBatch(event) {
-      event.preventDefault();
-      const rawData = this.actor.system.calculator.batch_data;
-      if (!rawData) return;
-
-      const { essenceKey, attritionCost, targets } = JSON.parse(rawData);
-
-      // 1. Attrition
-      const currentVal = this.actor.system.essences[essenceKey].value;
-      const newVal = Math.max(0, currentVal - attritionCost);
-      await this.actor.update({ [`system.essences.${essenceKey}.value`]: newVal });
-
-      // 2. Damage
-      let dmgCount = 0;
-      if (targets && targets.length > 0) {
-          for (const tData of targets) {
-              const token = canvas.tokens.get(tData.id);
-              if (token && token.actor) {
-                  const currentHP = Number(token.actor.system.resources.hp.value) || 0;
-                  const newHP = Math.max(0, currentHP - tData.damage);
-                  await token.actor.update({ "system.resources.hp.value": newHP });
-                  
-                  if (newHP <= 0) {
-                       const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
-                       if (!isDead) await token.actor.toggleStatusEffect("dead", { overlay: true });
-                  }
-                  dmgCount++;
-              }
-          }
-      }
-
-      // 3. Reset
-      await this.actor.update({
-          "system.calculator.attack_roll": 0,
-          "system.calculator.prof_roll": 0,
-          "system.calculator.defense_roll": 0,
-          "system.calculator.batch_data": "",
-          "system.calculator.output": `Resolution Complete. -${attritionCost}% Attrition.`
-      });
-
-      ui.notifications.info("Combat Resolution Complete.");
-  }
-  
-  _onItemControl(event) {
-    event.preventDefault();
-    const button = event.currentTarget;
-    const li = button.closest(".item");
-    const item = this.actor.items.get(li?.dataset.itemId);
-    switch ( button.dataset.action ) {
-      case "create": const cls = getDocumentClass("Item"); return cls.create({name: game.i18n.localize("NAREQUENTA.ItemNew"), type: "item"}, {parent: this.actor});
-      case "edit": return item.sheet.render(true);
-      case "delete": return item.delete();
-    }
-  }
-  
-  _onRollSheetCalc(event) {
-      event.preventDefault();
-      const btn = $(event.currentTarget);
-      const targetField = btn.data("target");
-      const type = btn.data("type");
-      const label = btn.data("label") || "Calculator Roll"; 
-      let formula = "1d100";
-      if (type === "prof") {
-          let tier = (this.actor.type === 'character') ? (this.actor.system.resources.action_surges.max || 0) : (this.actor.system.tier || 0);
-          if (tier === 0) {
-              this.actor.update({ [targetField]: 0 });
-              return;
-          }
-          formula = `${tier}d10`;
-      }
-      const roll = new Roll(formula);
-      roll.evaluate().then(r => {
-        if (game.dice3d) game.dice3d.showForRoll(r);
-        r.toMessage({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), flavor: label });
-        this.actor.update({ [targetField]: r.total });
-      });
-  }
-  
-  // Waning, Rest, etc... (ensure they are present from previous files)
-  async _onLongRest(event) { /* ... Same as previous ... */ }
-  async _onShortRest(event) { /* ... Same as previous ... */ }
-  async _onWaningPhase(event) { /* ... Same as previous ... */ }
-  async _onApplySheetDamage(event) { /* ... Same as previous ... */ }
-}
+    </section>
+</form>
