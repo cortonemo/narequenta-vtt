@@ -14,10 +14,10 @@
   "NAREQUENTA.NotifyInitFormulaUpdated": "Fórmula de iniciativa atualizada para",
   "NAREQUENTA.NotifyInitFormulaInvalid": "Fórmula de iniciativa inválida",
 
-  "NAREQUENTA.Health": "Hit Points",
-  "NAREQUENTA.EssenceMax": "Auge da Alma",
+  "NAREQUENTA.Health": "Vigor Atual (PV)",
+  "NAREQUENTA.EssenceMax": "Pico da Alma",
   "NAREQUENTA.EssenceCur": "Vigor Ativo",
-  "NAREQUENTA.EssenceTier": "Nível / Rendimento do Declínio",
+  "NAREQUENTA.EssenceTier": "Nível / Compensação de Declínio",
   "NAREQUENTA.ActionSurges": "Surtos de Intenção",
 
   "NAREQUENTA.TabEssences": "Facetas do Eu",
