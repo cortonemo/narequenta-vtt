@@ -72,13 +72,13 @@
     "item": {
       "description": "",
       "quantity": 1,
-      "weight": 0,
+      "weight": 10,
       "attributes": {},
       "groups": {}
     },
     "ability": {
       "description": "",
-      "range": 2,
+      "range": 5,
       "cost": {
         "motor": "vitalis",
         "quality": "motus"
@@ -88,8 +88,9 @@
     },
     "weapon": {
       "description": "",
-      "range": 2,
+      "range": 5,
       "damage_bonus": 0,
+      "weight": 15,
       "cost": {
         "motor": "vitalis",
         "quality": "motus"
