@@ -70,32 +70,38 @@
             {{!-- RESOLUTION CONTEXT PANEL --}}
             <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
                 
-                {{!-- 1. CONTEXT HEADER (Info Display) --}}
-                <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em;">
+                {{!-- 1. CONTEXT HEADER --}}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em; align-items: center;">
                     <div style="border-right: 1px solid #666; padding-right: 5px;">
                         <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span><br>
-                        {{#if systemData.calculator.item_name}}
-                            {{systemData.calculator.item_name}} ({{systemData.calculator.item_weight}}%)
-                        {{else}}
-                            <em style="color:#999">Select Item...</em>
-                        {{/if}}
+                        <select class="active-item-select" name="system.calculator.selected_item_id" style="width: 100%; font-size: 0.9em; background: #444; color: white; border: none;">
+                            <option value="">-- Select Item --</option>
+                            {{#each combatItems}}
+                                <option value="{{this.id}}" {{#if (eq this.id ../systemData.calculator.selected_item_id)}}selected{{/if}}>
+                                    {{this.name}} ({{this.range}}m)
+                                </option>
+                            {{/each}}
+                        </select>
                     </div>
-                    <div style="padding-left: 5px;">
-                        <span style="font-weight: bold; color: #ccc;">TARGET:</span><br>
-                        {{#if systemData.calculator.target_name}}
-                            {{systemData.calculator.target_name}}
-                        {{else}}
-                            <button class="launch-contest" style="background: #555; border: 1px solid #777; color: white; font-size: 0.8em; padding: 1px 6px; cursor: pointer;">
-                                <i class="fas fa-crosshairs"></i> Select
-                            </button>
-                        {{/if}}
+                    <div style="padding-left: 5px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight: bold; color: #ccc;">TARGET:</span><br>
+                            {{#if systemData.calculator.target_name}}
+                                {{systemData.calculator.target_name}}
+                            {{else}}
+                                <em style="color:#999">None</em>
+                            {{/if}}
+                        </div>
+                        <button class="launch-contest" title="Select Targets" style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
                     </div>
                 </div>
 
                 {{!-- 2. INPUT GRID --}}
                 <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
                     
-                    {{!-- ATTACKER COLUMN --}}
+                    {{!-- ATTACKER --}}
                     <div style="text-align: center;">
                         <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">ATTACK (d100)</label>
                         <div style="display: flex; justify-content: center; gap: 2px;">
@@ -111,14 +117,15 @@
                     {{!-- DIVIDER --}}
                     <div style="background: #ccc; height: 100%;"></div>
 
-                    {{!-- DEFENDER COLUMN --}}
+                    {{!-- DEFENDER --}}
                     <div style="text-align: center;">
                         <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">DEFENSE (d100)</label>
                         <div style="display: flex; justify-content: center; gap: 2px;">
                             <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="Auto" style="width: 50px; text-align: center; border: 1px dashed #666;">
+                            <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
                         </div>
                         <p style="font-size: 0.7em; color: #555; margin-top: 2px;">
-                            (Leave 0 to Auto-Roll)
+                            (Leave 0 for Auto-Roll)
                         </p>
                     </div>
                 </div>
