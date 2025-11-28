@@ -78,7 +78,7 @@
                             <option value="">-- Select Item --</option>
                             {{#each combatItems}}
                                 <option value="{{this.id}}" {{#if (eq this.id ../systemData.calculator.selected_item_id)}}selected{{/if}}>
-                                    {{this.name}} ({{this.range}}m)
+                                    {{this.name}} ({{this.range}}ft)
                                 </option>
                             {{/each}}
                         </select>
