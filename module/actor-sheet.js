@@ -33,7 +33,7 @@ export class NarequentaActorSheet extends ActorSheet {
         .map(i => ({
             id: i.id,
             name: i.name,
-            range: i.system.range || 2,
+            range: i.system.range || 5, // [FIXED] Changed 2 to 5
             type: i.type.toUpperCase()
         }));
 
@@ -139,8 +139,8 @@ export class NarequentaActorSheet extends ActorSheet {
       if(event) event.preventDefault();
       const attacker = this.actor;
       
-      // Use currently loaded range
-      let maxDist = this.actor.system.calculator.item_range || 2;
+      // [FIXED] Use currently loaded range, default to 5ft (standard square)
+      let maxDist = this.actor.system.calculator.item_range || 5;
       
       const tokens = attacker.getActiveTokens();
       const attackerToken = tokens.length > 0 ? tokens[0] : null;
@@ -166,7 +166,7 @@ export class NarequentaActorSheet extends ActorSheet {
               <div style="margin-bottom:4px; padding:4px; background:rgba(0,0,0,0.05); border-radius:4px; display:flex; align-items:center;">
                   <input type="checkbox" name="target" value="${t.id}" id="chk_${t.id}" style="margin-right:8px;">
                   <label for="chk_${t.id}" style="cursor:pointer; flex:1;">
-                      <strong>${t.name}</strong> <span style="font-size:0.8em; color:#555;">(${Math.round(dist)}m)</span>
+                      <strong>${t.name}</strong> <span style="font-size:0.8em; color:#555;">(${Math.round(dist)}ft)</span>
                   </label>
               </div>`;
               
@@ -177,7 +177,8 @@ export class NarequentaActorSheet extends ActorSheet {
       });
 
       if (count === 0) {
-          ui.notifications.warn(`No targets within ${maxDist}m.`);
+          // [FIXED] Unit changed to ft
+          ui.notifications.warn(`No targets within ${maxDist}ft.`);
           return;
       }
 
@@ -192,7 +193,7 @@ export class NarequentaActorSheet extends ActorSheet {
       const content = `
       <form id="targeting-form">
           <div style="text-align:center; margin-bottom:10px; font-style:italic;">
-             Range: <strong>${maxDist}m</strong>
+             Range: <strong>${maxDist}ft</strong>
           </div>
           <div style="display:flex; gap:10px; margin-bottom:10px;">
               <div style="flex:1; border:1px solid #ccc; padding:5px; background:#eef;">
@@ -249,51 +250,74 @@ export class NarequentaActorSheet extends ActorSheet {
   /* -------------------------------------------- */
   /* BATCH CALCULATE LOGIC (Sheet-Based)          */
   /* -------------------------------------------- */
+  /* -------------------------------------------- */
+  /* BATCH CALCULATE LOGIC (Sheet-Based) v0.9.6   */
+  /* -------------------------------------------- */
   async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
-      const targetIds = calc.target_ids || [];
       
+      // 1. Validate Targets
+      const targetIds = calc.target_ids || [];
       if (!Array.isArray(targetIds) || targetIds.length === 0) {
-          ui.notifications.warn("No targets selected.");
-          return;
+          // Fallback for single target legacy field
+          if (calc.target_id) targetIds.push(calc.target_id);
+          else { 
+              ui.notifications.warn("No targets selected."); 
+              return; 
+          }
       }
 
-      // Inputs
+      // 2. Gather Inputs
       const Attacker_d100 = Number(calc.attack_roll) || 0;
       const R_prof = Number(calc.prof_roll) || 0;
       const Manual_Def = Number(calc.defense_roll) || 0;
+      
       const itemBonus = Number(calc.item_bonus) || 0;
-      const itemWeight = Number(calc.item_weight) || 15; 
+      // [UPDATED v0.9.6] Pull weight, default to Medium (15) if undefined
+      const itemWeight = (typeof calc.item_weight !== "undefined") ? Number(calc.item_weight) : 15; 
       
       const motorKey = calc.active_motor || "vitalis"; 
       const motorData = this.actor.system.essences[motorKey] || { max: 100, value: 100 };
       const E_max = motorData.max;
       const E_cur = motorData.value;
       const defStat = calc.target_def_stat || "vitalis";
-
+      
       let Attacker_Tier = (this.actor.type === 'character') 
           ? (this.actor.system.resources.action_surges.max || 0) 
           : (this.actor.system.tier || 0);
 
-      // --- 1. ATTACKER HIT CHECK ---
+      // 3. Determine Hit Success (Zone Logic)
       const effectiveRoll = Attacker_d100 - R_prof;
+      
+      // Calculate Zone Penalty based on Current Essence
       let zonePenalty = 0;
-      if (E_cur <= 75) zonePenalty = 10;
-      if (E_cur <= 50) zonePenalty = 20;
-      if (E_cur <= 25) zonePenalty = 30;
+      if (E_cur <= 25) zonePenalty = 30;      // Hollow
+      else if (E_cur <= 50) zonePenalty = 20; // Fading
+      else if (E_cur <= 75) zonePenalty = 10; // Waning
+      // Peak (76-100) is 0
 
       const successThreshold = E_max - zonePenalty;
       let attackerSuccess = true;
       let hitLabel = "SUCCESS";
 
-      if (Attacker_d100 >= 96) { attackerSuccess = false; hitLabel = "CRIT FAIL"; }
-      else if (Attacker_d100 <= 5) { attackerSuccess = true; hitLabel = "CRIT SUCCESS"; }
-      else if (effectiveRoll > successThreshold) { attackerSuccess = false; hitLabel = "MISS"; }
+      // Critical Outcomes
+      if (Attacker_d100 >= 96) { 
+          attackerSuccess = false; 
+          hitLabel = "CRIT FAIL";
+      }
+      else if (Attacker_d100 <= 5) { 
+          attackerSuccess = true; 
+          hitLabel = "CRIT SUCCESS";
+      }
+      else if (effectiveRoll > successThreshold) { 
+          attackerSuccess = false; 
+          hitLabel = "MISS";
+      }
 
-      // --- 2. LOOP TARGETS ---
+      // 4. Loop Targets & Calculate Damage
       let sheetListHtml = `<div style="font-size:0.85em; color:#555; margin-bottom:5px; border-bottom:1px solid #ccc;">
-          Attack Roll: <strong>${effectiveRoll}</strong> vs <strong>${successThreshold}</strong> (${hitLabel})
+          Attack: <strong>${effectiveRoll}</strong> vs <strong>${successThreshold}</strong> (${hitLabel})
       </div>`;
       
       let payloadTargets = []; 
@@ -308,8 +332,8 @@ export class NarequentaActorSheet extends ActorSheet {
           
           let Def_Roll = 0;
           let isAuto = false;
-          
-          // Use manual if single target and value > 0
+
+          // Use manual defense roll if single target and value > 0
           if (targetIds.length === 1 && Manual_Def > 0) {
               Def_Roll = Manual_Def;
           } else {
@@ -317,26 +341,38 @@ export class NarequentaActorSheet extends ActorSheet {
               isAuto = true;
           }
 
-          const D_Margin = Def_Roll - Def_Ecur; 
+          const D_Margin = Def_Roll - Def_Ecur;
           let finalDamage = 0;
           let details = "";
           
           if (attackerSuccess) {
+              // Calculate Full Potential (A_FP)
               let A_FP = 100 - effectiveRoll;
-              if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
+              if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof); // Crit maxes potential
 
               const M_Defense = Def_Tier * 5.5;
+              
+              // v0.9.6 Additive Damage Formula
               let rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
-              let baseDamage = Math.max(R_prof, rawCalc); 
+              
+              // Hard Floor: Damage cannot be lower than Proficiency Roll (Skill Floor)
+              let baseDamage = Math.max(R_prof, rawCalc);
               if (baseDamage < 1) baseDamage = 1;
 
+              // Tier Advantage Multiplier (M_DTA)
               let mult = 1.0;
               const diff = Attacker_Tier - Def_Tier;
-              if (diff >= 1) mult = 1.25; if (diff >= 2) mult = 1.50;
-              if (diff === 0) mult = 1.00; if (diff === -1) mult = 0.75; if (diff <= -2) mult = 0.50;
+              
+              // Attacker Advantage
+              if (diff >= 1) mult = 1.25; 
+              if (diff >= 2) mult = 1.50; // Cap at +2 diff
+              
+              // Defender Advantage
+              if (diff === 0) mult = 1.00; 
+              if (diff === -1) mult = 0.75;
+              if (diff <= -2) mult = 0.50; // Cap at -2 diff
 
               finalDamage = Math.max(1, Math.floor(baseDamage * mult));
-              
               payloadTargets.push({ id: tid, damage: finalDamage, name: tToken.name });
               
               details = `<span style="font-size:0.8em; color:#555;">(Def:${Def_Roll}${isAuto?"A":""} | Tier ${Def_Tier} [x${mult}])</span>`;
@@ -351,17 +387,39 @@ export class NarequentaActorSheet extends ActorSheet {
           </div>`;
       }
 
+      // 5. Calculate Attrition (v0.9.6 Logic)
+      // Formula: Max(0, Weight - floor(R_prof / 2))
       let attritionCost = Math.max(0, itemWeight - Math.floor(R_prof / 2));
-      if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2);
-      if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
+      
+      // Critical Modifiers for Attrition
+      if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2); // Efficient
+      if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;            // Strained
 
-      sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">Self Attrition: -${attritionCost}%</div>`;
+      sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">
+          Self Attrition: -${attritionCost}% (Wt: ${itemWeight})
+      </div>`;
 
-      const resolutionPayload = { essenceKey: motorKey, attritionCost: attritionCost, targets: payloadTargets };
+      // 6. Prepare Payload & Update Actor
+      const resolutionPayload = { 
+          essenceKey: motorKey, 
+          attritionCost: attritionCost, 
+          targets: payloadTargets 
+      };
       
       await this.actor.update({
           "system.calculator.output": sheetListHtml,
           "system.calculator.batch_data": JSON.stringify(resolutionPayload) 
+      });
+      
+      // Optional Chat Log
+      ChatMessage.create({ 
+          speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
+          content: `<div class="narequenta chat-card">
+              <strong>Calculated Attack</strong><br>
+              ${hitLabel}<br>
+              Cost: ${attritionCost}%<br>
+              <em>See sheet to apply.</em>
+          </div>` 
       });
   }
 
