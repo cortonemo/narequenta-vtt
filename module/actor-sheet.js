@@ -500,10 +500,367 @@ export class NarequentaActorSheet extends ActorSheet {
         this.actor.update({ [targetField]: r.total });
       });
   }
+/* -------------------------------------------- */
+  /* REST & RECOVERY LOGIC                        */
+  /* -------------------------------------------- */
   
-  // Waning, Rest, etc... (ensure they are present from previous files)
-  async _onLongRest(event) { /* ... Same as previous ... */ }
-  async _onShortRest(event) { /* ... Same as previous ... */ }
-  async _onWaningPhase(event) { /* ... Same as previous ... */ }
-  async _onApplySheetDamage(event) { /* ... Same as previous ... */ }
+  /**
+   * Handle Long Rest (Renewal).
+   * Restores E_cur to E_max, HP to Max, and Action Surges to Max.
+   */
+  async _onLongRest(event) {
+    event.preventDefault();
+    const actor = this.actor;
+    const confirmed = await Dialog.confirm({
+      title: "Renewal (Long Rest)",
+      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to their current <strong>Maximums</strong>.<br><strong>Targeting Data will be cleared.</strong></p>"
+    });
+
+    if (confirmed) {
+      const updates = {};
+      const essences = actor.system.essences;
+      
+      // 1. Restore Essences
+      for (const [key, essence] of Object.entries(essences)) {
+        updates[`system.essences.${key}.value`] = essence.max;
+      }
+      
+      // 2. Restore Action Surges (Characters only)
+      if (actor.type === "character") {
+        updates[`system.resources.action_surges.value`] = actor.system.resources.action_surges.max;
+      }
+      
+      // 3. Restore HP
+      updates[`system.resources.hp.value`] = actor.system.resources.hp.max;
+
+      // 4. Clear Targeting Calculator
+      updates[`system.calculator.target_ids`] = [];
+      updates[`system.calculator.target_name`] = "None";
+      updates[`system.calculator.batch_data`] = "";
+      updates[`system.calculator.output`] = "Rest Complete. Targets Cleared.";
+
+      await actor.update(updates);
+      
+      ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: actor }),
+        content: `<div class="narequenta chat-card"><h3>Renewal</h3><p>Fully Restored & Targets Cleared.</p></div>`
+      });
+    }
+  }
+
+  /**
+   * Handle Short Rest (Refocus).
+   * Opens a dialog to roll for recovery.
+   */
+  async _onShortRest(event) {
+    event.preventDefault();
+    const actor = this.actor;
+    
+    const content = `
+    <div class="narequenta">
+        <div class="form-group">
+            <label style="font-weight:bold;">Rest Intensity:</label>
+            <select id="rest-type" style="width:100%; margin-bottom: 10px;">
+              <option value="quick">Quick Breath (1d6%) - Momentary</option>
+              <option value="mental" selected>Mental Calming (Variable)</option>
+              <option value="deep">Deep Meditation (4d10%) - 1 Hour</option>
+            </select>
+        </div>
+        <div id="mental-options" style="display:block; background:#f0f0f0; padding:5px; border:1px solid #ccc; margin-bottom:10px;">
+             <label>Calming Duration:</label>
+             <select id="mental-duration" style="width:100%;">
+                <option value="2d8">5 Minutes (2d8%)</option>
+                <option value="3d8">10 Minutes (3d8%)</option>
+                <option value="4d8">15 Minutes (4d8%)</option>
+                <option value="5d8">20 Minutes (5d8%)</option>
+             </select>
+        </div>
+        <div style="display:flex; gap:5px; align-items:center; margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
+            <button type="button" id="btn-roll-rest" style="flex:0 0 40px;"><i class="fas fa-dice"></i></button>
+            <input type="number" id="rest-result" placeholder="Roll" style="text-align:center; font-weight:bold;">
+        </div>
+    </div>
+    <script>$("#rest-type").change(function(){if($(this).val()==="mental")$("#mental-options").slideDown();else $("#mental-options").slideUp();});</script>`;
+
+    const d = new Dialog({
+      title: "Refocus",
+      content: content,
+      buttons: {
+        apply: {
+          icon: '<i class="fas fa-check"></i>',
+          label: "Apply",
+          callback: async (html) => {
+            const val = html.find("#rest-result").val();
+            if (val === "") return; 
+            
+            const recoveredAmount = parseInt(val);
+            const updates = {};
+            const essences = actor.system.essences;
+            const hp = actor.system.resources.hp;
+            let outputList = "";
+            
+            // Recover Essences
+            for (const [key, essence] of Object.entries(essences)) {
+              let newValue = essence.value + recoveredAmount;
+              if (newValue > 100) newValue = 100; // Cap at 100% absolute (Game Rule)
+              
+              // Only update if it actually changes
+              if (essence.value < 100) {
+                  updates[`system.essences.${key}.value`] = newValue;
+                  outputList += `<li><strong>${essence.label}:</strong> +${recoveredAmount}% (${newValue}%)</li>`;
+              }
+            }
+            
+            // Recover HP
+            let newHP = hp.value + recoveredAmount;
+            if (newHP > hp.max) newHP = hp.max;
+            
+            if (hp.value < hp.max) {
+                updates[`system.resources.hp.value`] = newHP;
+                outputList += `<li><strong>Active Vigor:</strong> +${recoveredAmount} (${newHP})</li>`;
+            }
+
+            await actor.update(updates);
+            
+            ChatMessage.create({
+              speaker: ChatMessage.getSpeaker({ actor: actor }),
+              content: `<div class="narequenta chat-card"><h3>Refocus Applied</h3><div><strong>Recovered:</strong> +${recoveredAmount}%</div><hr><ul>${outputList || "<li>At 100%.</li>"}</ul></div>`
+            });
+          }
+        }
+      },
+      render: (html) => {
+          html.find("#btn-roll-rest").click(async () => {
+              const type = html.find("#rest-type").val();
+              let formula = "1d6"; 
+              if (type === "mental") formula = html.find("#mental-duration").val();
+              else if (type === "deep") formula = "4d10";
+              
+              const roll = new Roll(formula);
+              await roll.evaluate();
+              if (game.dice3d) game.dice3d.showForRoll(roll);
+              
+              html.find("#rest-result").val(roll.total);
+          });
+      }
+    });
+    d.render(true);
+  }
+
+  /**
+   * Handle Waning Phase (Permanent Loss).
+   * Rolls 1d6 (Universal) or 2d6 (Focus) and reduces E_max.
+   */
+  async _onWaningPhase(event) {
+      event.preventDefault();
+      const actor = this.actor;
+      const essenceKeys = ["vitalis", "motus", "sensus", "verbum", "anima"];
+      const essenceLabels = { "vitalis": "VITALIS", "motus": "MOTUS", "sensus": "SENSUS", "verbum": "VERBUM", "anima": "ANIMA" };
+      
+      let essenceDropdown = "";
+      essenceKeys.forEach(key => { essenceDropdown += `<option value="${key}">${essenceLabels[key]}</option>`; });
+      
+      let rowsHTML = "";
+      essenceKeys.forEach(key => {
+          rowsHTML += `
+          <tr id="row-${key}" class="essence-row-calc">
+              <td style="font-weight:bold;">${essenceLabels[key]}</td>
+              <td id="formula-${key}" class="formula-cell" style="color:#555; text-align:center;">1d6</td>
+              <td><button class="roll-individual-btn" data-key="${key}" style="padding:2px 8px;"><i class="fas fa-dice"></i></button></td>
+              <td><input type="number" id="result-${key}" class="nq-manual" style="width:50px; text-align:center;" readonly></td>
+              <td id="display-${key}" style="font-size:0.8em; color:#666;">-</td>
+          </tr>`;
+      });
+
+      const content = `<div class="narequenta">
+      <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-weight:bold;">Select Refinement Focus (Higher Risk/Reward):</label>
+          <select id="focus-select" style="width:100%">${essenceDropdown}</select>
+          <p style="font-size:0.8em; margin-top:5px;">The Focus Essence rolls <strong>2d6</strong>. Others roll <strong>1d6</strong>.</p>
+      </div>
+      <hr>
+      <table class="nq-table" style="width:100%">
+          <thead><tr><th>Essence</th><th>Dice</th><th>Roll</th><th>Loss</th><th>Info</th></tr></thead>
+          <tbody>${rowsHTML}</tbody>
+      </table>
+      </div>`;
+
+      const performWaning = async (html, dialogInstance) => {
+          const focusKey = html.find("#focus-select").val();
+          const updates = {};
+          let chatOutput = "";
+          
+          for (const key of essenceKeys) {
+              const resultVal = html.find(`#result-${key}`).val();
+              if (resultVal === "") continue; 
+              
+              const loss = parseInt(resultVal);
+              const currentMax = actor.system.essences[key].max;
+              let newMax = currentMax - loss;
+              
+              // Hard Floor Rule
+              if (newMax < 50) newMax = 50;
+              
+              updates[`system.essences.${key}.max`] = newMax;
+              
+              const isFocus = (key === focusKey);
+              chatOutput += `<div style="display:flex; justify-content:space-between; font-size:0.9em; ${isFocus ? 'font-weight:bold; color:#006400;' : ''}"><span>${essenceLabels[key]}:</span><span>-${loss}% (${newMax}%)</span></div>`;
+          }
+          
+          if (Object.keys(updates).length > 0) {
+              await actor.update(updates);
+              ChatMessage.create({ 
+                  speaker: ChatMessage.getSpeaker({ actor: actor }), 
+                  content: `<div class="narequenta chat-card"><h3>The Waning</h3><div style="margin-bottom:5px;"><strong>Focus:</strong> ${essenceLabels[focusKey]}</div><hr>${chatOutput}<hr><div style="text-align:center; font-style:italic;">Sheet Updated.</div></div>` 
+              });
+          }
+          dialogInstance.close();
+      };
+
+      const d = new Dialog({ 
+          title: `The Waning: ${actor.name}`, 
+          content: content, 
+          buttons: { 
+              apply: { 
+                  icon: '<i class="fas fa-check"></i>', 
+                  label: "Apply All Changes", 
+                  callback: (html) => performWaning(html, d) 
+              } 
+          },
+          render: (html) => {
+              const updateHighlights = () => {
+                  const focusKey = html.find("#focus-select").val();
+                  essenceKeys.forEach(k => { html.find(`#row-${k}`).removeClass("nq-focus-highlight"); html.find(`#formula-${k}`).text("1d6"); });
+                  html.find(`#row-${focusKey}`).addClass("nq-focus-highlight"); html.find(`#formula-${focusKey}`).html("<b>2d6</b>");
+              };
+              updateHighlights(); 
+              html.find("#focus-select").change(updateHighlights);
+              
+              html.find(".roll-individual-btn").click(async (ev) => {
+                  ev.preventDefault(); 
+                  const btn = $(ev.currentTarget); 
+                  const key = btn.data("key"); 
+                  const focusKey = html.find("#focus-select").val(); 
+                  const isFocus = (key === focusKey);
+                  
+                  const formula = isFocus ? "2d6" : "1d6";
+                  const r = new Roll(formula); 
+                  await r.evaluate(); 
+                  if (game.dice3d) game.dice3d.showForRoll(r);
+                  
+                  let loss = r.total;
+                  let displayInfo = `Rolled ${loss}`;
+                  
+                  // Tier I Guarantee Logic (First Roll on 100% Focus)
+                  const currentMax = actor.system.essences[key].max;
+                  if (isFocus && currentMax === 100) { 
+                      const potentialMax = currentMax - loss;
+                      if (potentialMax > 90) { 
+                          loss = 10; 
+                          displayInfo = `Rolled ${r.total} -> Set 10 (Tier I Guarantee)`;
+                      } 
+                  }
+                  
+                  html.find(`#result-${key}`).val(loss);
+                  html.find(`#display-${key}`).text(displayInfo);
+                  r.toMessage({ speaker: ChatMessage.getSpeaker({ actor: actor }), flavor: `Waning Roll (${essenceLabels[key]})` });
+              });
+          }
+      });
+      d.render(true);
+  }
+ /* -------------------------------------------- */
+  /* MANUAL DAMAGE HANDLER                        */
+  /* -------------------------------------------- */
+  
+  /**
+   * manual generic damage application (Traps, Fall, GM Fiat).
+   * Opens a dialog to subtract from HP or specific Essence.
+   */
+  async _onApplySheetDamage(event) {
+      event.preventDefault();
+      const actor = this.actor;
+
+      const content = `
+          <div class="narequenta">
+              <div class="form-group">
+                  <label style="font-weight:bold;">Damage Amount:</label>
+                  <input type="number" id="dmg-amount" value="1" style="text-align:center;" autofocus>
+              </div>
+              <div class="form-group">
+                  <label style="font-weight:bold;">Target Pool:</label>
+                  <select id="dmg-target" style="width:100%;">
+                      <option value="hp" selected>Active Vigor (HP)</option>
+                      <option disabled>--- Essences (Direct Attrition) ---</option>
+                      <option value="vitalis">VITALIS</option>
+                      <option value="motus">MOTUS</option>
+                      <option value="sensus">SENSUS</option>
+                      <option value="verbum">VERBUM</option>
+                      <option value="anima">ANIMA</option>
+                  </select>
+              </div>
+              <p style="font-size:0.8em; color:#555; margin-top:5px;">
+                  Applied directly to <strong>Current Value</strong>. Floor is 0.
+              </p>
+          </div>
+      `;
+
+      new Dialog({
+          title: "Apply Damage / Attrition",
+          content: content,
+          buttons: {
+              apply: {
+                  icon: '<i class="fas fa-skull"></i>',
+                  label: "Apply Damage",
+                  callback: async (html) => {
+                      const amount = Number(html.find("#dmg-amount").val());
+                      const target = html.find("#dmg-target").val();
+                      
+                      if (!amount || amount <= 0) return;
+
+                      let current, path;
+                      let label = "";
+
+                      // Determine Target Path
+                      if (target === "hp") {
+                          path = "system.resources.hp.value";
+                          current = actor.system.resources.hp.value;
+                          label = "Active Vigor (HP)";
+                      } else {
+                          path = `system.essences.${target}.value`;
+                          current = actor.system.essences[target].value;
+                          label = target.toUpperCase();
+                      }
+
+                      // Calculate New Value (Hard Floor at 0)
+                      const newValue = Math.max(0, current - amount);
+
+                      // Update Actor
+                      await actor.update({ [path]: newValue });
+
+                      // Handle Death State (Only for HP)
+                      if (target === "hp" && newValue <= 0) {
+                          const isDead = actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
+                          if (!isDead) await actor.toggleStatusEffect("dead", { overlay: true });
+                      }
+
+                      // Chat Notification
+                      ChatMessage.create({
+                          speaker: ChatMessage.getSpeaker({ actor: actor }),
+                          content: `<div class="narequenta chat-card">
+                              <strong>Manual Damage</strong><br>
+                              Took <strong>${amount}</strong> damage to <strong>${label}</strong>.
+                              <br><em>(${current} ➔ ${newValue})</em>
+                          </div>`
+                      });
+                  }
+              },
+              cancel: {
+                  icon: '<i class="fas fa-times"></i>',
+                  label: "Cancel"
+              }
+          },
+          default: "apply"
+      }).render(true);
+  } 
 }
