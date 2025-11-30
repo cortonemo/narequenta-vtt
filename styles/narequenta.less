@@ -1,37 +1,62 @@
-/* Global System Styles */
+/* ========================================================================
+   NÁRËQUENTA SYSTEM STYLES (LESS SOURCE)
+   ======================================================================== */
+
+/* --- Variables --- */
+@color-text: #191813;
+@color-bg: #fcfcfc;
+@color-border: #333;
+@color-light-gray: #e0e0e0;
+@color-faint-gray: rgba(0, 0, 0, 0.05);
+
+/* Logic Colors */
+@color-emax: #8b0000; /* Dark Red - Represents Limit/Loss */
+@color-ecur: #006400; /* Dark Green - Represents Energy/Life */
+
+/* Theme Colors */
+@theme-pc-bg: #f0fdf4;
+@theme-pc-border: #006400;
+@theme-npc-bg: #fff5f5;
+@theme-npc-border: #8b0000;
+
+/* ------------------------------------------------------------------------
+   GLOBAL WINDOW STYLES
+   ------------------------------------------------------------------------ */
 .narequenta {
     .window-content {
         font-family: "Signika", sans-serif;
         font-size: 14px;
-        color: #191813;
-        background: #fcfcfc;
+        color: @color-text;
+        background: @color-bg;
     }
 
-/* --- Header Section --- */
-	.narequenta header.sheet-header {
-		display: flex;
-		align-items: center;
-		margin-bottom: 10px;
-		border-bottom: 2px solid #333;
-		padding-bottom: 10px;
-	}
+    /* --------------------------------------------------------------------
+       SHEET HEADER (Avatar, Name, Resources)
+       -------------------------------------------------------------------- */
+    header.sheet-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        border-bottom: 2px solid @color-border;
+        padding-bottom: 10px;
 
-	.narequenta .profile-img {
-		flex: 0 0 100px;
-		height: 100px;
-		margin-right: 15px;
-		border: 2px solid #333;       /* Thicker border */
-		background-color: #4b4a44;    /* Dark Grey Background */
-		border-radius: 5px;           /* Rounded corners */
-		object-fit: cover;            /* Ensures image fits nicely */
-		cursor: pointer;              /* Shows it's clickable */
-	}
-
+        /* Profile Image Container */
+        .profile-img {
+            flex: 0 0 100px;
+            height: 100px;
+            margin-right: 15px;
+            border: 2px solid @color-border;
+            background-color: #4b4a44;
+            border-radius: 5px;
+            object-fit: cover;
+            cursor: pointer; /* Indicates clickable for image upload */
+        }
 
         .header-fields {
             flex: 1;
         }
 
+        /* Character Name Input (Stylish Font) */
         h1.charname input {
             font-family: "Modesto Condensed", serif;
             font-size: 2em;
@@ -39,92 +64,46 @@
             border-bottom: 1px solid #000;
             width: 100%;
         }
-    }
-
-    /* --- The Essence Grid (Vitalis, Motus, etc.) --- */
-    .essence-grid-container {
-        border: 1px solid #bbb;
-        background: rgba(0, 0, 0, 0.05);
-        padding: 5px;
-        border-radius: 5px;
-        margin-bottom: 15px;
-
-        /* Grid Definition: Label | E_MAX | E_CUR | Tier | Dice */
-        .essence-header {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-            gap: 5px;
-            align-items: center;
-            padding: 4px;
-            font-weight: bold;
-            border-bottom: 1px solid #333;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-            text-transform: uppercase;
-        }
-
-        .essence-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-            gap: 5px;
-            align-items: center;
-            padding: 4px;
-            border-bottom: 1px solid #e0e0e0;
-
-            &:last-child {
-                border-bottom: none;
-            }
-
-            .essence-label {
-                font-weight: bold;
-                color: #4a4a4a;
-            }
-        }
-    }
-
-    /* --- Inputs --- */
-    input[type="number"] {
-        text-align: center;
-        background: rgba(255, 255, 255, 0.5);
-        border: 1px solid #7a7971;
-        border-radius: 3px;
-
-        /* Highlight E_MAX (Permanent Loss) */
-        &.input-emax {
-            color: #8b0000; /* Dark Red */
-            font-weight: bold;
-        }
-
-        /* Highlight E_CUR (Daily Energy) */
-        &.input-ecur {
-            color: #006400; /* Dark Green */
-            font-weight: bold;
-        }
-    }
-
-    /* Read-only derived stats */
-    .derived-stat {
-        text-align: center;
-        background: transparent;
-        border: none;
-        color: #555;
-        font-style: italic;
-        pointer-events: none; /* Prevent typing */
-    }
-
-    /* --- Resource Bar (Action Surges) --- */
-    .resource-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 5px 0;
         
-        label {
-            font-weight: bold;
+        /* Resource Rows (HP, Action Surges, Rest Buttons) */
+        .resource-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+
+            .resource {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                
+                label {
+                    font-weight: bold;
+                    margin-right: 5px;
+                }
+            }
+        }
+        
+        /* Rest Buttons (Icons + Text) */
+        .rest-btn {
+            background: #444;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            border: 1px solid #000;
+            
+            &:hover {
+                background: #666;
+                text-shadow: 0 0 2px #fff;
+            }
         }
     }
-    
-    /* --- Tabs Navigation --- */
+
+    /* --------------------------------------------------------------------
+       NAVIGATION TABS
+       -------------------------------------------------------------------- */
     .sheet-tabs {
         flex: 0 0 40px;
         border-top: 1px solid #AAA;
@@ -138,47 +117,220 @@
             border-bottom: 3px solid transparent;
             color: #4b4a44;
             font-weight: bold;
-            
+
             &.active {
                 border-bottom: 3px solid #444;
-                color: #191813;
+                color: @color-text;
                 text-shadow: 0 0 2px #FFF;
             }
-            
+
             &:hover {
                 color: #000;
                 text-shadow: 0 0 2px #FFF;
             }
         }
     }
-	
-	/* --- NPC SPECIFIC STYLING --- */
-    /* This targets the form with the 'npc' class we just added */
-    form.npc {
-        /* Give NPCs a faint reddish 'Threat' background */
-        background-color: #f4eaea !important; 
-        
-        /* Darker headers */
-        header.sheet-header {
-            border-bottom-color: #500;
-        }
 
-        /* Darker Profile Image Border */
-        .profile-img {
-            border-color: #500;
-            background-color: #2a0f0f;
-        }
+    /* --------------------------------------------------------------------
+       ESSENCE GRID (The Core Mechanic Display)
+       -------------------------------------------------------------------- */
+    .essence-grid-container {
+        border: 1px solid #bbb;
+        background: @color-faint-gray;
+        padding: 5px;
+        border-radius: 5px;
+        margin-bottom: 15px;
 
-        /* Darker Grid Lines */
+        /* Header Row Grid Definition */
         .essence-header {
-            border-bottom-color: #500;
-            color: #500;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr; /* Label | Max | Cur | Tier | Dice */
+            gap: 5px;
+            align-items: center;
+            padding: 4px;
+            font-weight: bold;
+            border-bottom: 1px solid @color-border;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        /* Data Row Grid Definition */
+        .essence-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 5px;
+            align-items: center;
+            padding: 4px;
+            border-bottom: 1px solid @color-light-gray;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            .essence-label {
+                font-weight: bold;
+                color: #4a4a4a;
+            }
+        }
+    }
+
+    /* --------------------------------------------------------------------
+       INPUTS & DERIVED STATS
+       -------------------------------------------------------------------- */
+    input[type="number"] {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid #7a7971;
+        border-radius: 3px;
+
+        /* Visual Logic: E_MAX is Red (Limit), E_CUR is Green (Life) */
+        &.input-emax {
+            color: @color-emax;
+            font-weight: bold;
+        }
+
+        &.input-ecur {
+            color: @color-ecur;
+            font-weight: bold;
+        }
+    }
+
+    /* Read-only stats (Tier, Dice strings) */
+    .derived-stat {
+        text-align: center;
+        background: transparent;
+        border: none;
+        color: #555;
+        font-style: italic;
+        pointer-events: none; /* Prevent user interaction */
+    }
+
+    /* --------------------------------------------------------------------
+       CALCULATOR PANEL (Combat Logic)
+       -------------------------------------------------------------------- */
+    .roll-calculation, .execute-batch {
+        cursor: pointer;
+        transition: background-color 0.2s;
+        
+        &:hover {
+            opacity: 0.9;
+        }
+    }
+    
+    .roll-calc-btn {
+        background: #ddd;
+        border: 1px solid #999;
+        border-radius: 3px;
+        padding: 0 5px;
+        cursor: pointer;
+        color: #333;
+        
+        &:hover {
+            background: #ccc;
+            color: #000;
+        }
+    }
+
+    /* --------------------------------------------------------------------
+       ITEMS & INVENTORY
+       -------------------------------------------------------------------- */
+    .items-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        
+        .item-header {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid #aaa;
+            font-weight: bold;
+            padding: 5px;
         }
         
-        /* Calculator Area Distinction */
-        .tab.calculator .essence-grid-container {
+        .item {
+            padding: 5px;
+            border-bottom: 1px solid #ccc;
+            background: rgba(255,255,255,0.2);
+            
+            .item-image {
+                flex: 0 0 24px;
+                margin-right: 5px;
+                img { border: none; }
+            }
+            
+            .item-name {
+                flex: 1;
+                margin: 0;
+                line-height: 24px;
+                
+                /* Rollable Item Link */
+                .rollable {
+                    color: #333;
+                    &:hover { color: #000; text-shadow: 0 0 2px #fff; }
+                }
+            }
+            
+            .item-controls {
+                flex: 0 0 50px;
+                text-align: right;
+                a { margin-left: 5px; color: #555; }
+            }
+        }
+    }
+
+    /* --------------------------------------------------------------------
+       THEME OVERRIDES: PC (Green) vs NPC (Red)
+       -------------------------------------------------------------------- */
+    
+    /* PC Theme: Growth, Life, Heroism */
+    form.character {
+        background-color: @theme-pc-bg !important;
+
+        header.sheet-header {
+            border-bottom-color: @theme-pc-border;
+        }
+
+        .profile-img {
+            border-color: @theme-pc-border;
+            background-color: #1a4d1a; /* Dark Green bg behind image */
+        }
+
+        .essence-header {
+            border-bottom-color: @theme-pc-border;
+            color: @theme-pc-border;
+        }
+        
+        .derived-stat {
+            color: #004d00;
+        }
+    }
+
+    /* NPC Theme: Threat, Blood, Adversity */
+    form.npc {
+        background-color: @theme-npc-bg !important;
+
+        header.sheet-header {
+            border-bottom-color: @theme-npc-border;
+        }
+
+        .profile-img {
+            border-color: @theme-npc-border;
+            background-color: #4d1a1a; /* Dark Red bg behind image */
+        }
+
+        .essence-header {
+            border-bottom-color: @theme-npc-border;
+            color: @theme-npc-border;
+        }
+        
+        /* Highlight the calculator in NPC sheets for GM visibility */
+        .tab.essences .essence-grid-container:nth-child(2) {
             background: rgba(139, 0, 0, 0.05);
-            border-color: #8b0000;
+            border-color: @theme-npc-border;
+        }
+
+        .derived-stat {
+            color: #4d0000;
         }
     }
 }
