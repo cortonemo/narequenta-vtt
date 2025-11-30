@@ -16,15 +16,16 @@
         "hp": { "value": 100, "min": 0, "max": 100 },
         "action_surges": { "value": 0, "min": 0, "max": 5 }
       },
-      "calculator": {
-        "attack_roll": 50,
-        "prof_roll": 0,
-        "defense_roll": 50,
+     "calculator": {
+        "attack_roll": null,
+        "prof_roll": null,
+        "defense_roll": null,
         "item_bonus": 0,
         "item_weight": 15,
         "active_motor": "vitalis",
         "active_motor_val": 0,
         "target_def_stat": "vitalis",
+        "apply_to": "hp",
         "target_name": "None",
         "target_ids": [],
         "batch_data": "",
@@ -43,15 +44,16 @@
     "npc": {
       "templates": ["base"],
       "tier": 0,
-      "calculator": {
-        "attack_roll": 50,
-        "prof_roll": 0,
-        "defense_roll": 50,
+     "calculator": {
+        "attack_roll": null,
+        "prof_roll": null,
+        "defense_roll": null,
         "item_bonus": 0,
         "item_weight": 15,
         "active_motor": "vitalis",
         "active_motor_val": 0,
         "target_def_stat": "vitalis",
+        "apply_to": "hp",
         "target_name": "None",
         "target_ids": [],
         "batch_data": "",

@@ -1,7 +1,7 @@
 <form class="{{cssClass}} {{actor.type}}" autocomplete="off">
 
     {{!-- ================================================================= --}}
-    {{!-- HEADER: Identity, Resources, Rest, Combat Flow                    --}}
+    {{!-- SHEET HEADER: Avatar, Name, Resources, Rest, Combat Utils         --}}
     {{!-- ================================================================= --}}
     <header class="sheet-header">
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
@@ -25,7 +25,7 @@
                     <span> / </span>
                     <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
                     
-                    {{!-- Lightning Bolt Button --}}
+                    {{!-- Use Action Surge Button (Lightning) --}}
                     <a class="use-action-surge" title="Use Action Surge" style="margin-left: 8px; color: #d4af37; cursor: pointer;">
                         <i class="fas fa-bolt"></i>
                     </a>
@@ -156,13 +156,16 @@
                     </div>
                 </div>
 
+                {{!-- Action Bar (Disabled if no attack roll) --}}
                 <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
-                    <button type="button" class="roll-calculation" style="background: #222; color: white; border: 1px solid #000; width: 90%;">
+                    <button type="button" class="roll-calculation" 
+                        {{#unless systemData.calculator.attack_roll}}disabled style="opacity: 0.5; cursor: not-allowed; background: #555; color: #ccc; border: 1px solid #000; width: 90%;"{{/unless}}
+                        {{#if systemData.calculator.attack_roll}}style="background: #222; color: white; border: 1px solid #000; width: 90%;"{{/if}}>
                         <i class="fas fa-calculator"></i> PREVIEW RESULT
                     </button>
                 </div>
 
-                {{!-- Results Output --}}
+                {{!-- Output --}}
                 {{#if systemData.calculator.output}}
                 <div style="padding: 10px; background: #fff;">
                     {{{systemData.calculator.output}}}

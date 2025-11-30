@@ -310,3 +310,38 @@
 - **Mechanics Header:** The Item Sheet header now includes dedicated inputs for **Weight (Attrition)**, **Range (ft)**, and **Damage/Heal Bonus**. These fields directly feed the Combat Calculator.
 - **Essence Costs:** Added specific dropdowns in the "Details" tab to define the **Motor ($E_P$)** and **Quality ($E_S$)** Essence pair used by the item.
 ***
+## [v0.9.60] — 2025-11-30 (Advanced Targeting & Combat Flow)
+**Status:** Alpha - Feature Expansion
+
+### 🎯 Tactical Targeting (AoE Safeguards)
+- **Safeguard Logic:** Implemented Tier-based targeting for Area of Effect items in the Combat Calculator:
+    - **Tier < 3 (Wild Magic):** Offensive AoE auto-selects **ALL** tokens in range (Friendly Fire risk).
+    - **Tier ≥ 3 (Mastery):** Offensive AoE auto-selects **NPCs Only** (Safe Casting).
+    - **Healing:** Always auto-selects **Allies (PCs)**.
+- **Essence Sync:** Selecting a weapon now automatically sets the **Target Defense Stat** to match the weapon's **Motor Essence**, enforcing the rule that defenders must contest with the same Essence used by the attacker.
+
+### ⚔️ Combat Flow Tools
+- **End Turn:** Added a button to the sheet header to advance the Foundry Combat Tracker and automatically open the sheet of the next combatant.
+- **Action Surge:** Added a dedicated "Lightning Bolt" button to spend Action Surges (PC Only), updating the resource and posting a dramatic notification to chat.
+
+### 📦 Item Mechanics
+- **Targeting Modes:** Implemented `target_type` logic (Self / Single Target / AoE).
+    - **Self:** Consumables apply immediately to the user.
+    - **Single Target:** Prompts a dialog to choose between "Self" (Drink) or "Administer/Throw".
+***
+## [v0.9.61] — 2025-11-30 (Universal Potions & Resource Routing)
+**Status:** Alpha - Mechanics Depth
+
+### 🧪 Universal Consumables
+- **Resource Routing:** Items can now target specific pools beyond just HP. Added `target_resource` field to define if an item affects **Active Vigor (HP)** or a specific **Essence** (e.g., *Vitalis Balm* restores Vitalis).
+- **Smart Application:** Updated `_onItemUse` to dynamically route healing or damage to the correct resource path based on the item's configuration.
+
+### ⚔️ Combat Logic Fixes
+- **Calculator Targeting:** Fixed a critical logic gap where damage calculated via the combat panel was always applying to the *Defensive Stat* used for the roll. It now correctly respects the item's `target_resource` (defaulting to HP for standard weapons).
+- **End Turn:** Fixed the "End Turn" button to correctly close the current actor sheet after advancing the combat tracker.
+
+### 💻 Interface
+- **Item Sheet:** Added an "Affects" dropdown to the Item Sheet header, allowing GMs to configure whether an item targets HP or a specific Essence.
+***
+
+

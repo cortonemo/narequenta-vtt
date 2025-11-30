@@ -73,7 +73,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* ITEM SELECTION & FORMULA PARSING             */
+  /* ITEM SELECTION (Setup Calculator)            */
   /* -------------------------------------------- */
   async _onSelectActiveItem(event) {
       event.preventDefault();
@@ -86,6 +86,9 @@ export class NarequentaActorSheet extends ActorSheet {
       const motorVal = this.actor.system.essences[motorKey]?.value || 0;
       const weight = (typeof sys.weight !== "undefined") ? Number(sys.weight) : 15; 
       const range = Number(sys.range) || 5;
+      
+      // [NEW] Determine Damage Destination (default HP)
+      const damageTarget = sys.target_resource || "hp";
 
       // Evaluate Damage/Healing Formula
       let bonusVal = 0;
@@ -106,17 +109,17 @@ export class NarequentaActorSheet extends ActorSheet {
           "system.calculator.item_bonus": bonusVal,
           "system.calculator.active_motor": motorKey,
           "system.calculator.active_motor_val": motorVal,
-          // Force Defender to contest with SAME essence
-          "system.calculator.target_def_stat": motorKey, 
+          "system.calculator.target_def_stat": motorKey, // Defense Roll (Same Essence)
+          "system.calculator.apply_to": damageTarget,    // [NEW] Damage Destination
           "system.calculator.item_range": range,
           "system.calculator.output": "" 
       });
 
-      ui.notifications.info(`Active: ${item.name} (${range}ft). Motor: ${motorKey.toUpperCase()}.`);
+      ui.notifications.info(`Active: ${item.name} (${range}ft). Motor: ${motorKey.toUpperCase()}. Dmg: ${damageTarget.toUpperCase()}`);
   }
 
   /* -------------------------------------------- */
-  /* COMBAT CALCULATOR (PRECISION LETHALITY)      */
+  /* COMBAT CALCULATOR (Logic Core)               */
   /* -------------------------------------------- */
   async _onCalculate(event) {
       event.preventDefault();
@@ -131,21 +134,29 @@ export class NarequentaActorSheet extends ActorSheet {
       // Gather Inputs
       const Attacker_d100 = Number(calc.attack_roll) || 0;
       const R_prof = Number(calc.prof_roll) || 0;
-      const Manual_Def = Number(calc.defense_roll) || 0;
+      const Manual_Def = Number(calc.defense_roll) || 0; // 0 is valid here (triggers Auto-roll)
+      
+      // [NEW] Safety Check: Prevent calculating on empty/null attack
+      if (Attacker_d100 === 0) {
+          ui.notifications.warn("Please roll for Attack (d100).");
+          return;
+      }
       const itemBonus = Number(calc.item_bonus) || 0;
       const itemWeight = (typeof calc.item_weight !== "undefined") ? Number(calc.item_weight) : 15; 
       
       const motorKey = calc.active_motor || "vitalis"; 
-      const motorData = this.actor.system.essences[motorKey] || { max: 100, value: 100 };
-      const E_max = motorData.max;
-      const E_cur = motorData.value;
+      const E_max = this.actor.system.essences[motorKey]?.max || 100;
+      const E_cur = this.actor.system.essences[motorKey]?.value || 100;
       const defStat = calc.target_def_stat || "vitalis";
+      
+      // [NEW] Where to apply the damage?
+      const targetResource = calc.apply_to || "hp";
 
       let Attacker_Tier = (this.actor.type === 'character') ? (this.actor.system.resources.action_surges.max || 0) : (this.actor.system.tier || 0);
 
-      // HEALING VS DAMAGE CHECK
+      // HEALING & POTION CHECK
       const isHealing = itemBonus < 0; 
-      const isPotion = isHealing && (itemWeight === 0); // Potions (Weight 0) don't use proficiency scaling
+      const isPotion = isHealing && (itemWeight === 0);
 
       // Hit Check (Zone Logic)
       const effectiveRoll = Attacker_d100 - R_prof;
@@ -184,14 +195,10 @@ export class NarequentaActorSheet extends ActorSheet {
           
           if (attackerSuccess) {
               if (isHealing) {
-                  // HEALING LOGIC
                   let healAmount = Math.abs(itemBonus);
-                  // Add Proficiency if it's a spell (Weight > 0)
                   if (!isPotion) healAmount += R_prof;
-                  // Healing is represented as negative damage
                   finalDamage = -Math.max(1, healAmount);
               } else {
-                  // DAMAGE LOGIC (Hard Floor)
                   let A_FP = 100 - effectiveRoll;
                   if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
                   const M_Defense = Def_Tier * 5.5;
@@ -221,14 +228,18 @@ export class NarequentaActorSheet extends ActorSheet {
           </div>`;
       }
 
-      // Attrition Logic (Weight - Prof/2)
       let attritionCost = Math.max(0, itemWeight - Math.floor(R_prof / 2));
       if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2);
       if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
 
       sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">Self Attrition: -${attritionCost}%</div>`;
 
-      const resolutionPayload = { essenceKey: motorKey, attritionCost: attritionCost, targets: payloadTargets };
+      const resolutionPayload = { 
+          essenceKey: motorKey, 
+          attritionCost: attritionCost, 
+          targets: payloadTargets,
+          targetResource: targetResource // [NEW] Pass the damage target
+      };
       
       await this.actor.update({
           "system.calculator.output": sheetListHtml,
@@ -244,8 +255,11 @@ export class NarequentaActorSheet extends ActorSheet {
       const rawData = this.actor.system.calculator.batch_data;
       if (!rawData) return;
 
-      const { essenceKey, attritionCost, targets } = JSON.parse(rawData);
-      const targetStat = this.actor.system.calculator.target_def_stat || "hp";
+      // [NEW] Read targetResource from payload
+      const { essenceKey, attritionCost, targets, targetResource } = JSON.parse(rawData);
+      
+      // Default to HP if missing (legacy safety)
+      const applyTo = targetResource || "hp";
 
       // 1. Attrition
       const currentVal = this.actor.system.essences[essenceKey].value;
@@ -261,24 +275,25 @@ export class NarequentaActorSheet extends ActorSheet {
                   let maxVal = 100;
                   let updatePath = "";
 
-                  if (targetStat === "hp") {
+                  if (applyTo === "hp") {
                       currentVal = token.actor.system.resources.hp.value;
                       maxVal = token.actor.system.resources.hp.max;
                       updatePath = "system.resources.hp.value";
                   } else {
-                      currentVal = token.actor.system.essences[targetStat]?.value || 0;
-                      maxVal = token.actor.system.essences[targetStat]?.max || 100;
-                      updatePath = `system.essences.${targetStat}.value`;
+                      // Apply to Essence
+                      currentVal = token.actor.system.essences[applyTo]?.value || 0;
+                      maxVal = token.actor.system.essences[applyTo]?.max || 100;
+                      updatePath = `system.essences.${applyTo}.value`;
                   }
 
-                  // Subtracting negative damage = Healing
                   let finalVal = currentVal - tData.damage;
                   if (finalVal < 0) finalVal = 0;
                   if (finalVal > maxVal) finalVal = maxVal;
 
                   await token.actor.update({ [updatePath]: finalVal });
                   
-                  if (targetStat === "hp" && finalVal <= 0 && tData.damage > 0) {
+                  // Check Death (Only for HP)
+                  if (applyTo === "hp" && finalVal <= 0 && tData.damage > 0) {
                        const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
                        if (!isDead) await token.actor.toggleStatusEffect("dead", { overlay: true });
                   }
@@ -286,7 +301,6 @@ export class NarequentaActorSheet extends ActorSheet {
           }
       }
 
-      // 3. Reset
       await this.actor.update({
           "system.calculator.attack_roll": 0,
           "system.calculator.prof_roll": 0,
@@ -295,6 +309,24 @@ export class NarequentaActorSheet extends ActorSheet {
           "system.calculator.output": `Applied. -${attritionCost}% Attrition.`
       });
       ui.notifications.info("Resolution Complete.");
+  }
+
+  /* -------------------------------------------- */
+  /* COMBAT UTILITIES                             */
+  /* -------------------------------------------- */
+  async _onEndTurn(event) {
+      event.preventDefault();
+      const combat = game.combat;
+      if (!combat) return;
+      
+      // Advance
+      await combat.nextTurn();
+      
+      // Open Next Sheet
+      if (combat.combatant?.actor) combat.combatant.actor.sheet.render(true);
+      
+      // [FIX] Close Current Sheet
+      this.close();
   }
 
   /* -------------------------------------------- */
