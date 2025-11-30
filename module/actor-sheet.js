@@ -78,38 +78,43 @@ export class NarequentaActorSheet extends ActorSheet {
       event.preventDefault();
       const itemId = event.target.value;
       const item = this.actor.items.get(itemId);
-
       if (!item) return;
 
       const sys = item.system;
       const motorKey = sys.cost?.motor || "vitalis";
-      
-      // Get Values
       const motorVal = this.actor.system.essences[motorKey]?.value || 0;
-      
-      // [UPDATED] Pull weight from new template field (Default 15/Medium)
       const weight = (typeof sys.weight !== "undefined") ? Number(sys.weight) : 15; 
-      
-      const dmgBonus = Number(sys.damage_bonus) || 0;
-      
-      // [UPDATED] Default range to 5ft (Melee standard)
       const range = Number(sys.range) || 5;
 
-      // Update Calculator State
+      // Evaluate Damage/Healing Formula
+      let bonusVal = 0;
+      const bonusRaw = sys.damage_bonus || "0";
+      try {
+          const r = new Roll(bonusRaw.toString());
+          await r.evaluate();
+          bonusVal = r.total;
+      } catch (e) {
+          console.error("Invalid Formula", e);
+          bonusVal = 0;
+      }
+
       await this.actor.update({
           "system.calculator.selected_item_id": itemId,
           "system.calculator.item_name": item.name,
           "system.calculator.item_weight": weight,
-          "system.calculator.item_bonus": dmgBonus,
+          "system.calculator.item_bonus": bonusVal,
           "system.calculator.active_motor": motorKey,
           "system.calculator.active_motor_val": motorVal,
+          
+          // [UPDATED] Force Defender to use the same Essence
+          "system.calculator.target_def_stat": motorKey, 
+          
           "system.calculator.item_range": range,
           "system.calculator.output": "" 
       });
 
-      // [UPDATED] Notification in feet (ft)
-      ui.notifications.info(`Active: ${item.name} (${range}ft). Motor: ${motorKey.toUpperCase()}.`);
-}
+      ui.notifications.info(`Active: ${item.name}. Motor: ${motorKey.toUpperCase()} (Matches Defense).`);
+  }
 
   /* -------------------------------------------- */
   /* LEGACY: ITEM ROLL (Kept for Click-to-Load)   */
@@ -138,10 +143,11 @@ export class NarequentaActorSheet extends ActorSheet {
   _onLaunchContest(event) {
       if(event) event.preventDefault();
       const attacker = this.actor;
-      
-      // [FIXED] Use currently loaded range, default to 5ft (standard square)
       let maxDist = this.actor.system.calculator.item_range || 5;
       
+      // [NEW] Get the current active motor to set as default defense
+      const defaultDef = this.actor.system.calculator.active_motor || "vitalis";
+
       const tokens = attacker.getActiveTokens();
       const attackerToken = tokens.length > 0 ? tokens[0] : null;
 
@@ -156,10 +162,8 @@ export class NarequentaActorSheet extends ActorSheet {
 
       canvas.tokens.placeables.forEach(t => {
           if (t.id === attackerToken.id) return; 
-          
           const dist = canvas.grid.measureDistance(attackerToken, t);
           const hp = t.actor?.system.resources?.hp?.value || 0;
-          
           if (dist <= maxDist && hp > 0) {
               const isPC = t.actor.type === "character";
               const entry = `
@@ -169,7 +173,6 @@ export class NarequentaActorSheet extends ActorSheet {
                       <strong>${t.name}</strong> <span style="font-size:0.8em; color:#555;">(${Math.round(dist)}ft)</span>
                   </label>
               </div>`;
-              
               if (isPC) pcHtml += entry;
               else npcHtml += entry;
               count++;
@@ -177,18 +180,22 @@ export class NarequentaActorSheet extends ActorSheet {
       });
 
       if (count === 0) {
-          // [FIXED] Unit changed to ft
           ui.notifications.warn(`No targets within ${maxDist}ft.`);
           return;
       }
 
-      const essenceOptions = `
-          <option value="vitalis">VITALIS (Force)</option>
-          <option value="motus">MOTUS (Reflex)</option>
-          <option value="sensus">SENSUS (Instinct)</option>
-          <option value="verbum">VERBUM (Logic)</option>
-          <option value="anima">ANIMA (Will)</option>
-      `;
+      // [UPDATED] Build options with 'selected' logic
+      const essences = ["vitalis", "motus", "sensus", "verbum", "anima", "hp"];
+      const labels = { 
+          vitalis: "VITALIS (Force)", motus: "MOTUS (Reflex)", sensus: "SENSUS (Instinct)",
+          verbum: "VERBUM (Logic)", anima: "ANIMA (Will)", hp: "Active Vigor (HP)" 
+      };
+      
+      let essenceOptions = "";
+      essences.forEach(key => {
+          const selected = (key === defaultDef) ? "selected" : "";
+          essenceOptions += `<option value="${key}" ${selected}>${labels[key]}</option>`;
+      });
 
       const content = `
       <form id="targeting-form">
@@ -206,7 +213,7 @@ export class NarequentaActorSheet extends ActorSheet {
               </div>
           </div>
           <div class="form-group">
-              <label><strong>Defensive Stat:</strong></label>
+              <label><strong>Defensive Stat (Contest):</strong></label>
               <select id="target-essence" style="width:100%;">${essenceOptions}</select>
           </div>
       </form>
@@ -224,7 +231,6 @@ export class NarequentaActorSheet extends ActorSheet {
                       html.find("input[name='target']:checked").each(function() {
                           selectedIds.push($(this).val());
                       });
-
                       if (selectedIds.length === 0) return;
 
                       const essenceKey = html.find("#target-essence").val();
