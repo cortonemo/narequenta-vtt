@@ -48,6 +48,37 @@
                 </div>
             </div>
         </div>
+		{{!-- Range (ft) --}}
+		<div class="resource">
+			<label>Range (ft):</label>
+			<input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 40px; text-align: center;">
+		</div>
+
+		{{!-- [NEW] Target Type --}}
+		<div class="resource">
+			<label>Target:</label>
+			<select name="system.target_type" style="height: 22px; font-size: 0.8em;">
+				{{#select systemData.target_type}}
+				<option value="self">Self Only</option>
+				<option value="one">Single Target</option>
+				<option value="aoe">Area (AoE)</option>
+				{{/select}}
+			</select>
+		</div>
+		{{!-- Target Resource (HP vs Essence) --}}
+		<div class="resource">
+			<label>Affects:</label>
+			<select name="system.target_resource" style="height: 22px; font-size: 0.8em;">
+				{{#select systemData.target_resource}}
+				<option value="hp">HP (Vigor)</option>
+				<option value="vitalis">VITALIS</option>
+				<option value="motus">MOTUS</option>
+				<option value="sensus">SENSUS</option>
+				<option value="verbum">VERBUM</option>
+				<option value="anima">ANIMA</option>
+				{{/select}}
+			</select>
+		</div>		
     </header>
 
     {{!-- ================================================================= --}}

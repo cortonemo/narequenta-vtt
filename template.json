@@ -20,14 +20,15 @@
         "attack_roll": 50,
         "prof_roll": 0,
         "defense_roll": 50,
-        "target_ecur": 100,
-        "target_tier": 0,
+        "item_bonus": 0,
+        "item_weight": 15,
+        "active_motor": "vitalis",
+        "active_motor_val": 0,
+        "target_def_stat": "vitalis",
         "target_name": "None",
-        "target_id": "", 
         "target_ids": [],
-        "last_damage": 0,
         "batch_data": "",
-        "output": "Waiting for input..."
+        "output": ""
       },
       "essences": {
         "vitalis": { "value": 100, "max": 100, "label": "VITALIS" },
@@ -46,14 +47,15 @@
         "attack_roll": 50,
         "prof_roll": 0,
         "defense_roll": 50,
-        "target_ecur": 100,
-        "target_tier": 0,
+        "item_bonus": 0,
+        "item_weight": 15,
+        "active_motor": "vitalis",
+        "active_motor_val": 0,
+        "target_def_stat": "vitalis",
         "target_name": "None",
-        "target_id": "", 
         "target_ids": [],
-        "last_damage": 0,
         "batch_data": "",
-        "output": "Waiting for input..."
+        "output": ""
       },
       "essences": {
         "vitalis": { "value": 100, "max": 100, "label": "VITALIS" },
@@ -73,12 +75,19 @@
       "description": "",
       "quantity": 1,
       "weight": 10,
+      "damage_bonus": "", 
+      "target_type": "one",
+      "target_resource": "hp",
       "attributes": {},
       "groups": {}
     },
     "ability": {
       "description": "",
       "range": 5,
+      "quantity": 1,
+      "damage_bonus": "", 
+      "target_type": "one",
+      "target_resource": "hp",
       "cost": {
         "motor": "vitalis",
         "quality": "motus"
@@ -89,8 +98,11 @@
     "weapon": {
       "description": "",
       "range": 5,
-      "damage_bonus": 0,
+      "quantity": 1,
+      "damage_bonus": "", 
       "weight": 15,
+      "target_type": "one",
+      "target_resource": "hp",
       "cost": {
         "motor": "vitalis",
         "quality": "motus"

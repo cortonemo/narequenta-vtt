@@ -1,8 +1,4 @@
-/* ========================================================================
-   NÁRËQUENTA SYSTEM STYLES (COMPILED CSS)
-   ======================================================================== */
-
-/* Global Window Settings */
+/* GLOBAL SETTINGS */
 .narequenta .window-content {
     font-family: "Signika", sans-serif;
     font-size: 14px;
@@ -10,9 +6,7 @@
     background: #fcfcfc;
 }
 
-/* ------------------------------------------------------------------------
-   SHEET HEADER
-   ------------------------------------------------------------------------ */
+/* HEADER */
 .narequenta header.sheet-header {
     display: flex;
     align-items: center;
@@ -20,8 +14,7 @@
     border-bottom: 2px solid #333;
     padding-bottom: 10px;
 }
-
-.narequenta header.sheet-header .profile-img {
+.narequenta .profile-img {
     flex: 0 0 100px;
     height: 100px;
     margin-right: 15px;
@@ -31,284 +24,87 @@
     object-fit: cover;
     cursor: pointer;
 }
-
-.narequenta header.sheet-header .header-fields {
-    flex: 1;
-}
-
-.narequenta header.sheet-header h1.charname input {
+.narequenta .header-fields { flex: 1; }
+.narequenta h1.charname input {
     font-family: "Modesto Condensed", serif;
     font-size: 2em;
     border: none;
     border-bottom: 1px solid #000;
     width: 100%;
 }
-
-.narequenta header.sheet-header .resource-row {
+.narequenta .resource-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin: 5px 0;
 }
-
-.narequenta header.sheet-header .resource-row .resource {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+.narequenta .resource { display: flex; align-items: center; gap: 5px; }
+.narequenta .resource label { font-weight: bold; margin-right: 5px; }
+.narequenta .rest-btn {
+    background: #444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; cursor: pointer; border: 1px solid #000;
 }
+.narequenta .rest-btn:hover { background: #666; text-shadow: 0 0 2px #fff; }
 
-.narequenta header.sheet-header .resource-row .resource label {
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.narequenta header.sheet-header .rest-btn {
-    background: #444;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    cursor: pointer;
-    border: 1px solid #000;
-}
-
-.narequenta header.sheet-header .rest-btn:hover {
-    background: #666;
-    text-shadow: 0 0 2px #fff;
-}
-
-/* ------------------------------------------------------------------------
-   TABS NAVIGATION
-   ------------------------------------------------------------------------ */
+/* TABS */
 .narequenta .sheet-tabs {
-    flex: 0 0 40px;
-    border-top: 1px solid #AAA;
-    border-bottom: 1px solid #AAA;
-    line-height: 40px;
-    margin-bottom: 10px;
+    flex: 0 0 40px; border-top: 1px solid #AAA; border-bottom: 1px solid #AAA; line-height: 40px; margin-bottom: 10px;
 }
-
 .narequenta .sheet-tabs .item {
-    display: inline-block;
-    padding: 0 10px;
-    border-bottom: 3px solid transparent;
-    color: #4b4a44;
-    font-weight: bold;
+    display: inline-block; padding: 0 10px; border-bottom: 3px solid transparent; color: #4b4a44; font-weight: bold;
 }
+.narequenta .sheet-tabs .item.active { border-bottom: 3px solid #444; color: #191813; text-shadow: 0 0 2px #FFF; }
+.narequenta .sheet-tabs .item:hover { color: #000; text-shadow: 0 0 2px #FFF; }
 
-.narequenta .sheet-tabs .item.active {
-    border-bottom: 3px solid #444;
-    color: #191813;
-    text-shadow: 0 0 2px #FFF;
-}
-
-.narequenta .sheet-tabs .item:hover {
-    color: #000;
-    text-shadow: 0 0 2px #FFF;
-}
-
-/* ------------------------------------------------------------------------
-   ESSENCE GRID
-   ------------------------------------------------------------------------ */
+/* ESSENCE GRID */
 .narequenta .essence-grid-container {
-    border: 1px solid #bbb;
-    background: rgba(0, 0, 0, 0.05);
-    padding: 5px;
-    border-radius: 5px;
-    margin-bottom: 15px;
+    border: 1px solid #bbb; background: rgba(0, 0, 0, 0.05); padding: 5px; border-radius: 5px; margin-bottom: 15px;
 }
-
-.narequenta .essence-grid-container .essence-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    gap: 5px;
-    align-items: center;
-    padding: 4px;
-    font-weight: bold;
-    border-bottom: 1px solid #333;
-    margin-bottom: 5px;
-    font-size: 0.9em;
-    text-transform: uppercase;
+.narequenta .essence-header, .narequenta .essence-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 5px; align-items: center; padding: 4px;
 }
+.narequenta .essence-header { font-weight: bold; border-bottom: 1px solid #333; margin-bottom: 5px; font-size: 0.9em; text-transform: uppercase; }
+.narequenta .essence-row { border-bottom: 1px solid #e0e0e0; }
+.narequenta .essence-row:last-child { border-bottom: none; }
+.narequenta .essence-label { font-weight: bold; color: #4a4a4a; }
 
-.narequenta .essence-grid-container .essence-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    gap: 5px;
-    align-items: center;
-    padding: 4px;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.narequenta .essence-grid-container .essence-row:last-child {
-    border-bottom: none;
-}
-
-.narequenta .essence-grid-container .essence-row .essence-label {
-    font-weight: bold;
-    color: #4a4a4a;
-}
-
-/* ------------------------------------------------------------------------
-   INPUTS & STATS
-   ------------------------------------------------------------------------ */
+/* INPUTS */
 .narequenta input[type="number"] {
-    text-align: center;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid #7a7971;
-    border-radius: 3px;
+    text-align: center; background: rgba(255, 255, 255, 0.5); border: 1px solid #7a7971; border-radius: 3px;
 }
+.narequenta .input-emax { color: #8b0000; font-weight: bold; } /* Red for Limit */
+.narequenta .input-ecur { color: #006400; font-weight: bold; } /* Green for Energy */
+.narequenta .derived-stat { text-align: center; background: transparent; border: none; color: #555; font-style: italic; pointer-events: none; }
 
-.narequenta input[type="number"].input-emax {
-    color: #8b0000; /* Dark Red */
-    font-weight: bold;
-}
+/* BUTTONS */
+.narequenta .roll-calculation:hover, .narequenta .execute-batch:hover { opacity: 0.9; cursor: pointer; }
+.narequenta .roll-calc-btn { background: #ddd; border: 1px solid #999; border-radius: 3px; padding: 0 5px; cursor: pointer; color: #333; }
+.narequenta .roll-calc-btn:hover { background: #ccc; color: #000; }
+.narequenta .end-turn:hover { background-color: #000 !important; color: #ffcc00 !important; box-shadow: 0 0 5px #ffcc00; }
+.narequenta .use-action-surge:hover { text-shadow: 0 0 5px #d4af37; transform: scale(1.1); transition: all 0.2s; }
 
-.narequenta input[type="number"].input-ecur {
-    color: #006400; /* Dark Green */
-    font-weight: bold;
-}
+/* ITEM LIST */
+.narequenta .items-list { list-style: none; margin: 0; padding: 0; }
+.narequenta .item-header { background: rgba(0,0,0,0.05); border: 1px solid #aaa; font-weight: bold; padding: 5px; }
+.narequenta .item { padding: 5px; border-bottom: 1px solid #ccc; background: rgba(255,255,255,0.2); }
+.narequenta .item .item-image { flex: 0 0 24px; margin-right: 5px; }
+.narequenta .item .item-name { flex: 1; margin: 0; line-height: 24px; }
+.narequenta .item .rollable { color: #333; }
+.narequenta .item .rollable:hover { color: #000; text-shadow: 0 0 2px #fff; }
+.narequenta .item-controls { flex: 0 0 50px; text-align: right; }
+.narequenta .item-controls a { margin-left: 5px; color: #555; }
 
-.narequenta .derived-stat {
-    text-align: center;
-    background: transparent;
-    border: none;
-    color: #555;
-    font-style: italic;
-    pointer-events: none;
-}
+/* THEMES */
+/* PC (Green) */
+.narequenta form.character { background-color: #f0fdf4 !important; }
+.narequenta form.character header.sheet-header { border-bottom-color: #006400; }
+.narequenta form.character .profile-img { border-color: #006400; background-color: #1a4d1a; }
+.narequenta form.character .essence-header { border-bottom-color: #006400; color: #006400; }
+.narequenta form.character .derived-stat { color: #004d00; }
 
-/* ------------------------------------------------------------------------
-   CALCULATOR BUTTONS
-   ------------------------------------------------------------------------ */
-.narequenta .roll-calculation:hover,
-.narequenta .execute-batch:hover {
-    opacity: 0.9;
-    cursor: pointer;
-}
-
-.narequenta .roll-calc-btn {
-    background: #ddd;
-    border: 1px solid #999;
-    border-radius: 3px;
-    padding: 0 5px;
-    cursor: pointer;
-    color: #333;
-}
-
-.narequenta .roll-calc-btn:hover {
-    background: #ccc;
-    color: #000;
-}
-
-/* ------------------------------------------------------------------------
-   ITEMS LIST
-   ------------------------------------------------------------------------ */
-.narequenta .items-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.narequenta .items-list .item-header {
-    background: rgba(0,0,0,0.05);
-    border: 1px solid #aaa;
-    font-weight: bold;
-    padding: 5px;
-}
-
-.narequenta .items-list .item {
-    padding: 5px;
-    border-bottom: 1px solid #ccc;
-    background: rgba(255,255,255,0.2);
-}
-
-.narequenta .items-list .item .item-image {
-    flex: 0 0 24px;
-    margin-right: 5px;
-}
-
-.narequenta .items-list .item .item-image img {
-    border: none;
-}
-
-.narequenta .items-list .item .item-name {
-    flex: 1;
-    margin: 0;
-    line-height: 24px;
-}
-
-.narequenta .items-list .item .item-name .rollable {
-    color: #333;
-}
-
-.narequenta .items-list .item .item-name .rollable:hover {
-    color: #000;
-    text-shadow: 0 0 2px #fff;
-}
-
-.narequenta .items-list .item .item-controls {
-    flex: 0 0 50px;
-    text-align: right;
-}
-
-.narequenta .items-list .item .item-controls a {
-    margin-left: 5px;
-    color: #555;
-}
-
-/* ------------------------------------------------------------------------
-   THEME OVERRIDES: PC (Green) vs NPC (Red)
-   ------------------------------------------------------------------------ */
-
-/* PC Theme */
-.narequenta form.character {
-    background-color: #f0fdf4 !important;
-}
-
-.narequenta form.character header.sheet-header {
-    border-bottom-color: #006400;
-}
-
-.narequenta form.character .profile-img {
-    border-color: #006400;
-    background-color: #1a4d1a;
-}
-
-.narequenta form.character .essence-header {
-    border-bottom-color: #006400;
-    color: #006400;
-}
-
-.narequenta form.character .derived-stat {
-    color: #004d00;
-}
-
-/* NPC Theme */
-.narequenta form.npc {
-    background-color: #fff5f5 !important;
-}
-
-.narequenta form.npc header.sheet-header {
-    border-bottom-color: #8b0000;
-}
-
-.narequenta form.npc .profile-img {
-    border-color: #8b0000;
-    background-color: #4d1a1a;
-}
-
-.narequenta form.npc .essence-header {
-    border-bottom-color: #8b0000;
-    color: #8b0000;
-}
-
-/* Highlight the calculator in NPC sheets for GM visibility */
-.narequenta form.npc .tab.essences .essence-grid-container:nth-child(2) {
-    background: rgba(139, 0, 0, 0.05);
-    border-color: #8b0000;
-}
-
-.narequenta form.npc .derived-stat {
-    color: #4d0000;
-}
+/* NPC (Red) */
+.narequenta form.npc { background-color: #fff5f5 !important; }
+.narequenta form.npc header.sheet-header { border-bottom-color: #8b0000; }
+.narequenta form.npc .profile-img { border-color: #8b0000; background-color: #4d1a1a; }
+.narequenta form.npc .essence-header { border-bottom-color: #8b0000; color: #8b0000; }
+.narequenta form.npc .tab.essences .essence-grid-container:nth-child(2) { background: rgba(139, 0, 0, 0.05); border-color: #8b0000; }
+.narequenta form.npc .derived-stat { color: #4d0000; }

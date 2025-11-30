@@ -1,54 +1,45 @@
 <form class="{{cssClass}} {{actor.type}}" autocomplete="off">
 
     {{!-- ================================================================= --}}
-    {{!-- SHEET HEADER: Avatar, Name, Resources (HP/Action Surges), Rest    --}}
+    {{!-- HEADER: Identity, Resources, Rest, Combat Flow                    --}}
     {{!-- ================================================================= --}}
     <header class="sheet-header">
-        
-        {{!-- Profile Image: Clickable to upload/edit token image --}}
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
-        
         <div class="header-fields">
-            {{!-- Character Name Input --}}
-            <h1 class="charname">
-                <input name="name" type="text" value="{{actor.name}}" placeholder="Name"/>
-            </h1>
+            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
             
-            {{!-- Resource Row: Health, Action Surges, and Rest Buttons --}}
             <div class="resource-row">
-                
                 {{!-- 1. Active Vigor (HP) --}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
-                    {{!-- Current HP --}}
                     <input type="number" name="system.resources.hp.value" value="{{systemData.resources.hp.value}}" style="width: 50px;">
                     <span> / </span>
-                    {{!-- Max HP --}}
                     <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
                 </div>
 
-                {{!-- 2. Action Surges (Only visible for 'character' type, hidden for NPCs) --}}
+                {{!-- 2. Action Surges (PC Only) with Use Button --}}
                 {{#if (eq actor.type "character")}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.ActionSurges"}}</label>
-                    {{!-- Current Surges --}}
                     <input type="number" name="system.resources.action_surges.value" value="{{systemData.resources.action_surges.value}}" style="width: 40px;">
                     <span> / </span>
-                    {{!-- Max Surges (Read-Only, derived from Tier in actor.js) --}}
                     <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
+                    
+                    {{!-- Lightning Bolt Button --}}
+                    <a class="use-action-surge" title="Use Action Surge" style="margin-left: 8px; color: #d4af37; cursor: pointer;">
+                        <i class="fas fa-bolt"></i>
+                    </a>
                 </div>
                 {{/if}}
 
-                {{!-- 3. Rest Buttons --}}
+                {{!-- 3. Utility Buttons --}}
                 <div class="resource" style="display: flex; gap: 5px; align-items: flex-end;">
-                    {{!-- Short Rest (Refocus): Rolls recovery dice --}}
+                    <a class="rest-btn end-turn" title="End Turn"><i class="fas fa-step-forward"></i> End Turn</a>
                     <a class="rest-btn short-rest" title="Refocus"><i class="fas fa-coffee"></i> Short</a>
-                    {{!-- Long Rest (Renewal): Full reset to E_max/HP Max --}}
                     <a class="rest-btn long-rest" title="Renewal"><i class="fas fa-bed"></i> Long</a>
                 </div>
             </div>
             
-            {{!-- Final Vow: Text field for the character's promise (PC Only) --}}
             {{#if (eq actor.type "character")}}
             <div class="resource-row">
                 <input type="text" name="system.promise" value="{{systemData.promise}}" placeholder="{{localize 'NAREQUENTA.TabPromise'}}" style="font-style: italic; width: 100%;">
@@ -57,99 +48,90 @@
         </div>
     </header>
 
-    {{!-- ================================================================= --}}
-    {{!-- NAVIGATION TABS: Essences, Abilities, Biography                   --}}
-    {{!-- ================================================================= --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
         <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
         <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
     </nav>
 
-    {{!-- ================================================================= --}}
-    {{!-- SHEET BODY: Content areas switching based on selected tab         --}}
-    {{!-- ================================================================= --}}
     <section class="sheet-body">
 
-        {{!-- 1. ESSENCES TAB: Core Stats & Combat Calculator --}}
+        {{!-- 1. ESSENCES TAB & COMBAT CALCULATOR --}}
         <div class="tab essences" data-group="primary" data-tab="essences">
             
-            {{!-- A. ESSENCE GRID: Vitalis, Motus, etc. --}}
+            {{!-- A. Essence Grid --}}
             <div class="essence-grid-container">
                 <div class="essence-header">
                     <span>{{localize "NAREQUENTA.TabEssences"}}</span>
-                    <span>E_MAX</span> {{!-- Permanent Potential --}}
-                    <span>E_CUR</span> {{!-- Current Energy --}}
-                    <span>TIER</span>  {{!-- Proficiency Level (Derived) --}}
-                    <span>DICE</span>  {{!-- Proficiency Pool (Derived) --}}
+                    <span>E_MAX</span>
+                    <span>E_CUR</span>
+                    <span>TIER</span>
+                    <span>DICE</span>
                 </div>
-                
-                {{!-- Loop through system.essences object --}}
                 {{#each systemData.essences as |essence key|}}
                 <div class="essence-row">
                     <span class="essence-label">{{essence.label}}</span>
-                    {{!-- E_MAX Input (Hard floor 50) --}}
                     <input class="input-emax" type="number" name="system.essences.{{key}}.max" value="{{essence.max}}" min="50" max="100">
-                    {{!-- E_CUR Input (Daily Resource) --}}
                     <input class="input-ecur" type="number" name="system.essences.{{key}}.value" value="{{essence.value}}" min="0" max="100">
-                    {{!-- Derived Stats (Read-Only) --}}
                     <span class="derived-stat">{{essence.tier}}</span>
                     <span class="derived-stat">{{essence.diceString}}</span>
                 </div>
                 {{/each}}
             </div>
 
-            {{!-- B. RESOLUTION CONTEXT PANEL (The Calculator) --}}
+            {{!-- B. Combat Calculator Panel --}}
             <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
                 
-                {{!-- B1. CONTEXT HEADER: Item Selection & Targeting --}}
+                {{!-- Context Header --}}
                 <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em; align-items: center;">
-                    
-                    {{!-- Active Item Dropdown --}}
                     <div style="border-right: 1px solid #666; padding-right: 5px;">
-                        <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span><br>
-                        {{!-- Selects an item to pull stats (Weight/Damage/Motor) into the calculator --}}
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span>
+                            {{!-- Badge showing active motor essence --}}
+                            {{#if systemData.calculator.active_motor}}
+                            <span style="font-size: 0.8em; background: #555; color: #fff; padding: 1px 4px; border-radius: 3px; text-transform: uppercase;">
+                                {{systemData.calculator.active_motor}}
+                            </span>
+                            {{/if}}
+                        </div>
                         <select class="active-item-select" name="system.calculator.selected_item_id" style="width: 100%; font-size: 0.9em; background: #444; color: white; border: none;">
                             <option value="">-- Select Item --</option>
                             {{#each combatItems}}
                                 <option value="{{this.id}}" {{#if (eq this.id ../systemData.calculator.selected_item_id)}}selected{{/if}}>
-                                    {{this.name}} ({{this.range}}ft) {{!-- Shows range in Feet (ft) --}}
+                                    {{this.name}} ({{this.range}}ft)
                                 </option>
                             {{/each}}
                         </select>
                     </div>
-
-                    {{!-- Targeting Controls --}}
+                    
                     <div style="padding-left: 5px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <span style="font-weight: bold; color: #ccc;">TARGET:</span><br>
-                            {{#if systemData.calculator.target_name}}
-                                {{systemData.calculator.target_name}} {{!-- "X Targets (VITALIS)" --}}
+                            <span style="font-weight: bold; color: #ccc;">TARGET DEF:</span><br>
+                            {{!-- Shows which essence the target defends with --}}
+                            {{#if systemData.calculator.target_def_stat}}
+                                <span style="text-transform: uppercase;">{{systemData.calculator.target_def_stat}}</span>
                             {{else}}
-                                <em style="color:#999">None</em>
+                                <em style="color:#999">VITALIS</em>
                             {{/if}}
                         </div>
-                        {{!-- Button to open the Tactical Targeting Dialog --}}
                         <button class="launch-contest" title="Select Targets" style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;">
                             <i class="fas fa-crosshairs"></i>
                         </button>
                     </div>
                 </div>
 
-                {{!-- B2. INPUT GRID: Dice Rolls --}}
+                {{!-- Input Grid --}}
                 <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
                     
-                    {{!-- ATTACKER INPUTS --}}
+                    {{!-- Attacker Side --}}
                     <div style="text-align: center;">
                         <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">ATTACK (d100)</label>
-                        {{!-- Main d100 Roll --}}
                         <div style="display: flex; justify-content: center; gap: 2px;">
                             <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="Roll" style="width: 50px; text-align: center;">
-                            {{!-- Roll Button (Dice Icon) --}}
                             <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
                         </div>
                         
-                        {{!-- Proficiency Roll Input (Added via Hotfix) --}}
+                        {{!-- Manual Proficiency Input --}}
                         <div style="margin-top: 5px;">
                             <label style="font-size: 0.8em; display:block;">Proficiency</label>
                             <div style="display: flex; justify-content: center; gap: 2px;">
@@ -159,13 +141,11 @@
                         </div>
                     </div>
 
-                    {{!-- Vertical Divider --}}
                     <div style="background: #ccc; height: 100%;"></div>
 
-                    {{!-- DEFENDER INPUTS --}}
+                    {{!-- Defender Side --}}
                     <div style="text-align: center;">
                         <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">DEFENSE (d100)</label>
-                        {{!-- Manual Defense Roll (Optional) --}}
                         <div style="display: flex; justify-content: center; gap: 2px;">
                             <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="Auto" style="width: 50px; text-align: center; border: 1px dashed #666;">
                             <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
@@ -176,20 +156,16 @@
                     </div>
                 </div>
 
-                {{!-- B3. ACTION BAR: Calculate Button --}}
                 <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
                     <button type="button" class="roll-calculation" style="background: #222; color: white; border: 1px solid #000; width: 90%;">
                         <i class="fas fa-calculator"></i> PREVIEW RESULT
                     </button>
                 </div>
 
-                {{!-- B4. OUTPUT & EXECUTION: Results Display --}}
+                {{!-- Results Output --}}
                 {{#if systemData.calculator.output}}
                 <div style="padding: 10px; background: #fff;">
-                    {{!-- Renders the HTML string generated by JS _onCalculate --}}
                     {{{systemData.calculator.output}}}
-                    
-                    {{!-- Execute Button: Only appears if calculation data is ready --}}
                     {{#if systemData.calculator.batch_data}}
                     <button type="button" class="execute-batch" style="background: #8b0000; color: white; width: 100%; margin-top: 5px; font-weight: bold;">
                         <i class="fas fa-skull"></i> EXECUTE
@@ -197,48 +173,49 @@
                     {{/if}}
                 </div>
                 {{/if}}
-				
             </div>
 
-            {{!-- C. WANING SECTION (PC Only) --}}
+            {{!-- C. Waning Phase (PC Only) --}}
             {{#if (eq actor.type "character")}}
             <div style="text-align:center; margin-bottom: 15px; margin-top: 20px; border-top: 2px solid #333; padding-top: 10px;">
                 <div style="margin-bottom: 5px;">
-                    {{!-- Toggle to show/hide the dangerous Waning Button --}}
                     <input type="checkbox" class="waning-toggle" id="enable-waning">
                     <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
                 </div>
-                {{!-- Triggers Permanent E_max Loss --}}
                 <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
                     <i class="fas fa-skull"></i> Trigger Waning Phase
                 </button>
             </div>
             {{/if}}
 
-            {{!-- D. ATTRIBUTES (Legacy Groups) --}}
             {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
         </div>
 
-        {{!-- 2. ITEMS TAB: Inventory & Abilities --}}
+        {{!-- 2. ITEMS TAB --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <ol class="items-list">
-                {{!-- Header Row --}}
                 <li class="item flexrow item-header">
                     <div class="item-image"></div>
                     <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
+                    {{!-- Quantity Column --}}
+                    <div style="flex: 0 0 40px; text-align: center; font-weight: bold; font-size: 0.8em; color: #555;">Qty</div>
                     <div class="item-controls">
                         <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
                     </div>
                 </li>
-                {{!-- Item Loop --}}
                 {{#each items as |item id|}}
                 <li class="item flexrow" data-item-id="{{item._id}}">
                     <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
                     <h4 class="item-name mb-0">
-                        {{!-- Click to roll/load item into calculator --}}
                         <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
                     </h4>
+                    {{!-- Quantity Display --}}
+                    <div style="flex: 0 0 40px; text-align: center; color: #555;">
+                        {{#if item.system.quantity}} x{{item.system.quantity}} {{/if}}
+                    </div>
                     <div class="item-controls">
+                        {{!-- Use Button (Flask Icon) --}}
+                        <a class="item-control item-use" title="Use/Consume"><i class="fas fa-flask"></i></a>
                         <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
                         <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
                     </div>
@@ -247,7 +224,7 @@
             </ol>
         </div>
 
-        {{!-- 3. BIOGRAPHY TAB: Free Text Editor --}}
+        {{!-- 3. BIOGRAPHY TAB --}}
         <div class="tab biography" data-group="primary" data-tab="biography">
             {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
         </div>
