@@ -504,25 +504,26 @@ export class NarequentaActorSheet extends ActorSheet {
   /* REST & RECOVERY LOGIC                        */
   /* -------------------------------------------- */
   
-  /**
+/**
    * Handle Long Rest (Renewal).
-   * Restores E_cur to E_max, HP to Max, and Action Surges to Max.
+   * Restores E_cur to 100%, HP to Max, and Action Surges to Max.
    */
   async _onLongRest(event) {
     event.preventDefault();
     const actor = this.actor;
     const confirmed = await Dialog.confirm({
       title: "Renewal (Long Rest)",
-      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to their current <strong>Maximums</strong>.<br><strong>Targeting Data will be cleared.</strong></p>"
+      content: "<p>Perform a <strong>Long Rest (6h+)</strong>?<br>This will restore <strong>Active Vigor (HP)</strong> and all <strong>Essences</strong> to <strong>100%</strong>.<br><strong>Targeting Data will be cleared.</strong></p>"
     });
 
     if (confirmed) {
       const updates = {};
       const essences = actor.system.essences;
       
-      // 1. Restore Essences
+      // 1. Restore Essences to 100 (Absolute)
       for (const [key, essence] of Object.entries(essences)) {
-        updates[`system.essences.${key}.value`] = essence.max;
+        // [UPDATED] Always set to 100, ignoring current E_max
+        updates[`system.essences.${key}.value`] = 100;
       }
       
       // 2. Restore Action Surges (Characters only)
@@ -530,7 +531,7 @@ export class NarequentaActorSheet extends ActorSheet {
         updates[`system.resources.action_surges.value`] = actor.system.resources.action_surges.max;
       }
       
-      // 3. Restore HP
+      // 3. Restore HP to Max
       updates[`system.resources.hp.value`] = actor.system.resources.hp.max;
 
       // 4. Clear Targeting Calculator
@@ -543,12 +544,12 @@ export class NarequentaActorSheet extends ActorSheet {
       
       ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor: actor }),
-        content: `<div class="narequenta chat-card"><h3>Renewal</h3><p>Fully Restored & Targets Cleared.</p></div>`
+        content: `<div class="narequenta chat-card"><h3>Renewal</h3><p>Essences restored to 100%. HP & Action Surges refreshed.</p></div>`
       });
     }
   }
 
-  /**
+/**
    * Handle Short Rest (Refocus).
    * Opens a dialog to roll for recovery.
    */
@@ -561,12 +562,12 @@ export class NarequentaActorSheet extends ActorSheet {
         <div class="form-group">
             <label style="font-weight:bold;">Rest Intensity:</label>
             <select id="rest-type" style="width:100%; margin-bottom: 10px;">
-              <option value="quick">Quick Breath (1d6%) - Momentary</option>
-              <option value="mental" selected>Mental Calming (Variable)</option>
+              <option value="quick" selected>Quick Breath (1d6%) - Momentary</option>
+              <option value="mental">Mental Calming (Variable)</option>
               <option value="deep">Deep Meditation (4d10%) - 1 Hour</option>
             </select>
         </div>
-        <div id="mental-options" style="display:block; background:#f0f0f0; padding:5px; border:1px solid #ccc; margin-bottom:10px;">
+        <div id="mental-options" style="display:none; background:#f0f0f0; padding:5px; border:1px solid #ccc; margin-bottom:10px;">
              <label>Calming Duration:</label>
              <select id="mental-duration" style="width:100%;">
                 <option value="2d8">5 Minutes (2d8%)</option>
