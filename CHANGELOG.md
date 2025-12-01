@@ -1,4 +1,16 @@
 # CHANGELOG
+***
+
+## [v0.9.73] — 2025-12-01 (Manual Input Flexibility)
+**Status:** Beta - User Experience & Dice Integrity
+
+### ⚔️ Combat Flow
+- **Changed:** **Quick Breath Dialog:** The EXECUTE button now opens a dialog with a manual input field. Players can choose to enter a physical dice result or leave it empty to auto-roll.
+- **Fixed:** **AoE Defense Dialog:** When multiple targets are selected for an attack, the calculator now prompts a dialog allowing individual manual defense roll entry for each target (defaulting to random if unchanged).
+
+### 🎯 Targeting
+- **Fixed:** **Targeting Source:** Distance calculation now prioritizes the *currently selected token* to ensure range is measured from the actor's current board position, not their spawn point.
+***
 
 ## [v0.9.72] — 2025-12-01 (Combat Flow & Configuration Polish)
 **Status:** Beta - Interface & Flow Enhancement
@@ -6,25 +18,11 @@
 ### ⚔️ Combat Mechanics
 - **Added:** **Minimum Attrition Rule:** All offensive actions now consume at least **5%** Active Vigor, regardless of Skill/Weight.
 - **Added:** **Quick Breath Toggle:** Added a "Lungs" button to the Calculator.
-    - Enables "Self" targeting mode.
-    - Clicking EXECUTE opens a specific **Roll Dialog** (Sum of D_prof), allowing manual confirmation before applying recovery.
-    - Automatically enforces **End Turn** upon completion.
-- **Added:** **Action Surge Loop:** Upon completing an attack, Characters are prompted to spend a Surge to continue their turn. If declined (or unavailable), the turn ends automatically.
+- **Added:** **Action Surge Loop:** Upon completing an attack, Characters are prompted to spend a Surge to continue their turn.
 
 ### 🎯 Targeting & Logic
 - **Added:** **Dynamic Faction Targeting:** The auto-select system now recognizes "Allies" and "Enemies" based on the Actor Type (PC vs NPC).
-    - Healing defaults to Allies.
-    - Mastery Damage defaults to Enemies.
-- **Added:** **Waning Configuration Dialog:** The "Trigger Waning Phase" button now opens a configuration table.
-    - Select a **Focus Essence** (2d6).
-    - Allows **Manual Input** for loss values (if physical dice were rolled).
-    - Leaves fields empty for Auto-Roll.
-
-### 🐛 Fixes & UI
-- **Fixed:** Item Sheet syntax error preventing window from opening.
-- **UI:** Target names are displayed in the calculator header.
-- **UI:** Rolls reset to 0 upon selecting a new target.
-- **Fixed:** **Dynamic Range Calculation:** Targeting now prioritizes the currently controlled/selected token to ensure distance is measured from the token's post-movement location.
+- **Added:** **Waning Configuration Dialog:** The "Trigger Waning Phase" button now opens a configuration table with Manual Input support.
 ***
 
 ## [v0.9.7] — 2025-12-01 (Tactical Flow & Weapon Nuance)

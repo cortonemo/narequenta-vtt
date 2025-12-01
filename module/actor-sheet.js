@@ -39,7 +39,6 @@ export class NarequentaActorSheet extends ActorSheet {
       async: true
     });
 
-    // Combat Items for Dropdown
     context.combatItems = this.actor.items.filter(i => ["weapon", "ability"].includes(i.type))
         .map(i => ({
             id: i.id,
@@ -151,7 +150,6 @@ export class NarequentaActorSheet extends ActorSheet {
                   <strong style="color: #ff6666;">⚠️ ENDS TURN IMMEDIATELY</strong>
               </span>
           </div>`;
-          
           updates["system.calculator.batch_data"] = JSON.stringify({ mode: "quick_breath" });
       } else {
           updates["system.calculator.target_name"] = "None";
@@ -169,26 +167,78 @@ export class NarequentaActorSheet extends ActorSheet {
       const calc = this.actor.system.calculator;
       const targetIds = calc.target_ids || [];
 
+      // Validation
       const rawAttack = calc.attack_roll;
       if (!rawAttack && rawAttack !== 0) { ui.notifications.warn("Please roll Attack (d100)."); return; }
       if (Number(rawAttack) === 0) { ui.notifications.warn("Attack cannot be 0."); return; }
       if (!Array.isArray(targetIds) || targetIds.length === 0) { ui.notifications.warn("No targets selected."); return; }
 
-      const Attacker_d100 = Number(calc.attack_roll);
-      const R_prof = Number(calc.prof_roll) || 0;
-      const Manual_Def = Number(calc.defense_roll) || 0;
-      const itemBonus = Number(calc.item_bonus) || 0;
-      const itemWeight = (typeof calc.item_weight !== "undefined") ? Number(calc.item_weight) : 15; 
-      const weaponType = calc.weapon_type || "none";
-      const motorKey = calc.active_motor || "vitalis";
-      const E_max = this.actor.system.essences[motorKey]?.max || 100;
-      const E_cur = this.actor.system.essences[motorKey]?.value || 100;
-      const defStat = calc.target_def_stat || "vitalis";
-      const targetResource = calc.apply_to || "hp";
+      // Gather Data
+      const context = {
+          Attacker_d100: Number(calc.attack_roll),
+          R_prof: Number(calc.prof_roll) || 0,
+          itemBonus: Number(calc.item_bonus) || 0,
+          itemWeight: (typeof calc.item_weight !== "undefined") ? Number(calc.item_weight) : 15,
+          weaponType: calc.weapon_type || "none",
+          motorKey: calc.active_motor || "vitalis",
+          defStat: calc.target_def_stat || "vitalis",
+          targetResource: calc.apply_to || "hp",
+          
+          E_max: this.actor.system.essences[calc.active_motor]?.max || 100,
+          E_cur: this.actor.system.essences[calc.active_motor]?.value || 100,
+          
+          Attacker_Tier: (this.actor.type === 'character') 
+              ? (this.actor.system.resources.action_surges.max || 0) 
+              : (this.actor.system.tier || 0),
+          
+          targetIds: targetIds,
+          defenseRolls: {} 
+      };
 
-      let Attacker_Tier = (this.actor.type === 'character') 
-          ? (this.actor.system.resources.action_surges.max || 0) 
-          : (this.actor.system.tier || 0);
+      const Manual_Def = Number(calc.defense_roll) || 0;
+
+      // AoE vs Single Logic
+      if (targetIds.length > 1 && Manual_Def === 0) {
+          // A. Multi-Target AoE -> Dialog
+          await this._showAoEDefenseDialog(context);
+      } else {
+          // B. Single or Manual Override
+          for (const tid of targetIds) {
+              context.defenseRolls[tid] = (Manual_Def > 0) ? Manual_Def : Math.floor(Math.random() * 100) + 1;
+          }
+          await this._processAttackComputation(context);
+      }
+  }
+
+  /* --- Helper: AoE Dialog --- */
+  async _showAoEDefenseDialog(context) {
+      let rows = "";
+      context.targetIds.forEach(tid => {
+          const tToken = canvas.tokens.get(tid);
+          const name = tToken ? tToken.name : "Unknown";
+          const rnd = Math.floor(Math.random() * 100) + 1;
+          rows += `<tr><td style="padding: 4px;">${name}</td><td style="text-align: right;"><input type="number" name="def_${tid}" value="${rnd}" style="width: 50px; text-align: center;"></td></tr>`;
+      });
+
+      const content = `<div class="narequenta"><p style="font-size:0.9em; margin-bottom:5px;"><strong>AoE Defense Resolution</strong></p><p style="font-size:0.8em; color:#555;">Verify or enter specific defense rolls.</p><table style="width:100%; border-collapse: collapse; font-size: 0.9em;"><thead style="background: #ddd;"><tr><th style="text-align:left; padding:4px;">Target</th><th>Def Roll</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+
+      new Dialog({
+          title: "Defense Rolls", content: content,
+          buttons: {
+              calc: { label: "Calculate Outcomes", icon: "<i class='fas fa-calculator'></i>", callback: async (html) => {
+                      context.targetIds.forEach(tid => {
+                          const val = html.find(`input[name="def_${tid}"]`).val();
+                          context.defenseRolls[tid] = Number(val);
+                      });
+                      await this._processAttackComputation(context);
+                  }}
+          }, default: "calc"
+      }).render(true);
+  }
+
+  /* --- Helper: Final Computation --- */
+  async _processAttackComputation(ctx) {
+      const { Attacker_d100, R_prof, itemBonus, itemWeight, weaponType, motorKey, defStat, targetResource, E_max, E_cur, Attacker_Tier, targetIds, defenseRolls } = ctx;
 
       const isHealing = itemBonus < 0;
       const isPotion = isHealing && (itemWeight === 0);
@@ -196,40 +246,28 @@ export class NarequentaActorSheet extends ActorSheet {
       // Hit Logic
       const effectiveRoll = Attacker_d100 - R_prof;
       let zonePenalty = 0;
-      if (E_cur <= 25) zonePenalty = 30;      
-      else if (E_cur <= 50) zonePenalty = 20; 
-      else if (E_cur <= 75) zonePenalty = 10; 
-
+      if (E_cur <= 25) zonePenalty = 30; else if (E_cur <= 50) zonePenalty = 20; else if (E_cur <= 75) zonePenalty = 10;
       const successThreshold = E_max - zonePenalty;
+      
       let attackerSuccess = true;
       let hitLabel = "SUCCESS";
-
       if (Attacker_d100 >= 96) { attackerSuccess = false; hitLabel = "CRIT FAIL"; }
       else if (Attacker_d100 <= 5) { attackerSuccess = true; hitLabel = "CRIT SUCCESS"; }
       else if (effectiveRoll > successThreshold) { attackerSuccess = false; hitLabel = "MISS"; }
 
-      let sheetListHtml = `<div style="font-size:0.85em; color:#555; margin-bottom:5px; border-bottom:1px solid #ccc;">
-          Attack: <strong>${effectiveRoll}</strong> vs <strong>${successThreshold}</strong> (${hitLabel})
-      </div>`;
-      
+      let sheetListHtml = `<div style="font-size:0.85em; color:#555; margin-bottom:5px; border-bottom:1px solid #ccc;">Attack: <strong>${effectiveRoll}</strong> vs <strong>${successThreshold}</strong> (${hitLabel})</div>`;
       let chatTableRows = ""; 
       let payloadTargets = [];
 
-      // Calculate for each target
       for (const tid of targetIds) {
           const tToken = canvas.tokens.get(tid);
           if (!tToken) continue;
           
           const tActor = tToken.actor;
           const Def_Ecur = tActor.system.essences[defStat]?.value || 50;
-          const Def_Tier = (tActor.type==='character') 
-              ? (tActor.system.resources.action_surges.max||0) 
-              : (tActor.system.tier||0);
+          const Def_Tier = (tActor.type==='character') ? (tActor.system.resources.action_surges.max||0) : (tActor.system.tier||0);
           
-          let Def_Roll = (targetIds.length === 1 && Manual_Def > 0) 
-              ? Manual_Def 
-              : Math.floor(Math.random() * 100) + 1;
-              
+          const Def_Roll = defenseRolls[tid];
           const D_Margin = Def_Roll - Def_Ecur; 
           let finalDamage = 0;
           let details = "";
@@ -238,76 +276,45 @@ export class NarequentaActorSheet extends ActorSheet {
           if (attackerSuccess) {
               if (isHealing) {
                   let healAmount = Math.abs(itemBonus);
-                  if (itemWeight > 0) healAmount += R_prof; 
-                  finalDamage = -Math.max(1, healAmount); 
-                  resultColor = "#006400"; 
+                  if (!isPotion) healAmount += R_prof;
+                  finalDamage = -Math.max(1, healAmount);
+                  resultColor = "#006400";
               } else {
-                  // Damage Calc
+                  // Damage Formula
                   let A_FP = 100 - effectiveRoll;
-                  if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof); 
-                  
-                  // Slashing Bonus
-                  if (weaponType === "slashing") {
-                      const slashBonus = Math.floor(Math.random() * 4) + 1;
-                      A_FP += slashBonus;
-                      details += ` (Slash +${slashBonus})`;
-                  }
+                  if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
+                  if (weaponType === "slashing") { const slashBonus = Math.floor(Math.random() * 4) + 1; A_FP += slashBonus; details += ` (Slash +${slashBonus})`; }
 
                   const M_Defense = Def_Tier * 5.5;
                   let rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
-                  
                   let baseDamage = Math.max(R_prof, rawCalc);
                   if (baseDamage < 1) baseDamage = 1;
 
                   let mult = 1.0;
                   const diff = Attacker_Tier - Def_Tier;
-                  if (diff >= 1) mult = 1.25; 
-                  if (diff >= 2) mult = 1.50;
-                  if (diff === 0) mult = 1.00; 
-                  if (diff === -1) mult = 0.75;
-                  if (diff <= -2) mult = 0.50;
+                  if (diff >= 1) mult = 1.25; if (diff >= 2) mult = 1.50; if (diff === 0) mult = 1.00; if (diff === -1) mult = 0.75; if (diff <= -2) mult = 0.50;
 
                   finalDamage = Math.max(1, Math.floor(baseDamage * mult));
-                  resultColor = "#8b0000"; 
+                  resultColor = "#8b0000";
               }
               
               payloadTargets.push({ id: tid, damage: finalDamage, name: tToken.name });
-              if (!details.includes("Slash")) details += ` (Def:${Def_Roll})`;
-              else details += ` / (Def:${Def_Roll})`;
-              
-              chatTableRows += `<tr>
-                  <td style="text-align:left;">${tToken.name}</td>
-                  <td style="text-align:center;">${Def_Roll}</td>
-                  <td style="text-align:right; font-weight:bold; color:${resultColor};">
-                      ${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}
-                  </td>
-              </tr>`;
+              if (!details.includes("Slash")) details += ` (Def:${Def_Roll})`; else details += ` / (Def:${Def_Roll})`;
+              chatTableRows += `<tr><td style="text-align:left;">${tToken.name}</td><td style="text-align:center;">${Def_Roll}</td><td style="text-align:right; font-weight:bold; color:${resultColor};">${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}</td></tr>`;
           } else {
               details = `(Missed)`;
               chatTableRows += `<tr><td style="text-align:left; color:#999;">${tToken.name}</td><td colspan="2" style="text-align:center; color:#999;">Evaded</td></tr>`;
           }
-
-          sheetListHtml += `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0;">
-              <div><strong>${tToken.name}</strong> <span style="font-size:0.8em; color:#555;">${details}</span></div>
-              <div style="font-weight:bold; color:${resultColor}; font-size:1.1em;">
-                  ${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}
-              </div>
-          </div>`;
+          sheetListHtml += `<div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0;"><div><strong>${tToken.name}</strong> <span style="font-size:0.8em; color:#555;">${details}</span></div><div style="font-weight:bold; color:${resultColor}; font-size:1.1em;">${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}</div></div>`;
       }
 
-      // --- Attrition Calculation (Minimum 5%) ---
+      // Attrition (Min 5%)
       let rawCost = Math.max(0, itemWeight - Math.floor(R_prof / 2));
-      
-      if (weaponType === "piercing") {
-          rawCost = Math.max(0, rawCost - 1);
-      }
+      if (weaponType === "piercing") rawCost = Math.max(0, rawCost - 1);
+      let attritionCost = Math.max(5, rawCost); 
 
-      // Enforce Minimum 5%
-      let attritionCost = Math.max(5, rawCost);
-
-      if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2); 
-      if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;            
+      if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2);
+      if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
       
       sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">Self Attrition: -${attritionCost}% <span style="font-weight:normal; color:#777;">(Min 5%)</span></div>`;
 
@@ -319,21 +326,12 @@ export class NarequentaActorSheet extends ActorSheet {
 
       ChatMessage.create({ 
           speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
-          content: `
-          <div class="narequenta chat-card">
+          content: `<div class="narequenta chat-card">
               <h3>${isHealing ? "Restoration" : "Attack Resolution"}</h3>
               <div><strong>Status:</strong> ${hitLabel} ${weaponType !== "none" ? `(${weaponType.toUpperCase()})` : ""}</div>
-              <div style="font-size:0.9em; border-top:1px dashed #ccc; margin-top:5px; padding-top:2px;">
-                  Cost: <span style="color:#a00; font-weight:bold;">-${attritionCost}%</span> ${motorKey.toUpperCase()}
-              </div>
-              <hr>
-              <table style="width:100%; font-size:0.9em; border-collapse:collapse;">
-                  <thead><tr style="background:#eee;"><th style="text-align:left;">Target</th><th>Def</th><th>Effect</th></tr></thead>
-                  <tbody>${chatTableRows}</tbody>
-              </table>
-              <div style="margin-top:5px; font-style:italic; font-size:0.8em; text-align:center;">
-                  Apply results via Sheet.
-              </div>
+              <div style="font-size:0.9em; border-top:1px dashed #ccc; margin-top:5px; padding-top:2px;">Cost: <span style="color:#a00; font-weight:bold;">-${attritionCost}%</span> ${motorKey.toUpperCase()}</div>
+              <hr><table style="width:100%; font-size:0.9em; border-collapse:collapse;"><thead><tr style="background:#eee;"><th style="text-align:left;">Target</th><th>Def</th><th>Effect</th></tr></thead><tbody>${chatTableRows}</tbody></table>
+              <div style="margin-top:5px; font-style:italic; font-size:0.8em; text-align:center;">Apply results via Sheet.</div>
           </div>` 
       });
   }
@@ -353,73 +351,44 @@ export class NarequentaActorSheet extends ActorSheet {
       const targetType = item?.system.target_type || "one"; 
       
       const isHealing = (Number(calc.item_bonus) || 0) < 0;
-      const tier = (attacker.type === 'character') 
-          ? (attacker.system.resources.action_surges.max || 0) 
-          : (attacker.system.tier || 0);
+      const tier = (attacker.type === 'character') ? (attacker.system.resources.action_surges.max || 0) : (attacker.system.tier || 0);
 
-      // [FIX] Determine Source Token (Prioritize Selected/Controlled)
+      // Determine Source Token (Priority: Selected > Owned)
       let sourceToken = null;
-      
-      // 1. Try to find a selected token on the canvas that matches this actor
       const controlled = canvas.tokens.controlled.find(t => t.actor?.id === attacker.id);
-      if (controlled) {
-          sourceToken = controlled;
-      } else {
-          // 2. Fallback: Get the first active token found for this actor
+      if (controlled) sourceToken = controlled;
+      else {
           const active = attacker.getActiveTokens();
           if (active.length > 0) sourceToken = active[0];
       }
 
-      if (!sourceToken) { 
-          ui.notifications.warn("No token found for this actor on the current scene."); 
-          return; 
-      }
+      if (!sourceToken) { ui.notifications.warn("Place token on scene."); return; }
       
-      // 1. Determine Faction Logic
       const myType = attacker.type; 
-      let friendHtml = "";
-      let foeHtml = ""; 
-      let count = 0;
+      let friendHtml = ""; let foeHtml = ""; let count = 0;
       
-      // 2. Sort Targets into Friend/Foe
       canvas.tokens.placeables.forEach(t => {
-          if (t.id === sourceToken.id) return; // Ignore Self
-          
-          // Measure distance from the Source Token's current center
+          if (t.id === sourceToken.id) return; 
           const dist = canvas.grid.measureDistance(sourceToken, t);
-          
           if (dist <= range && t.actor?.system.resources?.hp?.value > 0) {
               const targetActorType = t.actor.type;
-              const entry = `<div style="padding:2px;">
-                  <input type="checkbox" name="target" value="${t.id}" class="target-checkbox" data-type="${targetActorType}"> 
-                  <strong>${t.name}</strong> (${Math.round(dist)}ft)
-              </div>`;
-              
-              if (targetActorType === myType) {
-                  friendHtml += entry; // Same type = Ally
-              } else {
-                  foeHtml += entry;    // Different type = Enemy
-              }
+              const entry = `<div style="padding:2px;"><input type="checkbox" name="target" value="${t.id}" class="target-checkbox" data-type="${targetActorType}"> <strong>${t.name}</strong> (${Math.round(dist)}ft)</div>`;
+              if (targetActorType === myType) friendHtml += entry; else foeHtml += entry;
               count++;
           }
       });
 
       if (count === 0) { ui.notifications.warn(`No targets within ${range}ft of ${sourceToken.name}.`); return; }
 
-      // 3. Build Auto-Select Script based on Perspective
       let autoSelectScript = "";
       const friendType = myType; 
       const foeType = (myType === "character") ? "npc" : "character";
 
       if (targetType === "aoe") {
-          if (isHealing) {
-              autoSelectScript = `$('input[data-type="${friendType}"]').prop('checked', true);`;
-          } else {
-              if (tier >= 3) {
-                  autoSelectScript = `$('input[data-type="${foeType}"]').prop('checked', true);`; // Mastery
-              } else {
-                  autoSelectScript = `$('input.target-checkbox').prop('checked', true);`; // Wild
-              }
+          if (isHealing) autoSelectScript = `$('input[data-type="${friendType}"]').prop('checked', true);`;
+          else {
+              if (tier >= 3) autoSelectScript = `$('input[data-type="${foeType}"]').prop('checked', true);`;
+              else autoSelectScript = `$('input.target-checkbox').prop('checked', true);`;
           }
       }
 
@@ -427,24 +396,15 @@ export class NarequentaActorSheet extends ActorSheet {
       let options = "";
       essences.forEach(k => { options += `<option value="${k}" ${k===defaultDef?"selected":""}>${k.toUpperCase()}</option>`; });
 
-      // 5. Render Dialog
       const content = `
       <form>
-          <div style="text-align:center; margin-bottom:5px;">
-              Origin: <strong>${sourceToken.name}</strong> | Range: <strong>${range}ft</strong>
-          </div>
+          <div style="text-align:center; margin-bottom:5px;">Origin: <strong>${sourceToken.name}</strong> | Range: <strong>${range}ft</strong></div>
           <div style="display:flex; gap:5px; margin-bottom:10px;">
-              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;">
-                  <strong>Allies</strong><br>${friendHtml || "-"}
-              </div>
-              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;">
-                  <strong>Enemies</strong><br>${foeHtml || "-"}
-              </div>
+              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;"><strong>Allies</strong><br>${friendHtml || "-"}</div>
+              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;"><strong>Enemies</strong><br>${foeHtml || "-"}</div>
           </div>
           <div style="text-align:center; margin-bottom:10px;">
-              <button type="button" id="auto-select-btn" style="font-size:0.8em; width:100%;">
-                  ${targetType === "aoe" ? "Reset / Auto-Select" : "Auto-Select Targets"}
-              </button>
+              <button type="button" id="auto-select-btn" style="font-size:0.8em; width:100%;">${targetType === "aoe" ? "Reset / Auto-Select" : "Auto-Select Targets"}</button>
           </div>
           <label>Defensive Stat:</label>
           <select id="target-essence" style="width:100%;">${options}</select>
@@ -453,45 +413,25 @@ export class NarequentaActorSheet extends ActorSheet {
           ${autoSelectScript}
           $("#auto-select-btn").click(function() { 
               const anyChecked = $("input:checkbox:checked").length > 0;
-              if (anyChecked) { 
-                  $("input:checkbox").prop('checked', false); 
-              } else { 
-                  ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} 
-              }
+              if (anyChecked) { $("input:checkbox").prop('checked', false); } else { ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} }
           });
       </script>`;
 
       new Dialog({ 
-          title: `Targeting (${targetType.toUpperCase()})`, 
-          content: content, 
+          title: `Targeting (${targetType.toUpperCase()})`, content: content, 
           buttons: { 
-              confirm: { 
-                  label: "Lock", 
-                  icon: "<i class='fas fa-crosshairs'></i>",
-                  callback: async (html) => {
-                      const ids = []; 
-                      const names = [];
-                      html.find("input:checked").each(function(){ 
-                          ids.push($(this).val());
-                          const t = canvas.tokens.get($(this).val());
-                          if (t) names.push(t.name);
-                      });
-                      
+              confirm: { label: "Lock", icon: "<i class='fas fa-crosshairs'></i>", callback: async (html) => {
+                      const ids = []; const names = [];
+                      html.find("input:checked").each(function(){ ids.push($(this).val()); const t = canvas.tokens.get($(this).val()); if (t) names.push(t.name); });
                       if(ids.length) {
                           let nameString = names.join(", ");
                           if (nameString.length > 25) nameString = names.length + " Targets Selected";
-
                           await attacker.update({ 
-                              "system.calculator.target_ids": ids, 
-                              "system.calculator.target_def_stat": html.find("#target-essence").val(), 
-                              "system.calculator.target_name": nameString,
-                              "system.calculator.attack_roll": 0,
-                              "system.calculator.defense_roll": 0,
-                              "system.calculator.quick_breath_active": false
+                              "system.calculator.target_ids": ids, "system.calculator.target_def_stat": html.find("#target-essence").val(), "system.calculator.target_name": nameString,
+                              "system.calculator.attack_roll": 0, "system.calculator.defense_roll": 0, "system.calculator.quick_breath_active": false
                           });
                       }
-                  }
-              }
+                  }}
           }
       }).render(true);
   }
@@ -505,12 +445,11 @@ export class NarequentaActorSheet extends ActorSheet {
       if (!rawData) return;
       const payload = JSON.parse(rawData);
 
-      // CASE A: QUICK BREATH (Manual Roll Dialog)
+      // CASE A: QUICK BREATH (Manual Roll Input)
       if (payload.mode === "quick_breath") {
           const isChar = this.actor.type === "character";
           const tier = isChar ? (this.actor.system.resources.action_surges.max || 0) : (this.actor.system.tier || 0);
-          const diceCount = Math.max(1, tier);
-          const formula = `${diceCount}d10`;
+          const formula = `${Math.max(1, tier)}d10`;
 
           new Dialog({
               title: "Quick Breath",
@@ -520,22 +459,32 @@ export class NarequentaActorSheet extends ActorSheet {
                       <div><strong>Formula:</strong> ${formula}</div>
                       <div style="color:#a00; font-weight:bold; margin-top:3px;">⚠️ Costs Entire Turn</div>
                   </div>
+                  <div class="form-group" style="margin: 10px 0;">
+                      <label>Manual Result:</label>
+                      <input type="number" id="manual-qb-roll" placeholder="Leave empty to roll" style="text-align:center; width: 60%;">
+                  </div>
                   <p style="font-size:0.9em;">Center your spirit to regain Active Vigor.</p>
               </div>`,
               buttons: {
-                  roll: {
-                      icon: '<i class="fas fa-dice-d20"></i>',
-                      label: "Roll Recovery",
-                      callback: async () => {
-                          const r = new Roll(formula);
-                          await r.evaluate();
-                          if (game.dice3d) game.dice3d.showForRoll(r);
+                  confirm: {
+                      label: "Recover",
+                      icon: '<i class="fas fa-lungs"></i>',
+                      callback: async (html) => {
+                          const manualVal = html.find("#manual-qb-roll").val();
+                          let total = 0;
+
+                          if (manualVal !== "") {
+                              total = Number(manualVal);
+                          } else {
+                              const r = new Roll(formula);
+                              await r.evaluate();
+                              if (game.dice3d) game.dice3d.showForRoll(r);
+                              total = r.total;
+                          }
 
                           const updates = {};
                           for (const [key, essence] of Object.entries(this.actor.system.essences)) {
-                              if (essence.value < 100) {
-                                  updates[`system.essences.${key}.value`] = Math.min(100, essence.value + r.total);
-                              }
+                              if (essence.value < 100) updates[`system.essences.${key}.value`] = Math.min(100, essence.value + total);
                           }
                           updates["system.calculator.quick_breath_active"] = false;
                           updates["system.calculator.batch_data"] = "";
@@ -543,15 +492,14 @@ export class NarequentaActorSheet extends ActorSheet {
                           updates["system.calculator.target_name"] = "None";
 
                           await this.actor.update(updates);
-
                           ChatMessage.create({ 
                               speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
-                              content: `<div class="narequenta chat-card"><h3 style="color:#8b0000; border-bottom:1px solid #8b0000">Quick Breath</h3><div style="text-align:center;">Recovered <strong>${r.total}%</strong> Vigor</div></div>` 
+                              content: `<div class="narequenta chat-card"><h3 style="color:#8b0000; border-bottom:1px solid #8b0000">Quick Breath</h3><div style="text-align:center;">Recovered <strong>${total}%</strong> Vigor</div></div>` 
                           });
                           this._onEndTurn(event);
                       }
                   }
-              }, default: "roll"
+              }, default: "confirm"
           }).render(true);
           return;
       }
@@ -568,21 +516,13 @@ export class NarequentaActorSheet extends ActorSheet {
               if (token && token.actor) {
                   const applyTo = targetResource || "hp";
                   let currentTVal, maxTVal, updatePath;
-
                   if (applyTo === "hp") {
-                      currentTVal = token.actor.system.resources.hp.value;
-                      maxTVal = token.actor.system.resources.hp.max;
-                      updatePath = "system.resources.hp.value";
+                      currentTVal = token.actor.system.resources.hp.value; maxTVal = token.actor.system.resources.hp.max; updatePath = "system.resources.hp.value";
                   } else {
-                      currentTVal = token.actor.system.essences[applyTo]?.value || 0;
-                      maxTVal = token.actor.system.essences[applyTo]?.max || 100;
-                      updatePath = `system.essences.${applyTo}.value`;
+                      currentTVal = token.actor.system.essences[applyTo]?.value || 0; maxTVal = token.actor.system.essences[applyTo]?.max || 100; updatePath = `system.essences.${applyTo}.value`;
                   }
-
                   let finalVal = currentTVal - tData.damage;
-                  if (finalVal < 0) finalVal = 0;
-                  if (finalVal > maxTVal) finalVal = maxTVal;
-
+                  if (finalVal < 0) finalVal = 0; if (finalVal > maxTVal) finalVal = maxTVal;
                   await token.actor.update({ [updatePath]: finalVal });
                   if (applyTo === "hp" && finalVal <= 0 && tData.damage > 0) {
                        const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
@@ -592,31 +532,20 @@ export class NarequentaActorSheet extends ActorSheet {
           }
       }
 
-      await this.actor.update({
-          "system.calculator.attack_roll": 0,
-          "system.calculator.prof_roll": 0,
-          "system.calculator.defense_roll": 0,
-          "system.calculator.batch_data": "",
-          "system.calculator.output": `Applied. -${attritionCost}% Attrition.`
-      });
+      await this.actor.update({ "system.calculator.attack_roll": 0, "system.calculator.prof_roll": 0, "system.calculator.defense_roll": 0, "system.calculator.batch_data": "", "system.calculator.output": `Applied. -${attritionCost}% Attrition.` });
       ui.notifications.info("Resolution Complete.");
 
-      // CASE C: ACTION SURGE CHECK
+      // CASE C: ACTION SURGE
       if (this.actor.type === "character") {
           const surges = this.actor.system.resources.action_surges.value;
           if (surges > 0) {
               new Dialog({
-                  title: "End of Action",
-                  content: `<div style="text-align:center;"><p>Action Complete.</p><p>Spend Surge to <strong>Keep Turn</strong>?</p></div>`,
+                  title: "End of Action", content: `<div style="text-align:center;"><p>Action Complete.</p><p>Spend Surge to <strong>Keep Turn</strong>?</p></div>`,
                   buttons: {
-                      yes: {
-                          label: "Yes (Surge!)",
-                          icon: "<i class='fas fa-bolt'></i>",
-                          callback: async () => {
+                      yes: { label: "Yes (Surge!)", icon: "<i class='fas fa-bolt'></i>", callback: async () => {
                               await this.actor.update({"system.resources.action_surges.value": surges - 1});
                               ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), content: `<div class="narequenta chat-card"><h3 style="color:#d4af37">Action Surge!</h3></div>` });
-                          }
-                      },
+                          }},
                       no: { label: "No (End Turn)", icon: "<i class='fas fa-step-forward'></i>", callback: () => { this._onEndTurn(event); } }
                   }, default: "no"
               }).render(true);
@@ -631,75 +560,36 @@ export class NarequentaActorSheet extends ActorSheet {
       event.preventDefault();
       const essences = this.actor.system.essences;
       let rows = "";
-
       for (const [key, ess] of Object.entries(essences)) {
           const isFloor = ess.max <= 50;
           const style = isFloor ? "opacity: 0.5;" : "";
           const disabled = isFloor ? "disabled" : "";
           const checked = (!isFloor && key === "vitalis") ? "checked" : ""; 
-          
-          rows += `
-          <tr style="${style}">
-              <td style="text-align:center;"><input type="radio" name="focus_selection" value="${key}" ${checked} ${disabled}></td>
-              <td style="font-weight:bold; padding: 5px;">${ess.label}</td>
-              <td style="text-align:center;">${ess.max}%</td>
-              <td style="text-align:center;"><input type="number" name="loss_${key}" placeholder="Auto" style="width: 60px; text-align:center;" ${disabled}></td>
-          </tr>`;
+          rows += `<tr style="${style}"><td style="text-align:center;"><input type="radio" name="focus_selection" value="${key}" ${checked} ${disabled}></td><td style="font-weight:bold; padding: 5px;">${ess.label}</td><td style="text-align:center;">${ess.max}%</td><td style="text-align:center;"><input type="number" name="loss_${key}" placeholder="Auto" style="width: 60px; text-align:center;" ${disabled}></td></tr>`;
       }
-
-      const content = `
-      <div class="narequenta">
-          <div style="background:#f0f0f0; padding:10px; border-radius:4px; margin-bottom:10px; font-size: 0.9em;">
-              <ul style="margin:0; padding-left:20px;">
-                  <li>Select one <strong>Focus</strong> (Rolls <strong>2d6</strong>). Others roll <strong>1d6</strong>.</li>
-                  <li>Enter number in <strong>"Loss"</strong> for manual roll. Leave empty for Auto.</li>
-              </ul>
-          </div>
-          <table style="width:100%; border-collapse: collapse;">
-              <thead style="background: #333; color: #fff;"><tr><th style="padding: 5px;">Focus</th><th style="text-align:left; padding: 5px;">Essence</th><th>Max</th><th>Loss Input</th></tr></thead>
-              <tbody>${rows}</tbody>
-          </table>
-          <p style="color: #8b0000; font-weight: bold; text-align: center; margin-top: 10px;">⚠️ PERMANENTLY REDUCES SOUL'S PEAK</p>
-      </div>`;
+      const content = `<div class="narequenta"><div style="background:#f0f0f0; padding:10px; border-radius:4px; margin-bottom:10px; font-size: 0.9em;"><ul style="margin:0; padding-left:20px;"><li>Select one <strong>Focus</strong> (Rolls <strong>2d6</strong>). Others roll <strong>1d6</strong>.</li><li>Enter number in <strong>"Loss"</strong> for manual roll. Leave empty for Auto.</li></ul></div><table style="width:100%; border-collapse: collapse;"><thead style="background: #333; color: #fff;"><tr><th style="padding: 5px;">Focus</th><th style="text-align:left; padding: 5px;">Essence</th><th>Max</th><th>Loss Input</th></tr></thead><tbody>${rows}</tbody></table><p style="color: #8b0000; font-weight: bold; text-align: center; margin-top: 10px;">⚠️ PERMANENTLY REDUCES SOUL'S PEAK</p></div>`;
 
       new Dialog({
-          title: "The Waning Roll",
-          content: content,
+          title: "The Waning Roll", content: content,
           buttons: {
               cancel: { label: "Cancel", icon: "<i class='fas fa-times'></i>" },
-              commit: {
-                  label: "Commit to Loss", icon: "<i class='fas fa-skull'></i>",
-                  callback: async (html) => {
+              commit: { label: "Commit to Loss", icon: "<i class='fas fa-skull'></i>", callback: async (html) => {
                       const focusKey = html.find("input[name='focus_selection']:checked").val();
                       if (!focusKey) { ui.notifications.warn("Select Focus."); return; }
-
                       const updates = {};
                       let chatContent = `<h3 style="border-bottom: 2px solid #8b0000; color: #8b0000;">The Waning</h3><table style="width:100%; font-size: 0.9em; border-collapse: collapse;"><tr style="background: #eee;"><th style="text-align:left">Essence</th><th>Formula</th><th>Loss</th><th>New Max</th></tr>`;
-
                       for (const [key, ess] of Object.entries(essences)) {
                           if (ess.max <= 50) continue; 
                           const isFocus = (key === focusKey);
                           const manualInput = html.find(`input[name='loss_${key}']`).val();
                           let loss = 0; let formulaLabel = "";
-
                           if (manualInput !== "") { loss = Number(manualInput); formulaLabel = "Manual"; } 
-                          else {
-                              const formula = isFocus ? "2d6" : "1d6";
-                              const r = new Roll(formula);
-                              await r.evaluate();
-                              loss = r.total;
-                              formulaLabel = formula;
-                          }
-
-                          const newMax = Math.max(50, ess.max - loss);
-                          const actualLoss = ess.max - newMax;
+                          else { const r = new Roll(isFocus ? "2d6" : "1d6"); await r.evaluate(); loss = r.total; formulaLabel = isFocus ? "2d6" : "1d6"; }
+                          const newMax = Math.max(50, ess.max - loss); const actualLoss = ess.max - newMax;
                           updates[`system.essences.${key}.max`] = newMax;
-
-                          const rowStyle = isFocus ? "font-weight:bold; color:#8b0000;" : "color:#555;";
-                          const icon = isFocus ? "🔥" : "🍂";
+                          const rowStyle = isFocus ? "font-weight:bold; color:#8b0000;" : "color:#555;"; const icon = isFocus ? "🔥" : "🍂";
                           chatContent += `<tr style="${rowStyle}"><td style="padding:2px;">${icon} ${ess.label}</td><td style="text-align:center;">${formulaLabel}</td><td style="text-align:center;">-${actualLoss}%</td><td style="text-align:right;"><strong>${newMax}%</strong></td></tr>`;
                       }
-                      
                       chatContent += `</table>`;
                       await this.actor.update(updates);
                       ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), content: `<div class="narequenta chat-card">${chatContent}</div>` });
