@@ -405,4 +405,3 @@
 - The core description states the game is about **Beautiful Erosion**, where heroes fade and **Proficiency Compensates for Decline**.
 - Defines basic actor types (`character`, `npc`) and items (`base`, `ability`, `equipment`, `weapon`).
 - The `system.json` is configured with Foundry VTT URLs and licensed under `LICENSE.md`.
-[cite_start]```[cite: 1722, 1597-1722]
