@@ -1,6 +1,14 @@
 import { EntitySheetHelper } from "./helper.js";
 import { ATTRIBUTE_TYPES } from "./constants.js";
 
+/**
+ * Nárëquenta Actor Sheet
+ * Handles the logic for Character and NPC sheets, including:
+ * - Essence Management (E_max / E_cur)
+ * - The Combat Calculator (Attacks, Damage, Attrition)
+ * - Quick Breath & Recovery Logic
+ * - Inventory & Item Management
+ */
 export class NarequentaActorSheet extends ActorSheet {
 
   /** @inheritdoc */
@@ -18,17 +26,24 @@ export class NarequentaActorSheet extends ActorSheet {
   async getData(options) {
     const context = await super.getData(options);
     const actorData = this.actor.toObject(false);
+    
+    // Pass system data to the template
     context.systemData = this.actor.system; 
     context.system = this.actor.system; 
+    
+    // Legacy Worldbuilding Helpers (Attributes tab)
     EntitySheetHelper.getAttributeData(actorData);
     context.shorthand = !!game.settings.get("narequenta", "macroShorthand");
     context.dtypes = ATTRIBUTE_TYPES;
+    
+    // Enrich Biography Text (HTML)
     context.biographyHTML = await TextEditor.enrichHTML(context.systemData.biography, {
       secrets: this.document.isOwner,
       async: true
     });
 
-    // Combat Items Dropdown (Range = 5ft Default)
+    // Combat Items Dropdown (Populates the Calculator Selection)
+    // Filters for Weapons/Abilities and maps them for the select box
     context.combatItems = this.actor.items.filter(i => ["weapon", "ability"].includes(i.type))
         .map(i => ({
             id: i.id,
@@ -45,21 +60,22 @@ export class NarequentaActorSheet extends ActorSheet {
     super.activateListeners(html);
     if ( !this.isEditable ) return;
 
-    // Standard Listeners
+    // --- Standard Item Management ---
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
-    html.find(".item-use").click(this._onItemUse.bind(this)); // Consumables
-    
-    // Calculator Listeners
+    html.find(".item-use").click(this._onItemUse.bind(this)); // Consumables logic
+
+    // --- Combat Calculator & Targeting ---
     html.find(".roll-calculation").click(this._onCalculate.bind(this));
     html.find(".execute-batch").click(this._onExecuteBatch.bind(this));
     html.find(".active-item-select").change(this._onSelectActiveItem.bind(this));
+    html.find(".launch-contest").click(this._onLaunchContest.bind(this)); // Targeting Dialog
+    html.find(".roll-calc-btn").click(this._onRollSheetCalc.bind(this));   // Inline dice rollers
 
-    // Targeting & Dice
-    html.find(".launch-contest").click(this._onLaunchContest.bind(this));
-    html.find(".roll-calc-btn").click(this._onRollSheetCalc.bind(this));    
+    // --- Quick Breath Logic (NEW) ---
+    html.find(".toggle-quick-breath").click(this._onToggleQuickBreath.bind(this));
 
-    // Phase & Rest & Combat
+    // --- Phase & Rest Utilities ---
     html.find(".waning-toggle").change(ev => {
         const isChecked = ev.target.checked;
         if (isChecked) html.find(".waning-roll-btn").slideDown();
@@ -73,116 +89,183 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* ITEM SELECTION (Setup Calculator)            */
+  /* CALCULATOR: Item Selection Setup             */
   /* -------------------------------------------- */
   async _onSelectActiveItem(event) {
+    event.preventDefault();
+    const itemId = event.target.value;
+    const item = this.actor.items.get(itemId);
+    if (!item) return;
+
+    const sys = item.system;
+    const motorKey = sys.cost?.motor || "vitalis";
+    const motorVal = this.actor.system.essences[motorKey]?.value || 0;
+    const weight = (typeof sys.weight !== "undefined") ? Number(sys.weight) : 15;
+    const range = Number(sys.range) || 5;
+    
+    // [ADD THIS LINE HERE] Define the variable before using it below
+    const weaponType = sys.weapon_type || "none"; 
+
+    // Determine where damage applies (HP vs Essence)
+    const damageTarget = sys.target_resource || "hp";
+
+    // Evaluate Damage/Healing Formula (if static or simple math)
+    let bonusVal = 0;
+    const bonusRaw = sys.damage_bonus || "0";
+    try {
+        const r = new Roll(bonusRaw.toString());
+        await r.evaluate();
+        bonusVal = r.total;
+    } catch (e) {
+        console.error("Invalid Formula", e);
+        bonusVal = 0;
+    }
+
+    // Update Actor Flags for Calculator State
+    await this.actor.update({
+        "system.calculator.selected_item_id": itemId,
+        "system.calculator.item_name": item.name,
+        "system.calculator.item_weight": weight,
+        "system.calculator.item_bonus": bonusVal,
+        "system.calculator.active_motor": motorKey,
+        "system.calculator.active_motor_val": motorVal,
+        "system.calculator.target_def_stat": motorKey, // Default: Defense matches Attack Essence
+        "system.calculator.apply_to": damageTarget,
+        "system.calculator.item_range": range,
+        
+        // [YOUR CODE GOES HERE]
+        "system.calculator.weapon_type": weaponType, 
+        
+        "system.calculator.output": "", // Clear previous results
+        "system.calculator.quick_breath_active": false // Selecting an item cancels Quick Breath
+    });
+    
+    ui.notifications.info(`Active: ${item.name} (${range}ft). Motor: ${motorKey.toUpperCase()}.`);
+}
+
+  /* -------------------------------------------- */
+  /* QUICK BREATH TOGGLE (New Logic)             */
+  /* -------------------------------------------- */
+  async _onToggleQuickBreath(event) {
       event.preventDefault();
-      const itemId = event.target.value;
-      const item = this.actor.items.get(itemId);
-      if (!item) return;
+      const currentState = this.actor.system.calculator.quick_breath_active || false;
+      const newState = !currentState; // Toggle
 
-      const sys = item.system;
-      const motorKey = sys.cost?.motor || "vitalis";
-      const motorVal = this.actor.system.essences[motorKey]?.value || 0;
-      const weight = (typeof sys.weight !== "undefined") ? Number(sys.weight) : 15; 
-      const range = Number(sys.range) || 5;
-      
-      // [NEW] Determine Damage Destination (default HP)
-      const damageTarget = sys.target_resource || "hp";
+      const updates = {
+          "system.calculator.quick_breath_active": newState
+      };
 
-      // Evaluate Damage/Healing Formula
-      let bonusVal = 0;
-      const bonusRaw = sys.damage_bonus || "0";
-      try {
-          const r = new Roll(bonusRaw.toString());
-          await r.evaluate();
-          bonusVal = r.total;
-      } catch (e) {
-          console.error("Invalid Formula", e);
-          bonusVal = 0;
+      if (newState) {
+          // ACTIVATING: Prepare for recovery
+          // 1. Clear Targets (Self-only action)
+          updates["system.calculator.target_ids"] = [];
+          updates["system.calculator.target_name"] = "Self (Quick Breath)";
+          
+          // 2. Reset Rolls to 0 to avoid confusion
+          updates["system.calculator.attack_roll"] = 0;
+          updates["system.calculator.defense_roll"] = 0;
+          
+          // 3. Set Visual Output explaining the action
+          updates["system.calculator.output"] = `<div style="color: #d4af37; font-weight: bold; text-align: center; padding: 10px; background: #333; border: 1px solid #d4af37;">
+              <i class="fas fa-lungs"></i> QUICK BREATH PREPARED<br>
+              <span style="font-size: 0.8em; font-weight: normal; color: #ccc;">
+                  Recovers Vigor (Sum of D_prof).<br>
+                  <strong style="color: #ff6666;">⚠️ ENDS TURN IMMEDIATELY</strong>
+              </span>
+          </div>`;
+          
+          // 4. Create dummy batch data to enable the "EXECUTE" button
+          updates["system.calculator.batch_data"] = JSON.stringify({ mode: "quick_breath" });
+          
+      } else {
+          // DEACTIVATING: Reset to neutral state
+          updates["system.calculator.target_name"] = "None";
+          updates["system.calculator.output"] = "";
+          updates["system.calculator.batch_data"] = "";
       }
 
-      await this.actor.update({
-          "system.calculator.selected_item_id": itemId,
-          "system.calculator.item_name": item.name,
-          "system.calculator.item_weight": weight,
-          "system.calculator.item_bonus": bonusVal,
-          "system.calculator.active_motor": motorKey,
-          "system.calculator.active_motor_val": motorVal,
-          "system.calculator.target_def_stat": motorKey, // Defense Roll (Same Essence)
-          "system.calculator.apply_to": damageTarget,    // [NEW] Damage Destination
-          "system.calculator.item_range": range,
-          "system.calculator.output": "" 
-      });
-
-      ui.notifications.info(`Active: ${item.name} (${range}ft). Motor: ${motorKey.toUpperCase()}. Dmg: ${damageTarget.toUpperCase()}`);
+      await this.actor.update(updates);
   }
 
   /* -------------------------------------------- */
-  /* COMBAT CALCULATOR v0.9.62                    */
+  /* CALCULATE ATTACK (Pre-computation)          */
   /* -------------------------------------------- */
   async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
       const targetIds = calc.target_ids || [];
-      
-      // Safety Checks
+
+      // --- Safety Checks ---
       const rawAttack = calc.attack_roll;
       if (!rawAttack && rawAttack !== 0) { ui.notifications.warn("Please roll Attack (d100)."); return; }
       if (Number(rawAttack) === 0) { ui.notifications.warn("Attack cannot be 0."); return; }
       if (!Array.isArray(targetIds) || targetIds.length === 0) { ui.notifications.warn("No targets selected."); return; }
 
-      // Inputs
+      // --- Gather Inputs ---
       const Attacker_d100 = Number(calc.attack_roll);
       const R_prof = Number(calc.prof_roll) || 0;
       const Manual_Def = Number(calc.defense_roll) || 0;
       const itemBonus = Number(calc.item_bonus) || 0;
       const itemWeight = (typeof calc.item_weight !== "undefined") ? Number(calc.item_weight) : 15; 
       
-      const motorKey = calc.active_motor || "vitalis"; 
+      // [NEW] Get Weapon Type to apply specific rules
+      const weaponType = calc.weapon_type || "none";
+
+      const motorKey = calc.active_motor || "vitalis";
       const E_max = this.actor.system.essences[motorKey]?.max || 100;
       const E_cur = this.actor.system.essences[motorKey]?.value || 100;
       const defStat = calc.target_def_stat || "vitalis";
       const targetResource = calc.apply_to || "hp";
 
-      let Attacker_Tier = (this.actor.type === 'character') ? (this.actor.system.resources.action_surges.max || 0) : (this.actor.system.tier || 0);
+      let Attacker_Tier = (this.actor.type === 'character') 
+          ? (this.actor.system.resources.action_surges.max || 0) 
+          : (this.actor.system.tier || 0);
 
-      // Determine Mode
-      const isHealing = itemBonus < 0; 
+      // --- Determine Mode (Healing vs Damage) ---
+      const isHealing = itemBonus < 0;
       const isPotion = isHealing && (itemWeight === 0);
 
-      // Hit Check (Zone Logic)
+      // --- Hit Check (Zone Logic) ---
       const effectiveRoll = Attacker_d100 - R_prof;
       let zonePenalty = 0;
-      if (E_cur <= 25) zonePenalty = 30;
-      else if (E_cur <= 50) zonePenalty = 20;
-      else if (E_cur <= 75) zonePenalty = 10;
+      // Zone Thresholds
+      if (E_cur <= 25) zonePenalty = 30;      // Hollow
+      else if (E_cur <= 50) zonePenalty = 20; // Fading
+      else if (E_cur <= 75) zonePenalty = 10; // Waning
 
       const successThreshold = E_max - zonePenalty;
       let attackerSuccess = true;
       let hitLabel = "SUCCESS";
 
+      // Criticals & Failures
       if (Attacker_d100 >= 96) { attackerSuccess = false; hitLabel = "CRIT FAIL"; }
       else if (Attacker_d100 <= 5) { attackerSuccess = true; hitLabel = "CRIT SUCCESS"; }
       else if (effectiveRoll > successThreshold) { attackerSuccess = false; hitLabel = "MISS"; }
 
-      // HTML Output Builders
+      // --- Build Output HTML ---
       let sheetListHtml = `<div style="font-size:0.85em; color:#555; margin-bottom:5px; border-bottom:1px solid #ccc;">
           Attack: <strong>${effectiveRoll}</strong> vs <strong>${successThreshold}</strong> (${hitLabel})
       </div>`;
       
-      let chatTableRows = ""; // For Chat Log
-      let payloadTargets = []; 
+      let chatTableRows = ""; 
+      let payloadTargets = [];
 
+      // Loop through targets to calculate damage individually
       for (const tid of targetIds) {
           const tToken = canvas.tokens.get(tid);
           if (!tToken) continue;
           
           const tActor = tToken.actor;
           const Def_Ecur = tActor.system.essences[defStat]?.value || 50;
-          const Def_Tier = (tActor.type==='character') ? (tActor.system.resources.action_surges.max||0) : (tActor.system.tier||0);
+          const Def_Tier = (tActor.type==='character') 
+              ? (tActor.system.resources.action_surges.max||0) 
+              : (tActor.system.tier||0);
           
-          let Def_Roll = (targetIds.length === 1 && Manual_Def > 0) ? Manual_Def : Math.floor(Math.random() * 100) + 1;
+          // Defense Roll
+          let Def_Roll = (targetIds.length === 1 && Manual_Def > 0) 
+              ? Manual_Def 
+              : Math.floor(Math.random() * 100) + 1;
+              
           const D_Margin = Def_Roll - Def_Ecur; 
           
           let finalDamage = 0;
@@ -191,42 +274,66 @@ export class NarequentaActorSheet extends ActorSheet {
           
           if (attackerSuccess) {
               if (isHealing) {
+                  // HEALING FORMULA
                   let healAmount = Math.abs(itemBonus);
                   if (!isPotion) healAmount += R_prof;
-                  finalDamage = -Math.max(1, healAmount);
-                  resultColor = "#006400"; // Green
+                  finalDamage = -Math.max(1, healAmount); 
+                  resultColor = "#006400"; 
               } else {
+                  // DAMAGE FORMULA
+                  // 1. Calculate Full Potential (A_FP)
                   let A_FP = 100 - effectiveRoll;
-                  if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
+                  if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof); 
+                  
+                  // [NEW] RULE: Slashing Weapons add 1d4 to A_FP (Force & Will)
+                  if (weaponType === "slashing") {
+                      const slashBonus = Math.floor(Math.random() * 4) + 1;
+                      A_FP += slashBonus;
+                      details += ` (Slash +${slashBonus})`;
+                  }
+
+                  // 2. Mitigation
                   const M_Defense = Def_Tier * 5.5;
+                  
+                  // 3. Raw Calc
                   let rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
-                  let baseDamage = Math.max(R_prof, rawCalc); 
+                  
+                  // 4. Hard Floor (Proficiency)
+                  let baseDamage = Math.max(R_prof, rawCalc);
                   if (baseDamage < 1) baseDamage = 1;
 
+                  // 5. Tier Advantage Multiplier
                   let mult = 1.0;
                   const diff = Attacker_Tier - Def_Tier;
-                  if (diff >= 1) mult = 1.25; if (diff >= 2) mult = 1.50;
-                  if (diff === 0) mult = 1.00; if (diff === -1) mult = 0.75; if (diff <= -2) mult = 0.50;
+                  if (diff >= 1) mult = 1.25; 
+                  if (diff >= 2) mult = 1.50;
+                  if (diff === 0) mult = 1.00; 
+                  if (diff === -1) mult = 0.75;
+                  if (diff <= -2) mult = 0.50;
 
                   finalDamage = Math.max(1, Math.floor(baseDamage * mult));
-                  resultColor = "#8b0000"; // Red
+                  resultColor = "#8b0000"; 
               }
               
               payloadTargets.push({ id: tid, damage: finalDamage, name: tToken.name });
-              details = `(Def:${Def_Roll})`;
+              if (!details.includes("Slash")) details += ` (Def:${Def_Roll})`;
+              else details += ` / (Def:${Def_Roll})`;
               
-              // Add Row to Chat
+              // Chat Log Row
               chatTableRows += `<tr>
                   <td style="text-align:left;">${tToken.name}</td>
                   <td style="text-align:center;">${Def_Roll}</td>
-                  <td style="text-align:right; font-weight:bold; color:${resultColor};">${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}</td>
+                  <td style="text-align:right; font-weight:bold; color:${resultColor};">
+                      ${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}
+                  </td>
               </tr>`;
-
           } else {
+              // Missed
               details = `(Missed)`;
               chatTableRows += `<tr><td style="text-align:left; color:#999;">${tToken.name}</td><td colspan="2" style="text-align:center; color:#999;">Evaded</td></tr>`;
           }
 
+          // Sheet Preview Row
           sheetListHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0;">
               <div><strong>${tToken.name}</strong> <span style="font-size:0.8em; color:#555;">${details}</span></div>
@@ -236,27 +343,33 @@ export class NarequentaActorSheet extends ActorSheet {
           </div>`;
       }
 
-      // Attrition
+      // --- Calculate Self Attrition ---
       let attritionCost = Math.max(0, itemWeight - Math.floor(R_prof / 2));
-      if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2);
-      if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
+      
+      // [NEW] RULE: Piercing Weapons ignore 1% Attrition Cost (Precision)
+      if (weaponType === "piercing") {
+          attritionCost = Math.max(0, attritionCost - 1);
+      }
 
+      if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2); // Crit success reduces cost
+      if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;            // Crit fail doubles cost
+      
       sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">Self Attrition: -${attritionCost}%</div>`;
 
-      const resolutionPayload = { essenceKey: motorKey, attritionCost: attritionCost, targets: payloadTargets, targetResource: targetResource };
-      
+      // --- Save Results for Batch Execution ---
+      const resolutionPayload = { essenceKey: motorKey, attritionCost: attritionCost, targets: payloadTargets, targetResource: targetResource, mode: "attack" };
       await this.actor.update({
           "system.calculator.output": sheetListHtml,
           "system.calculator.batch_data": JSON.stringify(resolutionPayload) 
       });
-      
-      // Detailed Chat Output
+
+      // --- Send to Chat ---
       ChatMessage.create({ 
           speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
           content: `
           <div class="narequenta chat-card">
               <h3>${isHealing ? "Restoration" : "Attack Resolution"}</h3>
-              <div><strong>Status:</strong> ${hitLabel}</div>
+              <div><strong>Status:</strong> ${hitLabel} ${weaponType !== "none" ? `(${weaponType.toUpperCase()})` : ""}</div>
               <div style="font-size:0.9em;">Cost: -${attritionCost}% ${motorKey.toUpperCase()}</div>
               <hr>
               <table style="width:100%; font-size:0.9em; border-collapse:collapse;">
@@ -271,30 +384,37 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* TARGETING DIALOG (Auto-Select AoE)           */
+  /* TARGETING DIALOG (AoE & Selection)          */
   /* -------------------------------------------- */
   _onLaunchContest(event) {
       if(event) event.preventDefault();
+      
       const attacker = this.actor;
       const calc = attacker.system.calculator;
       const range = calc.item_range || 5;
+      const defaultDef = calc.active_motor || "vitalis";
       
-      // Determine Target Type from the Item itself if possible
       const itemId = calc.selected_item_id;
       const item = attacker.items.get(itemId);
-      const targetType = item?.system.target_type || "one"; // one, aoe, self
+      const targetType = item?.system.target_type || "one"; 
       
-      const defaultDef = calc.active_motor || "vitalis";
       const isHealing = (Number(calc.item_bonus) || 0) < 0;
-      const tier = (attacker.type === 'character') ? (attacker.system.resources.action_surges.max || 0) : (attacker.system.tier || 0);
+      const tier = (attacker.type === 'character') 
+          ? (attacker.system.resources.action_surges.max || 0) 
+          : (attacker.system.tier || 0);
 
       const tokens = attacker.getActiveTokens();
       if (tokens.length === 0) { ui.notifications.warn("Place token on scene."); return; }
       
-      let pcHtml = ""; let npcHtml = ""; let count = 0;
+      // Build Target List
+      let pcHtml = "";
+      let npcHtml = ""; 
+      let count = 0;
+      
       canvas.tokens.placeables.forEach(t => {
-          if (t.id === tokens[0].id) return; 
+          if (t.id === tokens[0].id) return; // Don't target self
           const dist = canvas.grid.measureDistance(tokens[0], t);
+          
           if (dist <= range && t.actor?.system.resources?.hp?.value > 0) {
               const entry = `<div style="padding:2px;"><input type="checkbox" name="target" value="${t.id}" class="target-checkbox" data-type="${t.actor.type}"> <strong>${t.name}</strong> (${Math.round(dist)}ft)</div>`;
               if (t.actor.type === "character") pcHtml += entry; else npcHtml += entry;
@@ -304,11 +424,9 @@ export class NarequentaActorSheet extends ActorSheet {
 
       if (count === 0) { ui.notifications.warn(`No targets within ${range}ft.`); return; }
 
-      // Selection Logic: If AoE, check by default based on Tier/Type
+      // Auto-Select Logic
       let autoSelectScript = "";
-      
       if (targetType === "aoe") {
-          // If it's AOE, we default to selecting things immediately
           if (isHealing) {
               autoSelectScript = `$('input[data-type="character"]').prop('checked', true);`;
           } else {
@@ -316,10 +434,10 @@ export class NarequentaActorSheet extends ActorSheet {
               else autoSelectScript = `$('input.target-checkbox').prop('checked', true);`; // Wild
           }
       } else {
-          // Single Target defaults to nothing checked
-          autoSelectScript = "";
+          autoSelectScript = ""; // Manual
       }
 
+      // Defensive Options
       const essences = ["vitalis", "motus", "sensus", "verbum", "anima", "hp"];
       let options = "";
       essences.forEach(k => { options += `<option value="${k}" ${k===defaultDef?"selected":""}>${k.toUpperCase()}</option>`; });
@@ -340,72 +458,147 @@ export class NarequentaActorSheet extends ActorSheet {
           <select id="target-essence" style="width:100%;">${options}</select>
       </form>
       <script>
-          // Run immediately if AoE to show selection
           ${autoSelectScript}
-          
           $("#auto-select-btn").click(function() { 
-              // Toggle logic if button is clicked manually
               const anyChecked = $("input:checkbox:checked").length > 0;
-              if (anyChecked) {
-                  $("input:checkbox").prop('checked', false); 
-              } else {
-                  ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} 
-              }
+              if (anyChecked) { $("input:checkbox").prop('checked', false); } else { ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} }
           });
       </script>`;
 
-      new Dialog({ title: `Targeting (${targetType.toUpperCase()})`, content: content, buttons: { confirm: { label: "Lock", callback: async (html) => {
-          const ids = []; html.find("input:checked").each(function(){ ids.push($(this).val()); });
-          if(ids.length) await attacker.update({ "system.calculator.target_ids": ids, "system.calculator.target_def_stat": html.find("#target-essence").val(), "system.calculator.target_name": `${ids.length} Targets` });
-      }}}}).render(true);
+      new Dialog({ 
+          title: `Targeting (${targetType.toUpperCase()})`, 
+          content: content, 
+          buttons: { 
+              confirm: { 
+                  label: "Lock", 
+                  icon: "<i class='fas fa-crosshairs'></i>",
+                  callback: async (html) => {
+                      const ids = []; 
+                      const names = [];
+                      
+                      html.find("input:checked").each(function(){ 
+                          ids.push($(this).val());
+                          const t = canvas.tokens.get($(this).val());
+                          if (t) names.push(t.name);
+                      });
+                      
+                      if(ids.length) {
+                          // Display Names logic
+                          let nameString = names.join(", ");
+                          if (nameString.length > 25) nameString = names.length + " Targets Selected";
+
+                          await attacker.update({ 
+                              "system.calculator.target_ids": ids, 
+                              "system.calculator.target_def_stat": html.find("#target-essence").val(), 
+                              "system.calculator.target_name": nameString,
+                              
+                              // [NEW] Reset Rolls to 0 on new selection
+                              "system.calculator.attack_roll": 0,
+                              "system.calculator.defense_roll": 0,
+                              
+                              // [NEW] Disable Quick Breath if targeting manually
+                              "system.calculator.quick_breath_active": false
+                          });
+                      }
+                  }
+              }
+          }
+      }).render(true);
   }
 
   /* -------------------------------------------- */
-  /* EXECUTE BATCH (Apply Damage/Heal)            */
+  /* EXECUTE BATCH (Apply Damage & Flow Control) */
   /* -------------------------------------------- */
   async _onExecuteBatch(event) {
       event.preventDefault();
       const rawData = this.actor.system.calculator.batch_data;
       if (!rawData) return;
+      const payload = JSON.parse(rawData);
 
-      // [NEW] Read targetResource from payload
-      const { essenceKey, attritionCost, targets, targetResource } = JSON.parse(rawData);
+      // ==========================================
+      // CASE A: QUICK BREATH (Combat Recovery)
+      // ==========================================
+      if (payload.mode === "quick_breath") {
+          // 1. Calculate Dice (Based on Tier)
+          const isChar = this.actor.type === "character";
+          const tier = isChar ? (this.actor.system.resources.action_surges.max || 0) : (this.actor.system.tier || 0);
+          const diceCount = Math.max(1, tier);
+          const formula = `${diceCount}d10`;
+
+          const r = new Roll(formula);
+          await r.evaluate();
+          if (game.dice3d) game.dice3d.showForRoll(r);
+
+          // 2. Apply Recovery to Essences (Cap at 100)
+          const updates = {};
+          for (const [key, essence] of Object.entries(this.actor.system.essences)) {
+              if (essence.value < 100) {
+                  updates[`system.essences.${key}.value`] = Math.min(100, essence.value + r.total);
+              }
+          }
+          
+          // 3. Reset State
+          updates["system.calculator.quick_breath_active"] = false;
+          updates["system.calculator.batch_data"] = "";
+          updates["system.calculator.output"] = "Quick Breath Complete.";
+          updates["system.calculator.target_name"] = "None";
+
+          await this.actor.update(updates);
+
+          // 4. Chat Message
+          ChatMessage.create({ 
+              speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
+              content: `<div class="narequenta chat-card">
+                  <h3 style="color:#8b0000; border-bottom:1px solid #8b0000">Quick Breath</h3>
+                  <div style="font-weight:bold; color:#a00; font-size:0.85em;">⚠️ ENDS TURN</div>
+                  <div style="text-align:center; font-size:1.2em; margin-top:5px;">Recovered <strong>${r.total}%</strong> Vigor</div>
+              </div>` 
+          });
+
+          // 5. FORCE END TURN
+          this._onEndTurn(event);
+          return;
+      }
+
+      // ==========================================
+      // CASE B: STANDARD ATTACK / ACTION
+      // ==========================================
       
-      // Default to HP if missing (legacy safety)
-      const applyTo = targetResource || "hp";
-
-      // 1. Attrition
+      const { essenceKey, attritionCost, targets, targetResource } = payload;
+      
+      // 1. Apply Self Attrition
       const currentVal = this.actor.system.essences[essenceKey].value;
       const newVal = Math.max(0, currentVal - attritionCost);
       await this.actor.update({ [`system.essences.${essenceKey}.value`]: newVal });
 
-      // 2. Damage / Healing
+      // 2. Apply Damage/Healing to Targets
       if (targets && targets.length > 0) {
           for (const tData of targets) {
               const token = canvas.tokens.get(tData.id);
               if (token && token.actor) {
-                  let currentVal = 0;
-                  let maxVal = 100;
+                  // Determine Destination
+                  const applyTo = targetResource || "hp";
+                  let currentTVal = 0;
+                  let maxTVal = 100;
                   let updatePath = "";
 
                   if (applyTo === "hp") {
-                      currentVal = token.actor.system.resources.hp.value;
-                      maxVal = token.actor.system.resources.hp.max;
+                      currentTVal = token.actor.system.resources.hp.value;
+                      maxTVal = token.actor.system.resources.hp.max;
                       updatePath = "system.resources.hp.value";
                   } else {
-                      // Apply to Essence
-                      currentVal = token.actor.system.essences[applyTo]?.value || 0;
-                      maxVal = token.actor.system.essences[applyTo]?.max || 100;
+                      currentTVal = token.actor.system.essences[applyTo]?.value || 0;
+                      maxTVal = token.actor.system.essences[applyTo]?.max || 100;
                       updatePath = `system.essences.${applyTo}.value`;
                   }
 
-                  let finalVal = currentVal - tData.damage;
+                  let finalVal = currentTVal - tData.damage;
                   if (finalVal < 0) finalVal = 0;
-                  if (finalVal > maxVal) finalVal = maxVal;
+                  if (finalVal > maxTVal) finalVal = maxTVal;
 
                   await token.actor.update({ [updatePath]: finalVal });
                   
-                  // Check Death (Only for HP)
+                  // Dead Status Check (Only for HP)
                   if (applyTo === "hp" && finalVal <= 0 && tData.damage > 0) {
                        const isDead = token.actor.effects.some(e => e.statusId === "dead" || (e.statuses && e.statuses.has("dead")));
                        if (!isDead) await token.actor.toggleStatusEffect("dead", { overlay: true });
@@ -414,6 +607,7 @@ export class NarequentaActorSheet extends ActorSheet {
           }
       }
 
+      // 3. Reset Calculator
       await this.actor.update({
           "system.calculator.attack_roll": 0,
           "system.calculator.prof_roll": 0,
@@ -422,28 +616,71 @@ export class NarequentaActorSheet extends ActorSheet {
           "system.calculator.output": `Applied. -${attritionCost}% Attrition.`
       });
       ui.notifications.info("Resolution Complete.");
+
+      // ==========================================
+      // CASE C: ACTION SURGE CHECK (Flow Control)
+      // ==========================================
+      if (this.actor.type === "character") {
+          const surges = this.actor.system.resources.action_surges.value;
+          if (surges > 0) {
+              // Prompt to Spend Surge or End Turn
+              new Dialog({
+                  title: "End of Action",
+                  content: `<div style="text-align:center;">
+                      <p>Your action is complete.</p>
+                      <p>You have <strong>${surges}</strong> Surge(s) remaining.</p>
+                      <p>Spend one to <strong>Act Again</strong>?</p>
+                  </div>`,
+                  buttons: {
+                      yes: {
+                          label: "Yes (Surge!)",
+                          icon: "<i class='fas fa-bolt'></i>",
+                          callback: async () => {
+                              // Spend Surge, Keep Turn
+                              await this.actor.update({"system.resources.action_surges.value": surges - 1});
+                              ChatMessage.create({ 
+                                  speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
+                                  content: `<div class="narequenta chat-card"><h3 style="color:#d4af37">Action Surge!</h3><p>The turn continues...</p></div>` 
+                              });
+                          }
+                      },
+                      no: {
+                          label: "No (End Turn)",
+                          icon: "<i class='fas fa-step-forward'></i>",
+                          callback: () => {
+                              // Standard End Turn
+                              this._onEndTurn(event);
+                          }
+                      }
+                  },
+                  default: "no"
+              }).render(true);
+          } else {
+              // No surges = Auto End
+              this._onEndTurn(event);
+          }
+      } else {
+          // NPCs = Auto End
+          this._onEndTurn(event);
+      }
   }
 
   /* -------------------------------------------- */
-  /* COMBAT UTILITIES                             */
+  /* UTILITY: End Turn                           */
   /* -------------------------------------------- */
   async _onEndTurn(event) {
-      event.preventDefault();
+      if(event) event.preventDefault();
       const combat = game.combat;
       if (!combat) return;
       
-      // Advance
       await combat.nextTurn();
-      
-      // Open Next Sheet
-      if (combat.combatant?.actor) combat.combatant.actor.sheet.render(true);
-      
-      // [FIX] Close Current Sheet
+      // Close current sheet, open next
       this.close();
+      if (combat.combatant?.actor) combat.combatant.actor.sheet.render(true);
   }
 
   /* -------------------------------------------- */
-  /* CONSUMABLES LOGIC v0.9.60                   */
+  /* UTILITY: Consumables (Use Button)           */
   /* -------------------------------------------- */
   async _onItemUse(event) {
       event.preventDefault();
@@ -454,25 +691,19 @@ export class NarequentaActorSheet extends ActorSheet {
       const sys = item.system;
       const qty = sys.quantity || 0;
       const type = sys.target_type || "one"; 
-      
-      // [NEW] Get the specific resource this item affects (default hp)
       const resourceKey = sys.target_resource || "hp"; 
 
       if (qty <= 0) { ui.notifications.warn("Item Depleted."); return; }
 
-      // Helper to execute the roll/heal
       const executeConsume = async (targetActor) => {
           await item.update({ "system.quantity": qty - 1 });
           const formula = sys.damage_bonus || "0";
-          
           try {
               const r = new Roll(formula);
               await r.evaluate();
               if (game.dice3d) game.dice3d.showForRoll(r);
               
-              // 1. Determine Paths based on Resource Key
-              let currentPath, maxPath, label;
-              let currentVal, maxVal;
+              let currentPath, maxPath, label, currentVal, maxVal;
 
               if (resourceKey === "hp") {
                   currentPath = "system.resources.hp.value";
@@ -481,7 +712,6 @@ export class NarequentaActorSheet extends ActorSheet {
                   maxVal = targetActor.system.resources.hp.max;
                   label = "HP";
               } else {
-                  // It's an Essence (vitalis, motus, etc.)
                   currentPath = `system.essences.${resourceKey}.value`;
                   maxPath = `system.essences.${resourceKey}.max`;
                   currentVal = targetActor.system.essences[resourceKey]?.value || 0;
@@ -489,36 +719,27 @@ export class NarequentaActorSheet extends ActorSheet {
                   label = resourceKey.toUpperCase();
               }
 
-              // 2. Apply Effect
-              // Negative Total = Healing (Add to pool)
-              // Positive Total = Damage (Subtract from pool)
               let change = 0;
               let newVal = 0;
 
-              if (r.total < 0) {
-                  // HEALING
+              if (r.total < 0) { // Healing
                   change = Math.abs(r.total);
                   newVal = Math.min(maxVal, currentVal + change);
                   ui.notifications.info(`${targetActor.name}: Recovered ${change} ${label}.`);
-              } else {
-                  // DAMAGE / REDUCTION
+              } else { // Damage
                   change = r.total;
                   newVal = Math.max(0, currentVal - change);
                   ui.notifications.info(`${targetActor.name}: Lost ${change} ${label}.`);
               }
 
-              // 3. Update Actor
               await targetActor.update({ [currentPath]: newVal });
-
               r.toMessage({ 
                   speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
                   flavor: `Consumed: ${item.name} (${label} ${r.total < 0 ? "+" : "-"}${change})` 
               });
-
           } catch (e) { console.error(e); }
       };
 
-      // Target selection logic (Self vs Other)
       if (type === "self") {
           executeConsume(this.actor);
       } else {
@@ -526,20 +747,10 @@ export class NarequentaActorSheet extends ActorSheet {
               title: `Use ${item.name}`,
               content: `<p>Target: <strong>${resourceKey.toUpperCase()}</strong></p>`,
               buttons: {
-                  self: {
-                      label: "Self",
-                      icon: "<i class='fas fa-user'></i>",
-                      callback: () => executeConsume(this.actor)
-                  },
-                  target: {
-                      label: "Target",
-                      icon: "<i class='fas fa-bullseye'></i>",
-                      callback: () => {
+                  self: { label: "Self", icon: "<i class='fas fa-user'></i>", callback: () => executeConsume(this.actor) },
+                  target: { label: "Target", icon: "<i class='fas fa-bullseye'></i>", callback: () => {
                           const targets = Array.from(game.user.targets);
-                          if (targets.length !== 1) {
-                              ui.notifications.warn("Select exactly 1 target.");
-                              return;
-                          }
+                          if (targets.length !== 1) { ui.notifications.warn("Select exactly 1 target."); return; }
                           executeConsume(targets[0].actor);
                       }
                   }
@@ -550,9 +761,8 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* REST, RESOURCES, TARGETING, LEGACY           */
+  /* REST & RECOVERY (Manual Buttons)            */
   /* -------------------------------------------- */
-  
   async _onLongRest(event) {
     event.preventDefault();
     const confirmed = await Dialog.confirm({
@@ -565,10 +775,6 @@ export class NarequentaActorSheet extends ActorSheet {
       for (const [key, essence] of Object.entries(essences)) { updates[`system.essences.${key}.value`] = 100; }
       if (this.actor.type === "character") updates[`system.resources.action_surges.value`] = this.actor.system.resources.action_surges.max;
       updates[`system.resources.hp.value`] = this.actor.system.resources.hp.max;
-      updates[`system.calculator.target_ids`] = [];
-      updates[`system.calculator.target_name`] = "None";
-      updates[`system.calculator.batch_data`] = "";
-      updates[`system.calculator.output`] = "Rest Complete.";
       await this.actor.update(updates);
       ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), content: `<div class="narequenta chat-card"><h3>Renewal</h3><p>Restored to 100%.</p></div>` });
     }
@@ -576,45 +782,54 @@ export class NarequentaActorSheet extends ActorSheet {
 
   async _onShortRest(event) {
     event.preventDefault();
+    // 1. Determine Dice
+    const isChar = this.actor.type === "character";
+    const tier = isChar ? (this.actor.system.resources.action_surges.max || 0) : (this.actor.system.tier || 0);
+    const diceCount = Math.max(1, tier);
+    const formula = `${diceCount}d10`;
+
     const content = `
     <div class="narequenta">
-        <div class="form-group"><label>Rest Intensity:</label>
-            <select id="rest-type" style="width:100%; margin-bottom: 10px;">
-              <option value="quick" selected>Quick Breath (1d6%)</option>
-              <option value="mental">Mental Calming (Variable)</option>
-              <option value="deep">Deep Meditation (4d10%)</option>
-            </select>
+        <div style="background:#f0f0f0; padding:8px; border-radius:4px; font-size:0.9em;">
+            <div><strong>Proficiency Tier:</strong> ${tier}</div>
+            <div><strong>Recovery Formula:</strong> ${formula}</div>
         </div>
-        <div id="mental-options" style="display:none; background:#f0f0f0; padding:5px;"><select id="mental-duration" style="width:100%;"><option value="2d8">5 Min</option><option value="3d8">10 Min</option></select></div>
-        <div style="display:flex; margin-top:10px;"><button type="button" id="btn-roll-rest">Roll</button><input type="number" id="rest-result" style="text-align:center;"></div>
-    </div>
-    <script>$("#rest-type").change(function(){if($(this).val()==="mental")$("#mental-options").slideDown();else $("#mental-options").slideUp();});</script>`;
+        <p style="font-size:0.8em; margin-top:5px; color:#555;">Restores Active Vigor ($E_{cur}$) to all Essences.</p>
+    </div>`;
     new Dialog({
-      title: "Refocus", content: content,
-      buttons: { apply: { icon: '<i class="fas fa-check"></i>', label: "Apply", callback: async (html) => {
-            const val = html.find("#rest-result").val();
-            if (val === "") return; 
-            const rec = parseInt(val);
+      title: "Short Rest (Respite)",
+      content: content,
+      buttons: {
+        roll: {
+          icon: '<i class="fas fa-dice-d20"></i>',
+          label: "Roll Recovery",
+          callback: async (html) => {
+            const rollObj = new Roll(formula);
+            await rollObj.evaluate();
+            if (game.dice3d) game.dice3d.showForRoll(rollObj);
+            
             const updates = {};
             for (const [key, essence] of Object.entries(this.actor.system.essences)) {
-              if (essence.value < 100) updates[`system.essences.${key}.value`] = Math.min(100, essence.value + rec);
+                if (essence.value < 100) updates[`system.essences.${key}.value`] = Math.min(100, essence.value + rollObj.total);
             }
             const hp = this.actor.system.resources.hp;
-            if (hp.value < hp.max) updates[`system.resources.hp.value`] = Math.min(hp.max, hp.value + rec);
+            if (hp.value < hp.max) updates[`system.resources.hp.value`] = Math.min(hp.max, hp.value + rollObj.total);
+
             await this.actor.update(updates);
-            ChatMessage.create({ speaker: ChatMessage.getSpeaker({ actor: this.actor }), content: `Refocus: Recovered ${rec}.` });
-      }}},
-      render: (html) => { html.find("#btn-roll-rest").click(async () => {
-          let formula = "1d6";
-          const type = html.find("#rest-type").val();
-          if (type === "mental") formula = html.find("#mental-duration").val();
-          else if (type === "deep") formula = "4d10";
-          const r = new Roll(formula); await r.evaluate(); if (game.dice3d) game.dice3d.showForRoll(r);
-          html.find("#rest-result").val(r.total);
-      });}
+            
+            ChatMessage.create({ 
+                speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
+                content: `<div class="narequenta chat-card"><h3 style="color:#2e8b57;">Short Rest</h3><div style="text-align:center;">Recovered <strong>${rollObj.total}%</strong> Vigor</div></div>` 
+            });
+          }
+        }
+      }
     }).render(true);
   }
 
+  /* -------------------------------------------- */
+  /* LEGACY / MISC HANDLERS                      */
+  /* -------------------------------------------- */
   async _onUseActionSurge(event) {
       event.preventDefault();
       const current = this.actor.system.resources.action_surges.value;
@@ -624,155 +839,24 @@ export class NarequentaActorSheet extends ActorSheet {
       } else { ui.notifications.warn("No Action Surges left."); }
   }
 
-  async _onEndTurn(event) {
-      event.preventDefault();
-      const combat = game.combat;
-      if (!combat) return;
-      await combat.nextTurn();
-      if (combat.combatant?.actor) combat.combatant.actor.sheet.render(true);
-  }
-
-  /* -------------------------------------------- */
-  /* TACTICAL TARGETING UI (AoE Logic)            */
-  /* -------------------------------------------- */
-  _onLaunchContest(event) {
-      if(event) event.preventDefault();
-      
-      // 1. Setup Data
-      const attacker = this.actor;
-      const calc = attacker.system.calculator;
-      const range = calc.item_range || 5;
-      const defaultDef = calc.active_motor || "vitalis";
-      
-      // Determine if Offensive or Healing based on bonus in calculator
-      const isHealing = (Number(calc.item_bonus) || 0) < 0;
-      
-      // Determine Tier for Safeguard Logic
-      const tier = (attacker.type === 'character') 
-          ? (attacker.system.resources.action_surges.max || 0) 
-          : (attacker.system.tier || 0);
-
-      const tokens = attacker.getActiveTokens();
-      if (tokens.length === 0) { ui.notifications.warn("Place token on scene."); return; }
-      
-      // 2. Build Target Lists
-      let pcHtml = ""; let npcHtml = ""; let count = 0;
-      let allIds = []; let npcIds = []; let pcIds = [];
-
-      canvas.tokens.placeables.forEach(t => {
-          if (t.id === tokens[0].id) return; 
-          const dist = canvas.grid.measureDistance(tokens[0], t);
-          if (dist <= range && t.actor?.system.resources?.hp?.value > 0) {
-              
-              const entry = `
-              <div style="padding:2px;">
-                  <input type="checkbox" name="target" value="${t.id}" class="target-checkbox" data-type="${t.actor.type}"> 
-                  <strong>${t.name}</strong> (${Math.round(dist)}ft)
-              </div>`;
-              
-              if (t.actor.type === "character") {
-                  pcHtml += entry;
-                  pcIds.push(t.id);
-              } else {
-                  npcHtml += entry;
-                  npcIds.push(t.id);
-              }
-              allIds.push(t.id);
-              count++;
-          }
-      });
-
-      if (count === 0) { ui.notifications.warn(`No targets within ${range}ft.`); return; }
-
-      // 3. Build Selection Logic Buttons
-      let autoSelectScript = "";
-      
-      if (isHealing) {
-          // HEALING: Auto-select PCs (Allies)
-          autoSelectScript = `$('input[data-type="character"]').prop('checked', true);`;
-      } else {
-          // DAMAGE: Check Tier
-          if (tier >= 3) {
-              // Mastery: Safe Casting (Select NPCs only)
-              autoSelectScript = `$('input[data-type="npc"]').prop('checked', true);`;
-          } else {
-              // Wild: Dangerous Casting (Select ALL)
-              autoSelectScript = `$('input.target-checkbox').prop('checked', true);`;
-          }
-      }
-
-      // 4. Render Dialog
-      const essences = ["vitalis", "motus", "sensus", "verbum", "anima", "hp"];
-      let options = "";
-      essences.forEach(k => { options += `<option value="${k}" ${k===defaultDef?"selected":""}>${k.toUpperCase()}</option>`; });
-
-      const content = `
-      <form>
-          <div style="text-align:center; margin-bottom:5px;">Range: <strong>${range}ft</strong></div>
-          
-          <div style="display:flex; gap:5px; margin-bottom:10px;">
-              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;">
-                  <strong>Allies (PCs)</strong><br>${pcHtml || "-"}
-              </div>
-              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;">
-                  <strong>Enemies (NPCs)</strong><br>${npcHtml || "-"}
-              </div>
-          </div>
-
-          <div style="text-align:center; margin-bottom:10px;">
-              <button type="button" id="auto-select-btn" style="font-size:0.8em; width:100%;">
-                  ${isHealing ? "Auto-Target Allies (Healing)" : (tier >= 3 ? "Auto-Target Enemies (Mastery)" : "⚠️ Auto-Target Area (Wild Magic)")}
-              </button>
-          </div>
-
-          <label>Defensive Stat:</label>
-          <select id="target-essence" style="width:100%;">${options}</select>
-      </form>
-      <script>
-          $("#auto-select-btn").click(function() {
-              $("input:checkbox").prop('checked', false); // Clear
-              ${autoSelectScript} // Apply Logic
-          });
-      </script>
-      `;
-
-      new Dialog({ 
-          title: "Tactical Targeting", 
-          content: content, 
-          buttons: { 
-              confirm: { 
-                  label: "Lock Targets", 
-                  icon: "<i class='fas fa-crosshairs'></i>",
-                  callback: async (html) => {
-                      const ids = []; 
-                      html.find("input:checked").each(function(){ ids.push($(this).val()); });
-                      
-                      if(ids.length) await this.actor.update({ 
-                          "system.calculator.target_ids": ids, 
-                          "system.calculator.target_def_stat": html.find("#target-essence").val(), 
-                          "system.calculator.target_name": `${ids.length} Targets` 
-                      });
-                  }
-              }
-          }
-      }).render(true);
-  }
-
-  _onItemControl(event) { /* Legacy CRUD */ 
-    event.preventDefault(); const btn = event.currentTarget; const li = btn.closest(".item"); const item = this.actor.items.get(li?.dataset.itemId);
+  _onItemControl(event) { 
+    event.preventDefault(); const btn = event.currentTarget;
+    const li = btn.closest(".item"); const item = this.actor.items.get(li?.dataset.itemId);
     if(btn.dataset.action === "create") return getDocumentClass("Item").create({name: game.i18n.localize("NAREQUENTA.ItemNew"), type: "item"}, {parent: this.actor});
     if(btn.dataset.action === "edit") return item.sheet.render(true);
     if(btn.dataset.action === "delete") return item.delete();
   }
   
-  _onItemRoll(event) { /* Legacy click-to-load wrapper */
-    event.preventDefault(); const li = $(event.currentTarget).parents(".item"); const id = li.data("itemId");
+  _onItemRoll(event) { 
+    event.preventDefault(); const li = $(event.currentTarget).parents(".item");
+    const id = li.data("itemId");
     const dropdown = this.element.find(".active-item-select");
     if(dropdown.length) dropdown.val(id).change(); else this._onSelectActiveItem({target:{value:id}, preventDefault:()=>{}});
   }
 
-  _onRollSheetCalc(event) { /* Helper dice roller for calculator inputs */
-      event.preventDefault(); const btn = $(event.currentTarget);
+  _onRollSheetCalc(event) { 
+      event.preventDefault();
+      const btn = $(event.currentTarget);
       const type = btn.data("type"); const target = btn.data("target");
       let formula = "1d100";
       if (type === "prof") {
@@ -783,6 +867,5 @@ export class NarequentaActorSheet extends ActorSheet {
       new Roll(formula).evaluate().then(r => { if(game.dice3d) game.dice3d.showForRoll(r); this.actor.update({[target]: r.total}); });
   }
 
-  async _onWaningPhase(event) { /* ... Kept from previous ... */ }
-  async _onApplySheetDamage(event) { /* ... Kept from previous ... */ }
+  async _onWaningPhase(event) { /* Placeholder for Waning Roll logic if implemented elsewhere */ }
 }

@@ -1,4 +1,4 @@
-📁 Root: G:\Git\narequenta-vtt (Mapped Folders: lang, module, styles, templates)
+📁 Root: G:\Git\narequenta-vtt
 ├── 📂 lang/
 │   ├── 📄 en.json
 │   └── 📄 pt.json
@@ -23,13 +23,11 @@
 │   ├── 📄 actor-sheet.html
 │   └── 📄 item-sheet.html
 ├── 📄 .gitattributes
+├── 📄 CHANGELOG.md
 ├── 📄 gulpfile.js
 ├── 📄 header_image.png
 ├── 📄 LICENSE.md
-├── 📄 narequenta-vtt_structure_partial.txt
 ├── 📄 package.json
 ├── 📄 README.md
 ├── 📄 system.json
-├── 📄 system.zip
-├── 📄 template.json
-└── 📄 VTTMergedtxt.txt
+└── 📄 template.json

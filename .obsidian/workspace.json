@@ -13,20 +13,6 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "README"
-            }
-          },
-          {
-            "id": "b436f9c581ccdb30",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
                 "file": "CHANGELOG.md",
                 "mode": "source",
                 "source": false
@@ -35,8 +21,7 @@
               "title": "CHANGELOG"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -198,12 +183,31 @@
       "bases:Create new base": false
     }
   },
-  "active": "b436f9c581ccdb30",
+  "active": "f55994c571b8cd88",
   "lastOpenFiles": [
+    "templates/parts/sheet-attributes.html.md",
+    "templates/parts/sheet-groups.html.md",
+    "templates/actor-sheet.html.md",
+    "templates/item-sheet.html.md",
+    "module/constants.js.md",
+    "module/token.js.md",
+    "module/templates.js.md",
+    "module/narequenta.js.md",
+    "module/macro.js.md",
+    "module/helper.js.md",
+    "module/item.js.md",
+    "module/item-sheet.js.md",
+    "module/actor.js.md",
+    "module/actor-sheet.js.md",
+    "README.md",
+    "narequenta-vtt.txt",
+    "templates.txt",
+    "styles.txt",
+    "module.txt",
+    "lang.txt",
+    "CHANGELOG.md",
     "system.zip",
     "system.zip.tmp",
-    "README.md",
-    "CHANGELOG.md",
     "LICENSE.md",
     "header_image.png"
   ]

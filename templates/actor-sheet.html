@@ -56,7 +56,9 @@
 
     <section class="sheet-body">
 
-        {{!-- 1. ESSENCES TAB & COMBAT CALCULATOR --}}
+        {{!-- ================================================================= --}}
+        {{!-- 1. ESSENCES TAB & COMBAT CALCULATOR                               --}}
+        {{!-- ================================================================= --}}
         <div class="tab essences" data-group="primary" data-tab="essences">
             
             {{!-- A. Essence Grid --}}
@@ -68,6 +70,7 @@
                     <span>TIER</span>
                     <span>DICE</span>
                 </div>
+            
                 {{#each systemData.essences as |essence key|}}
                 <div class="essence-row">
                     <span class="essence-label">{{essence.label}}</span>
@@ -82,8 +85,10 @@
             {{!-- B. Combat Calculator Panel --}}
             <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
                 
-                {{!-- Context Header --}}
+                {{!-- Calculator Header: Weapon Selection & Target Info --}}
                 <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em; align-items: center;">
+                    
+                    {{!-- LEFT SIDE: Item/Weapon Selection --}}
                     <div style="border-right: 1px solid #666; padding-right: 5px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span>
@@ -104,23 +109,65 @@
                         </select>
                     </div>
                     
+                    {{!-- RIGHT SIDE: Targeting & Quick Breath Controls (COMMENTED SECTION) --}}
                     <div style="padding-left: 5px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="font-weight: bold; color: #ccc;">TARGET DEF:</span><br>
-                            {{!-- Shows which essence the target defends with --}}
+                        
+                        {{!-- Target Info Display --}}
+                        <div style="flex: 1; overflow: hidden; white-space: nowrap;">
+                            <span style="font-weight: bold; color: #ccc;">TARGET:</span>
+                            
+                            {{!-- Target Name: Displays specific names selected via the targeting dialog --}}
+                            <span style="font-size: 0.8em; color: #fff; margin-left: 5px; font-style: italic;">
+                                {{#if systemData.calculator.target_name}}
+                                    {{systemData.calculator.target_name}}
+                                {{else}}
+                                    None
+                                {{/if}}
+                            </span>
+                            <br>
+                            
+                            {{!-- Defensive Stat: Shows which essence (Vitalis/Motus) the defender uses --}}
+                            <span style="font-weight: bold; color: #999; font-size: 0.7em;">DEF STAT:</span>
                             {{#if systemData.calculator.target_def_stat}}
-                                <span style="text-transform: uppercase;">{{systemData.calculator.target_def_stat}}</span>
+                                <span style="text-transform: uppercase; font-size: 0.7em; color: #fff;">{{systemData.calculator.target_def_stat}}</span>
                             {{else}}
-                                <em style="color:#999">VITALIS</em>
+                                {{!-- Default Fallback --}}
+                                <em style="color:#666; font-size: 0.7em;">VITALIS</em>
                             {{/if}}
                         </div>
-                        <button class="launch-contest" title="Select Targets" style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;">
-                            <i class="fas fa-crosshairs"></i>
-                        </button>
+
+                        {{!-- Action Buttons Wrapper --}}
+                        <div style="display: flex; gap: 2px;">
+                            
+                            {{!-- 
+                                1. QUICK BREATH TOGGLE 
+                                - Toggles the 'system.calculator.quick_breath_active' boolean.
+                                - Visual Feedback: Background turns Gold (#d4af37) when active.
+                                - Function: Prepares a recovery roll and disables standard targeting.
+                            --}}
+                            <button type="button" class="toggle-quick-breath" title="Quick Breath (Recover & End Turn)" 
+                                style="border: 1px solid #777; color: white; padding: 2px 6px; cursor: pointer;
+                                {{#if systemData.calculator.quick_breath_active}}background: #d4af37; color: #000;{{else}}background: #555;{{/if}}">
+                                <i class="fas fa-lungs"></i>
+                            </button>
+
+                            {{!-- 
+                                2. TARGET BUTTON 
+                                - Opens the Targeting Dialog (AoE/Single).
+                                - Conditional Logic: If Quick Breath is active, this button is visibly disabled (opacity 0.3)
+                                  and unclickable (pointer-events: none) to prevent logic conflicts.
+                            --}}
+                            <button type="button" class="launch-contest" title="Select Targets" 
+                                style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;
+                                {{#if systemData.calculator.quick_breath_active}}opacity: 0.3; pointer-events: none;{{/if}}">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
                     </div>
+                
                 </div>
 
-                {{!-- Input Grid --}}
+                {{!-- Input Grid (Rolls) --}}
                 <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
                     
                     {{!-- Attacker Side --}}
@@ -156,16 +203,20 @@
                     </div>
                 </div>
 
-                {{!-- Action Bar (Disabled if no attack roll) --}}
+                {{!-- Action Bar (Disabled if no attack roll OR if Quick Breath not ready) --}}
                 <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
                     <button type="button" class="roll-calculation" 
-                        {{#unless systemData.calculator.attack_roll}}disabled style="opacity: 0.5; cursor: not-allowed; background: #555; color: #ccc; border: 1px solid #000; width: 90%;"{{/unless}}
-                        {{#if systemData.calculator.attack_roll}}style="background: #222; color: white; border: 1px solid #000; width: 90%;"{{/if}}>
+                        {{!-- Enable if: Attack Roll exists OR Quick Breath is active (dummy batch data) --}}
+                        {{#unless (or systemData.calculator.attack_roll systemData.calculator.batch_data)}}
+                            disabled style="opacity: 0.5; cursor: not-allowed; background: #555; color: #ccc; border: 1px solid #000; width: 90%;"
+                        {{else}}
+                            style="background: #222; color: white; border: 1px solid #000; width: 90%;"
+                        {{/unless}}>
                         <i class="fas fa-calculator"></i> PREVIEW RESULT
                     </button>
                 </div>
 
-                {{!-- Output --}}
+                {{!-- Output / Execution Area --}}
                 {{#if systemData.calculator.output}}
                 <div style="padding: 10px; background: #fff;">
                     {{{systemData.calculator.output}}}
@@ -194,7 +245,9 @@
             {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
         </div>
 
-        {{!-- 2. ITEMS TAB --}}
+        {{!-- ================================================================= --}}
+        {{!-- 2. ITEMS TAB                                                      --}}
+        {{!-- ================================================================= --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <ol class="items-list">
                 <li class="item flexrow item-header">
@@ -227,7 +280,9 @@
             </ol>
         </div>
 
-        {{!-- 3. BIOGRAPHY TAB --}}
+        {{!-- ================================================================= --}}
+        {{!-- 3. BIOGRAPHY TAB                                                  --}}
+        {{!-- ================================================================= --}}
         <div class="tab biography" data-group="primary" data-tab="biography">
             {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
         </div>

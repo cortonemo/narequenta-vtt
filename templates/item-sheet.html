@@ -75,8 +75,18 @@
                         {{/select}}
                     </select>
                 </div>
-            </div>
-            
+				{{!-- Weapon Type Selector --}}
+				<div class="resource">
+					<label>Type:</label>
+					<select name="system.weapon_type" style="height: 22px; font-size: 0.8em;">
+						{{#select systemData.weapon_type}}
+						{{#each systemData.weaponTypes as |label key|}}
+							<option value="{{key}}">{{label}}</option>
+						{{/each}}
+						{{/select}}
+					</select>
+				</div>
+            </div>            
             {{!-- 
                Damage/Heal Formula:
                Accepts dice formulas (e.g., "1d8 + 2") or static numbers.

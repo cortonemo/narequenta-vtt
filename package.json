@@ -1,6 +1,6 @@
 {
   "name": "narequenta",
-  "version": "0.9.16",
+  "version": "0.9.7",
   "description": "Nárëquenta — Tales of the Waning (Foundry VTT System)",
   "scripts": {
     "css": "gulp css",

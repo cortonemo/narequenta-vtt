@@ -91,8 +91,17 @@ export class SimpleItemSheet extends ItemSheet {
       async: true
     });
 
-    return context;
-  }
+    // 8. Weapon Types (Proposed in weapons and armors.md)
+	context.systemData.weaponTypes = {
+    "none": "None / Generic",
+    "slashing": "Slashing (Force & Will)",       // +1d4 to A_FP
+    "piercing": "Piercing (Precision)",          // Ignore 1% Attrition
+    "bludgeoning": "Bludgeoning (Endurance)",    // Crit Effects
+    "ranged": "Ranged (Finesse)",                // Target specific stats
+    "unarmed": "Unarmed"
+};
+
+return context;
 
   /** * Activate event listeners for interactivity.
    * Handles clicks, drags, and inputs on the sheet.
