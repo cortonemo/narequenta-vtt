@@ -119,28 +119,23 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* COMBAT CALCULATOR (Logic Core)               */
+  /* COMBAT CALCULATOR v0.9.62                    */
   /* -------------------------------------------- */
   async _onCalculate(event) {
       event.preventDefault();
       const calc = this.actor.system.calculator;
       const targetIds = calc.target_ids || [];
       
-      if (!Array.isArray(targetIds) || targetIds.length === 0) {
-          ui.notifications.warn("No targets selected.");
-          return;
-      }
+      // Safety Checks
+      const rawAttack = calc.attack_roll;
+      if (!rawAttack && rawAttack !== 0) { ui.notifications.warn("Please roll Attack (d100)."); return; }
+      if (Number(rawAttack) === 0) { ui.notifications.warn("Attack cannot be 0."); return; }
+      if (!Array.isArray(targetIds) || targetIds.length === 0) { ui.notifications.warn("No targets selected."); return; }
 
-      // Gather Inputs
-      const Attacker_d100 = Number(calc.attack_roll) || 0;
+      // Inputs
+      const Attacker_d100 = Number(calc.attack_roll);
       const R_prof = Number(calc.prof_roll) || 0;
-      const Manual_Def = Number(calc.defense_roll) || 0; // 0 is valid here (triggers Auto-roll)
-      
-      // [NEW] Safety Check: Prevent calculating on empty/null attack
-      if (Attacker_d100 === 0) {
-          ui.notifications.warn("Please roll for Attack (d100).");
-          return;
-      }
+      const Manual_Def = Number(calc.defense_roll) || 0;
       const itemBonus = Number(calc.item_bonus) || 0;
       const itemWeight = (typeof calc.item_weight !== "undefined") ? Number(calc.item_weight) : 15; 
       
@@ -148,13 +143,11 @@ export class NarequentaActorSheet extends ActorSheet {
       const E_max = this.actor.system.essences[motorKey]?.max || 100;
       const E_cur = this.actor.system.essences[motorKey]?.value || 100;
       const defStat = calc.target_def_stat || "vitalis";
-      
-      // [NEW] Where to apply the damage?
       const targetResource = calc.apply_to || "hp";
 
       let Attacker_Tier = (this.actor.type === 'character') ? (this.actor.system.resources.action_surges.max || 0) : (this.actor.system.tier || 0);
 
-      // HEALING & POTION CHECK
+      // Determine Mode
       const isHealing = itemBonus < 0; 
       const isPotion = isHealing && (itemWeight === 0);
 
@@ -173,10 +166,12 @@ export class NarequentaActorSheet extends ActorSheet {
       else if (Attacker_d100 <= 5) { attackerSuccess = true; hitLabel = "CRIT SUCCESS"; }
       else if (effectiveRoll > successThreshold) { attackerSuccess = false; hitLabel = "MISS"; }
 
+      // HTML Output Builders
       let sheetListHtml = `<div style="font-size:0.85em; color:#555; margin-bottom:5px; border-bottom:1px solid #ccc;">
           Attack: <strong>${effectiveRoll}</strong> vs <strong>${successThreshold}</strong> (${hitLabel})
       </div>`;
       
+      let chatTableRows = ""; // For Chat Log
       let payloadTargets = []; 
 
       for (const tid of targetIds) {
@@ -192,12 +187,14 @@ export class NarequentaActorSheet extends ActorSheet {
           
           let finalDamage = 0;
           let details = "";
+          let resultColor = "#333";
           
           if (attackerSuccess) {
               if (isHealing) {
                   let healAmount = Math.abs(itemBonus);
                   if (!isPotion) healAmount += R_prof;
                   finalDamage = -Math.max(1, healAmount);
+                  resultColor = "#006400"; // Green
               } else {
                   let A_FP = 100 - effectiveRoll;
                   if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
@@ -212,39 +209,155 @@ export class NarequentaActorSheet extends ActorSheet {
                   if (diff === 0) mult = 1.00; if (diff === -1) mult = 0.75; if (diff <= -2) mult = 0.50;
 
                   finalDamage = Math.max(1, Math.floor(baseDamage * mult));
+                  resultColor = "#8b0000"; // Red
               }
+              
               payloadTargets.push({ id: tid, damage: finalDamage, name: tToken.name });
-              details = `<span style="font-size:0.8em; color:#555;">(Def:${Def_Roll} | Tier ${Def_Tier})</span>`;
+              details = `(Def:${Def_Roll})`;
+              
+              // Add Row to Chat
+              chatTableRows += `<tr>
+                  <td style="text-align:left;">${tToken.name}</td>
+                  <td style="text-align:center;">${Def_Roll}</td>
+                  <td style="text-align:right; font-weight:bold; color:${resultColor};">${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}</td>
+              </tr>`;
+
           } else {
-              details = `<span style="font-size:0.8em; color:#999;">(Missed)</span>`;
+              details = `(Missed)`;
+              chatTableRows += `<tr><td style="text-align:left; color:#999;">${tToken.name}</td><td colspan="2" style="text-align:center; color:#999;">Evaded</td></tr>`;
           }
 
           sheetListHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0;">
-              <div><strong>${tToken.name}</strong> ${details}</div>
-              <div style="font-weight:bold; color:${finalDamage > 0 ? '#8b0000' : '#006400'}; font-size:1.1em;">
+              <div><strong>${tToken.name}</strong> <span style="font-size:0.8em; color:#555;">${details}</span></div>
+              <div style="font-weight:bold; color:${resultColor}; font-size:1.1em;">
                   ${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}
               </div>
           </div>`;
       }
 
+      // Attrition
       let attritionCost = Math.max(0, itemWeight - Math.floor(R_prof / 2));
       if (Attacker_d100 <= 5) attritionCost = Math.floor(attritionCost / 2);
       if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
 
       sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">Self Attrition: -${attritionCost}%</div>`;
 
-      const resolutionPayload = { 
-          essenceKey: motorKey, 
-          attritionCost: attritionCost, 
-          targets: payloadTargets,
-          targetResource: targetResource // [NEW] Pass the damage target
-      };
+      const resolutionPayload = { essenceKey: motorKey, attritionCost: attritionCost, targets: payloadTargets, targetResource: targetResource };
       
       await this.actor.update({
           "system.calculator.output": sheetListHtml,
           "system.calculator.batch_data": JSON.stringify(resolutionPayload) 
       });
+      
+      // Detailed Chat Output
+      ChatMessage.create({ 
+          speaker: ChatMessage.getSpeaker({ actor: this.actor }), 
+          content: `
+          <div class="narequenta chat-card">
+              <h3>${isHealing ? "Restoration" : "Attack Resolution"}</h3>
+              <div><strong>Status:</strong> ${hitLabel}</div>
+              <div style="font-size:0.9em;">Cost: -${attritionCost}% ${motorKey.toUpperCase()}</div>
+              <hr>
+              <table style="width:100%; font-size:0.9em; border-collapse:collapse;">
+                  <thead><tr style="background:#eee;"><th style="text-align:left;">Target</th><th>Def</th><th>Effect</th></tr></thead>
+                  <tbody>${chatTableRows}</tbody>
+              </table>
+              <div style="margin-top:5px; font-style:italic; font-size:0.8em; text-align:center;">
+                  Apply results via Sheet.
+              </div>
+          </div>` 
+      });
+  }
+
+  /* -------------------------------------------- */
+  /* TARGETING DIALOG (Auto-Select AoE)           */
+  /* -------------------------------------------- */
+  _onLaunchContest(event) {
+      if(event) event.preventDefault();
+      const attacker = this.actor;
+      const calc = attacker.system.calculator;
+      const range = calc.item_range || 5;
+      
+      // Determine Target Type from the Item itself if possible
+      const itemId = calc.selected_item_id;
+      const item = attacker.items.get(itemId);
+      const targetType = item?.system.target_type || "one"; // one, aoe, self
+      
+      const defaultDef = calc.active_motor || "vitalis";
+      const isHealing = (Number(calc.item_bonus) || 0) < 0;
+      const tier = (attacker.type === 'character') ? (attacker.system.resources.action_surges.max || 0) : (attacker.system.tier || 0);
+
+      const tokens = attacker.getActiveTokens();
+      if (tokens.length === 0) { ui.notifications.warn("Place token on scene."); return; }
+      
+      let pcHtml = ""; let npcHtml = ""; let count = 0;
+      canvas.tokens.placeables.forEach(t => {
+          if (t.id === tokens[0].id) return; 
+          const dist = canvas.grid.measureDistance(tokens[0], t);
+          if (dist <= range && t.actor?.system.resources?.hp?.value > 0) {
+              const entry = `<div style="padding:2px;"><input type="checkbox" name="target" value="${t.id}" class="target-checkbox" data-type="${t.actor.type}"> <strong>${t.name}</strong> (${Math.round(dist)}ft)</div>`;
+              if (t.actor.type === "character") pcHtml += entry; else npcHtml += entry;
+              count++;
+          }
+      });
+
+      if (count === 0) { ui.notifications.warn(`No targets within ${range}ft.`); return; }
+
+      // Selection Logic: If AoE, check by default based on Tier/Type
+      let autoSelectScript = "";
+      
+      if (targetType === "aoe") {
+          // If it's AOE, we default to selecting things immediately
+          if (isHealing) {
+              autoSelectScript = `$('input[data-type="character"]').prop('checked', true);`;
+          } else {
+              if (tier >= 3) autoSelectScript = `$('input[data-type="npc"]').prop('checked', true);`; // Mastery
+              else autoSelectScript = `$('input.target-checkbox').prop('checked', true);`; // Wild
+          }
+      } else {
+          // Single Target defaults to nothing checked
+          autoSelectScript = "";
+      }
+
+      const essences = ["vitalis", "motus", "sensus", "verbum", "anima", "hp"];
+      let options = "";
+      essences.forEach(k => { options += `<option value="${k}" ${k===defaultDef?"selected":""}>${k.toUpperCase()}</option>`; });
+
+      const content = `
+      <form>
+          <div style="text-align:center; margin-bottom:5px;">Range: <strong>${range}ft</strong></div>
+          <div style="display:flex; gap:5px; margin-bottom:10px;">
+              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;"><strong>Allies</strong><br>${pcHtml || "-"}</div>
+              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;"><strong>Enemies</strong><br>${npcHtml || "-"}</div>
+          </div>
+          <div style="text-align:center; margin-bottom:10px;">
+              <button type="button" id="auto-select-btn" style="font-size:0.8em; width:100%;">
+                  ${targetType === "aoe" ? "Reset / Auto-Select" : "Auto-Select Targets"}
+              </button>
+          </div>
+          <label>Defensive Stat:</label>
+          <select id="target-essence" style="width:100%;">${options}</select>
+      </form>
+      <script>
+          // Run immediately if AoE to show selection
+          ${autoSelectScript}
+          
+          $("#auto-select-btn").click(function() { 
+              // Toggle logic if button is clicked manually
+              const anyChecked = $("input:checkbox:checked").length > 0;
+              if (anyChecked) {
+                  $("input:checkbox").prop('checked', false); 
+              } else {
+                  ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} 
+              }
+          });
+      </script>`;
+
+      new Dialog({ title: `Targeting (${targetType.toUpperCase()})`, content: content, buttons: { confirm: { label: "Lock", callback: async (html) => {
+          const ids = []; html.find("input:checked").each(function(){ ids.push($(this).val()); });
+          if(ids.length) await attacker.update({ "system.calculator.target_ids": ids, "system.calculator.target_def_stat": html.find("#target-essence").val(), "system.calculator.target_name": `${ids.length} Targets` });
+      }}}}).render(true);
   }
 
   /* -------------------------------------------- */

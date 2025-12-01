@@ -1,84 +1,93 @@
 <form class="{{cssClass}}" autocomplete="off">
     
     {{!-- ================================================================= --}}
-    {{!-- HEADER: Icon, Name, and Core Mechanics (Weight, Range, Damage)    --}}
+    {{!-- HEADER: Identity & Core Mechanics                                 --}}
     {{!-- ================================================================= --}}
     <header class="sheet-header">
         
-        {{!-- Item Icon: Click to upload/change --}}
+        {{!-- Item Icon: Click to open file picker and upload image --}}
         <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
         
         <div class="header-fields">
-            {{!-- Item Name Input --}}
+            {{!-- Item Name --}}
             <h1 class="charname">
                 <input name="name" type="text" value="{{item.name}}" placeholder="Name"/>
             </h1>
             
-            {{!-- ITEM MECHANICS GRID: These fields feed the Combat Calculator --}}
+            {{!-- MECHANICS GRID: Top row of stats used by the Calculator --}}
             <div class="resource-row" style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
                 
                 {{!-- 
                    Weight (Attrition):
                    Used in formula: Cost = max(0, Weight - floor(R_prof/2)).
-                   Defaults to 15 (Medium) if empty.
+                   Standard values: Light (10), Medium (15), Heavy (20).
+                   Zero (0) indicates a Potion/Consumable (Fixed Potency).
                 --}}
                 <div class="resource">
-                    <label>Weight (Attr):</label>
-                    <input type="number" name="system.weight" value="{{systemData.weight}}" placeholder="15" style="width: 40px; text-align: center;">
+                    <label>Weight:</label>
+                    <input type="number" name="system.weight" value="{{systemData.weight}}" placeholder="15" style="width: 50px; text-align: center;">
                 </div>
 
                 {{!-- 
                    Range (ft):
-                   Used by Tactical Targeting to filter valid targets.
-                   Defaults to 5ft (Melee).
+                   Used by the Tactical Targeting system to filter valid targets.
+                   Defaults to 5 (Melee).
                 --}}
                 <div class="resource">
                     <label>Range (ft):</label>
-                    <input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 40px; text-align: center;">
+                    <input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 60px; text-align: center;">
                 </div>
 
                 {{!-- 
-                   Damage/Heal Bonus:
-                   Accepts static numbers (e.g., "2") or formulas (e.g., "-1d4").
-                   Negative values trigger Healing Mode in the calculator.
+                   Target Type:
+                   Determines how the 'Use' button behaves.
+                   - One: Prompts "Self or Administer?"
+                   - AoE: Opens targeting dialog with Auto-Select logic.
+                   - Self: Applies immediately to user.
                 --}}
-                <div class="resource" style="flex: 1;">
-                    <label>Dmg/Heal:</label>
-                    <input type="text" name="system.damage_bonus" value="{{systemData.damage_bonus}}" placeholder="e.g. -1d4 (Heal) or 2" style="width: 100%;">
+                <div class="resource">
+                    <label>Target:</label>
+                    <select name="system.target_type" style="height: 22px; font-size: 0.8em;">
+                        {{#select systemData.target_type}}
+                        <option value="one">Single Target</option>
+                        <option value="aoe">Area (AoE)</option>
+                        <option value="self">Self Only</option>
+                        {{/select}}
+                    </select>
+                </div>
+
+                {{!-- 
+                   Affects (Target Resource):
+                   Determines WHICH pool is damaged or healed on the target.
+                   - HP: Standard damage/healing.
+                   - Essences: Specific restoration (e.g. Vitalis Balm) or damage.
+                --}}
+                <div class="resource">
+                    <label>Affects:</label>
+                    <select name="system.target_resource" style="height: 22px; font-size: 0.8em;">
+                        {{#select systemData.target_resource}}
+                        <option value="hp">HP</option>
+                        <option value="vitalis">VITALIS</option>
+                        <option value="motus">MOTUS</option>
+                        <option value="sensus">SENSUS</option>
+                        <option value="verbum">VERBUM</option>
+                        <option value="anima">ANIMA</option>
+                        {{/select}}
+                    </select>
                 </div>
             </div>
+            
+            {{!-- 
+               Damage/Heal Formula:
+               Accepts dice formulas (e.g., "1d8 + 2") or static numbers.
+               - Positive: Damage.
+               - Negative (e.g., "-1d4"): Healing.
+            --}}
+            <div class="resource-row" style="margin-top: 5px;">
+                 <label style="font-weight:bold; margin-right:5px;">Dmg/Heal Formula:</label>
+                 <input type="text" name="system.damage_bonus" value="{{systemData.damage_bonus}}" placeholder="e.g. -1d4 (Heal) or 2 (Damage)" style="flex:1;">
+            </div>
         </div>
-		{{!-- Range (ft) --}}
-		<div class="resource">
-			<label>Range (ft):</label>
-			<input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 40px; text-align: center;">
-		</div>
-
-		{{!-- [NEW] Target Type --}}
-		<div class="resource">
-			<label>Target:</label>
-			<select name="system.target_type" style="height: 22px; font-size: 0.8em;">
-				{{#select systemData.target_type}}
-				<option value="self">Self Only</option>
-				<option value="one">Single Target</option>
-				<option value="aoe">Area (AoE)</option>
-				{{/select}}
-			</select>
-		</div>
-		{{!-- Target Resource (HP vs Essence) --}}
-		<div class="resource">
-			<label>Affects:</label>
-			<select name="system.target_resource" style="height: 22px; font-size: 0.8em;">
-				{{#select systemData.target_resource}}
-				<option value="hp">HP (Vigor)</option>
-				<option value="vitalis">VITALIS</option>
-				<option value="motus">MOTUS</option>
-				<option value="sensus">SENSUS</option>
-				<option value="verbum">VERBUM</option>
-				<option value="anima">ANIMA</option>
-				{{/select}}
-			</select>
-		</div>		
     </header>
 
     {{!-- ================================================================= --}}
@@ -95,27 +104,24 @@
     {{!-- ================================================================= --}}
     <section class="sheet-body">
 
-        {{!-- 1. DESCRIPTION TAB: Rich Text Editor --}}
+        {{!-- 1. DESCRIPTION TAB: Rich Text --}}
         <div class="tab" data-group="primary" data-tab="description">
-            {{!-- 
-                'target': Where the text is saved (system.description).
-                'engine': 'prosemirror' is the modern Foundry VTT editor.
-            --}}
             {{editor descriptionHTML target="system.description" button=true editable=editable engine="prosemirror"}}
         </div>
 
-        {{!-- 2. DETAILS TAB: Essence Pair Configuration --}}
+        {{!-- 2. DETAILS TAB: Essence Costs --}}
         <div class="tab" data-group="primary" data-tab="details">
             <div class="essence-grid-container">
                 <h3 style="border-bottom: 1px solid #333; margin-bottom: 10px;">Action Costs & Scaling</h3>
                 
                 {{!-- 
-                   Motor Essence (E_P):
-                   This determines which Essence pool takes the Variable Attrition.
-                   It also sets the default Defense Stat for the target.
+                   Motor Essence ($E_P):
+                   The primary stat used for the action. 
+                   Takes the Variable Attrition Cost.
+                   Sets the default Defensive Stat for the contest.
                 --}}
                 <div class="form-group">
-                    <label><strong>Motor Essence ($E_P$):</strong> <span style="font-size: 0.8em; color: #555;">(Determines Attrition Pool)</span></label>
+                    <label><strong>Motor Essence ($E_P$):</strong></label>
                     <select name="system.cost.motor" style="width: 100%;">
                         {{#select systemData.cost.motor}}
                         {{#each systemData.essencesList as |label key|}}
@@ -126,11 +132,11 @@
                 </div>
 
                 {{!-- 
-                   Quality Essence (E_S):
-                   This determines which Essence pool takes the Fixed 1% Cost.
+                   Quality Essence ($E_S$):
+                   The secondary stat. Takes a fixed 1% Attrition Cost.
                 --}}
                 <div class="form-group" style="margin-top: 10px;">
-                    <label><strong>Quality Essence ($E_S$):</strong> <span style="font-size: 0.8em; color: #555;">(Fixed 1% Loss)</span></label>
+                    <label><strong>Quality Essence ($E_S$):</strong></label>
                     <select name="system.cost.quality" style="width: 100%;">
                         {{#select systemData.cost.quality}}
                         {{#each systemData.essencesList as |label key|}}
@@ -142,7 +148,7 @@
             </div>
         </div>
 
-        {{!-- 3. ATTRIBUTES TAB: Legacy Worldbuilding Tags --}}
+        {{!-- 3. ATTRIBUTES TAB: Legacy support for custom fields --}}
         <div class="tab attributes" data-group="primary" data-tab="attributes">
             {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
         </div>
