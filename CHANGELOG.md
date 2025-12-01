@@ -24,6 +24,7 @@
 - **Fixed:** Item Sheet syntax error preventing window from opening.
 - **UI:** Target names are displayed in the calculator header.
 - **UI:** Rolls reset to 0 upon selecting a new target.
+- **Fixed:** **Dynamic Range Calculation:** Targeting now prioritizes the currently controlled/selected token to ensure distance is measured from the token's post-movement location.
 ***
 
 ## [v0.9.7] — 2025-12-01 (Tactical Flow & Weapon Nuance)

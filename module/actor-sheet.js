@@ -339,7 +339,7 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* TARGETING DIALOG (Dynamic Allies/Enemies)   */
+  /* TARGETING DIALOG (Dynamic Ally/Enemy)       */
   /* -------------------------------------------- */
   _onLaunchContest(event) {
       if(event) event.preventDefault();
@@ -357,18 +357,36 @@ export class NarequentaActorSheet extends ActorSheet {
           ? (attacker.system.resources.action_surges.max || 0) 
           : (attacker.system.tier || 0);
 
-      const tokens = attacker.getActiveTokens();
-      if (tokens.length === 0) { ui.notifications.warn("Place token on scene."); return; }
+      // [FIX] Determine Source Token (Prioritize Selected/Controlled)
+      let sourceToken = null;
       
-      // Determine Faction logic
+      // 1. Try to find a selected token on the canvas that matches this actor
+      const controlled = canvas.tokens.controlled.find(t => t.actor?.id === attacker.id);
+      if (controlled) {
+          sourceToken = controlled;
+      } else {
+          // 2. Fallback: Get the first active token found for this actor
+          const active = attacker.getActiveTokens();
+          if (active.length > 0) sourceToken = active[0];
+      }
+
+      if (!sourceToken) { 
+          ui.notifications.warn("No token found for this actor on the current scene."); 
+          return; 
+      }
+      
+      // 1. Determine Faction Logic
       const myType = attacker.type; 
       let friendHtml = "";
       let foeHtml = ""; 
       let count = 0;
       
+      // 2. Sort Targets into Friend/Foe
       canvas.tokens.placeables.forEach(t => {
-          if (t.id === tokens[0].id) return; 
-          const dist = canvas.grid.measureDistance(tokens[0], t);
+          if (t.id === sourceToken.id) return; // Ignore Self
+          
+          // Measure distance from the Source Token's current center
+          const dist = canvas.grid.measureDistance(sourceToken, t);
           
           if (dist <= range && t.actor?.system.resources?.hp?.value > 0) {
               const targetActorType = t.actor.type;
@@ -377,15 +395,18 @@ export class NarequentaActorSheet extends ActorSheet {
                   <strong>${t.name}</strong> (${Math.round(dist)}ft)
               </div>`;
               
-              if (targetActorType === myType) friendHtml += entry;
-              else foeHtml += entry;
-              
+              if (targetActorType === myType) {
+                  friendHtml += entry; // Same type = Ally
+              } else {
+                  foeHtml += entry;    // Different type = Enemy
+              }
               count++;
           }
       });
 
-      if (count === 0) { ui.notifications.warn(`No targets within ${range}ft.`); return; }
+      if (count === 0) { ui.notifications.warn(`No targets within ${range}ft of ${sourceToken.name}.`); return; }
 
+      // 3. Build Auto-Select Script based on Perspective
       let autoSelectScript = "";
       const friendType = myType; 
       const foeType = (myType === "character") ? "npc" : "character";
@@ -394,8 +415,11 @@ export class NarequentaActorSheet extends ActorSheet {
           if (isHealing) {
               autoSelectScript = `$('input[data-type="${friendType}"]').prop('checked', true);`;
           } else {
-              if (tier >= 3) autoSelectScript = `$('input[data-type="${foeType}"]').prop('checked', true);`;
-              else autoSelectScript = `$('input.target-checkbox').prop('checked', true);`;
+              if (tier >= 3) {
+                  autoSelectScript = `$('input[data-type="${foeType}"]').prop('checked', true);`; // Mastery
+              } else {
+                  autoSelectScript = `$('input.target-checkbox').prop('checked', true);`; // Wild
+              }
           }
       }
 
@@ -403,12 +427,19 @@ export class NarequentaActorSheet extends ActorSheet {
       let options = "";
       essences.forEach(k => { options += `<option value="${k}" ${k===defaultDef?"selected":""}>${k.toUpperCase()}</option>`; });
 
+      // 5. Render Dialog
       const content = `
       <form>
-          <div style="text-align:center; margin-bottom:5px;">Range: <strong>${range}ft</strong></div>
+          <div style="text-align:center; margin-bottom:5px;">
+              Origin: <strong>${sourceToken.name}</strong> | Range: <strong>${range}ft</strong>
+          </div>
           <div style="display:flex; gap:5px; margin-bottom:10px;">
-              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;"><strong>Allies</strong><br>${friendHtml || "-"}</div>
-              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;"><strong>Enemies</strong><br>${foeHtml || "-"}</div>
+              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;">
+                  <strong>Allies</strong><br>${friendHtml || "-"}
+              </div>
+              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;">
+                  <strong>Enemies</strong><br>${foeHtml || "-"}
+              </div>
           </div>
           <div style="text-align:center; margin-bottom:10px;">
               <button type="button" id="auto-select-btn" style="font-size:0.8em; width:100%;">
@@ -422,7 +453,11 @@ export class NarequentaActorSheet extends ActorSheet {
           ${autoSelectScript}
           $("#auto-select-btn").click(function() { 
               const anyChecked = $("input:checkbox:checked").length > 0;
-              if (anyChecked) { $("input:checkbox").prop('checked', false); } else { ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} }
+              if (anyChecked) { 
+                  $("input:checkbox").prop('checked', false); 
+              } else { 
+                  ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} 
+              }
           });
       </script>`;
 
