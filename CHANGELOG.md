@@ -1,3 +1,4 @@
+# CHANGELOG
 ## Version 0.9.0
 
 - This is the initial version of the Nárëquenta system.
@@ -343,5 +344,20 @@
 ### 💻 Interface
 - **Item Sheet:** Added an "Affects" dropdown to the Item Sheet header, allowing GMs to configure whether an item targets HP or a specific Essence.
 ***
+## [v0.9.62] — 2025-11-30 (Detailed Output & Smart Targeting)
+**Status:** Alpha - UX Enhancement
 
+### ⚔️ Combat Calculator Enhancements
+- **Detailed Chat Log:** The calculator now outputs a structured HTML table to the Chat Log upon processing. This table lists every specific target, their individual Defense Roll (randomized or manual), and the calculated Damage/Healing result.
+- **Visual Clarity:** Results in the chat are color-coded (Red for Damage, Green for Healing) to match the sheet interface.
+
+### 🎯 Targeting Improvements
+- **Smart Auto-Select:** Updated the Targeting Dialog (`_onLaunchContest`). If an item is flagged as **AoE**, the system now automatically pre-selects valid tokens based on the action type:
+    - **Healing:** Auto-selects Allies (PCs).
+    - **Damage (Tier < 3):** Auto-selects All (Wild Magic safeguard).
+    - **Damage (Tier ≥ 3):** Auto-selects Enemies (NPCs) (Mastery safeguard).
+
+### 🐛 UI Fixes
+- **Item Sheet Layout:** Increased the width of the **Range** input field to `60px` to prevent text cutting off when entering long distances (e.g., "120").
+***
 
