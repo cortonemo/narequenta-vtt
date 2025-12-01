@@ -185,6 +185,8 @@
   },
   "active": "f55994c571b8cd88",
   "lastOpenFiles": [
+    "system.zip",
+    "system.zip.tmp",
     "templates/parts/sheet-attributes.html.md",
     "templates/parts/sheet-groups.html.md",
     "templates/actor-sheet.html.md",
@@ -206,8 +208,6 @@
     "module.txt",
     "lang.txt",
     "CHANGELOG.md",
-    "system.zip",
-    "system.zip.tmp",
     "LICENSE.md",
     "header_image.png"
   ]
