@@ -1,6 +1,18 @@
 # CHANGELOG
 ***
+## [v0.9.75] — 2025-12-02 (Item Standardization & UI Hints)
+**Status:** Beta - Content Polish & Math Sync
 
+### 📦 Content & Items
+- **Fixed:** Updated legacy Compendium Items (`Soul-Drain`, `Sense Scar`, `River-Reed Spear`, `Old Iron Blade`, `Buckler`) to use standard **Weight** values.
+    - *Context:* These items previously had `null` weights or referenced the old `7 - R_prof` formula. They now adhere to the automated calculator logic (`Weight - R_prof/2`).
+- **Changed:** Cleaned up item descriptions to remove obsolete math references, relying on the automated Chat Output for calculation details.
+
+### 💻 Interface (UI)
+- **Added:** Visual reminder **(Floor: 50%)** added to the Essence Grid header on the Character Sheet to reinforce the *Extinction of Essence* rule.
+- **Added:** Placeholder text (`10/15/20`) added to the Item Sheet **Weight** input to guide users toward the standard Weight Classes (Light/Medium/Heavy).
+- **Fixed:** System manifest (`system.json`) version bumped to `0.9.75` to ensure correct update tracking in Foundry VTT.
+***
 ## [v0.9.74] — 2025-12-02 (Steel & Splinters Implementation)
 **Status:** Beta - Equipment & Durability Mechanics
 

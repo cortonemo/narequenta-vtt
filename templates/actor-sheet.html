@@ -8,7 +8,7 @@
         <div class="header-fields">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
             
-			<div class="resource-row">
+            <div class="resource-row">
                 {{!-- 1. Active Vigor (HP) --}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
@@ -17,15 +17,7 @@
                     <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
                 </div>
 
-                {{!-- 2. Total Mitigation Display (v0.9.73) --}}
-                <div class="resource" title="Total Mitigation (Reflex + Armor + Parry)">
-                    <label>Def ($\bar{M}$)</label>
-                    <span class="derived-stat" style="font-weight: bold; font-size: 1.4em; color: #333; margin-left: 5px;">
-                        {{systemData.mitigation.total}}
-                    </span>
-                </div>
-
-                {{!-- 3. Action Surges (PC Only) with Use Button --}}
+                {{!-- 2. Action Surges (PC Only) with Use Button --}}
                 {{#if (eq actor.type "character")}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.ActionSurges"}}</label>
@@ -40,11 +32,11 @@
                 </div>
                 {{/if}}
 
-                {{!-- 4. Utility Buttons --}}
+                {{!-- 3. Utility Buttons --}}
                 <div class="resource" style="display: flex; gap: 5px; align-items: flex-end;">
                     <a class="rest-btn end-turn" title="End Turn"><i class="fas fa-step-forward"></i> End Turn</a>
-                    <a class="rest-btn short-rest" title="Refocus"><i class="fas fa-coffee"></i> Short</a>
-                    <a class="rest-btn long-rest" title="Renewal"><i class="fas fa-bed"></i> Long</a>
+                    <a class="rest-btn short-rest" title="Refocus (Quick Breath)"><i class="fas fa-coffee"></i> Short</a>
+                    <a class="rest-btn long-rest" title="Renewal (Full Restore)"><i class="fas fa-bed"></i> Long</a>
                 </div>
             </div>
             
@@ -64,25 +56,24 @@
 
     <section class="sheet-body">
 
-        {{!-- ================================================================= --}}
-        {{!-- 1. ESSENCES TAB & COMBAT CALCULATOR                               --}}
-        {{!-- ================================================================= --}}
+        {{!-- 1. ESSENCES TAB & COMBAT CALCULATOR --}}
         <div class="tab essences" data-group="primary" data-tab="essences">
             
             {{!-- A. Essence Grid --}}
             <div class="essence-grid-container">
                 <div class="essence-header">
-                    <span>{{localize "NAREQUENTA.TabEssences"}}</span>
+                    <span>{{localize "NAREQUENTA.TabEssences"}} <span style="font-size:0.7em; color:#888; font-weight:normal;">(Floor: 50%)</span></span>
                     <span>E_MAX</span>
                     <span>E_CUR</span>
                     <span>TIER</span>
                     <span>DICE</span>
                 </div>
-            
                 {{#each systemData.essences as |essence key|}}
                 <div class="essence-row">
                     <span class="essence-label">{{essence.label}}</span>
+                    {{!-- E_MAX: Red Limit --}}
                     <input class="input-emax" type="number" name="system.essences.{{key}}.max" value="{{essence.max}}" min="50" max="100">
+                    {{!-- E_CUR: Green Energy --}}
                     <input class="input-ecur" type="number" name="system.essences.{{key}}.value" value="{{essence.value}}" min="0" max="100">
                     <span class="derived-stat">{{essence.tier}}</span>
                     <span class="derived-stat">{{essence.diceString}}</span>
@@ -93,14 +84,11 @@
             {{!-- B. Combat Calculator Panel --}}
             <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
                 
-                {{!-- Calculator Header: Weapon Selection & Target Info --}}
+                {{!-- Context Header --}}
                 <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em; align-items: center;">
-                    
-                    {{!-- LEFT SIDE: Item/Weapon Selection --}}
                     <div style="border-right: 1px solid #666; padding-right: 5px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span>
-                            {{!-- Badge showing active motor essence --}}
                             {{#if systemData.calculator.active_motor}}
                             <span style="font-size: 0.8em; background: #555; color: #fff; padding: 1px 4px; border-radius: 3px; text-transform: uppercase;">
                                 {{systemData.calculator.active_motor}}
@@ -117,65 +105,22 @@
                         </select>
                     </div>
                     
-                    {{!-- RIGHT SIDE: Targeting & Quick Breath Controls (COMMENTED SECTION) --}}
                     <div style="padding-left: 5px; display:flex; justify-content:space-between; align-items:center;">
-                        
-                        {{!-- Target Info Display --}}
-                        <div style="flex: 1; overflow: hidden; white-space: nowrap;">
-                            <span style="font-weight: bold; color: #ccc;">TARGET:</span>
-                            
-                            {{!-- Target Name: Displays specific names selected via the targeting dialog --}}
-                            <span style="font-size: 0.8em; color: #fff; margin-left: 5px; font-style: italic;">
-                                {{#if systemData.calculator.target_name}}
-                                    {{systemData.calculator.target_name}}
-                                {{else}}
-                                    None
-                                {{/if}}
-                            </span>
-                            <br>
-                            
-                            {{!-- Defensive Stat: Shows which essence (Vitalis/Motus) the defender uses --}}
-                            <span style="font-weight: bold; color: #999; font-size: 0.7em;">DEF STAT:</span>
+                        <div>
+                            <span style="font-weight: bold; color: #ccc;">TARGET DEF:</span><br>
                             {{#if systemData.calculator.target_def_stat}}
-                                <span style="text-transform: uppercase; font-size: 0.7em; color: #fff;">{{systemData.calculator.target_def_stat}}</span>
+                                <span style="text-transform: uppercase;">{{systemData.calculator.target_def_stat}}</span>
                             {{else}}
-                                {{!-- Default Fallback --}}
-                                <em style="color:#666; font-size: 0.7em;">VITALIS</em>
+                                <em style="color:#999">VITALIS</em>
                             {{/if}}
                         </div>
-
-                        {{!-- Action Buttons Wrapper --}}
-                        <div style="display: flex; gap: 2px;">
-                            
-                            {{!-- 
-                                1. QUICK BREATH TOGGLE 
-                                - Toggles the 'system.calculator.quick_breath_active' boolean.
-                                - Visual Feedback: Background turns Gold (#d4af37) when active.
-                                - Function: Prepares a recovery roll and disables standard targeting.
-                            --}}
-                            <button type="button" class="toggle-quick-breath" title="Quick Breath (Recover & End Turn)" 
-                                style="border: 1px solid #777; color: white; padding: 2px 6px; cursor: pointer;
-                                {{#if systemData.calculator.quick_breath_active}}background: #d4af37; color: #000;{{else}}background: #555;{{/if}}">
-                                <i class="fas fa-lungs"></i>
-                            </button>
-
-                            {{!-- 
-                                2. TARGET BUTTON 
-                                - Opens the Targeting Dialog (AoE/Single).
-                                - Conditional Logic: If Quick Breath is active, this button is visibly disabled (opacity 0.3)
-                                  and unclickable (pointer-events: none) to prevent logic conflicts.
-                            --}}
-                            <button type="button" class="launch-contest" title="Select Targets" 
-                                style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;
-                                {{#if systemData.calculator.quick_breath_active}}opacity: 0.3; pointer-events: none;{{/if}}">
-                                <i class="fas fa-crosshairs"></i>
-                            </button>
-                        </div>
+                        <button class="launch-contest" title="Select Targets" style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
                     </div>
-                
                 </div>
 
-                {{!-- Input Grid (Rolls) --}}
+                {{!-- Input Grid --}}
                 <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
                     
                     {{!-- Attacker Side --}}
@@ -211,20 +156,16 @@
                     </div>
                 </div>
 
-                {{!-- Action Bar (Disabled if no attack roll OR if Quick Breath not ready) --}}
+                {{!-- Action Bar (Disabled if no attack roll) --}}
                 <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
                     <button type="button" class="roll-calculation" 
-                        {{!-- Enable if: Attack Roll exists OR Quick Breath is active (dummy batch data) --}}
-                        {{#unless (or systemData.calculator.attack_roll systemData.calculator.batch_data)}}
-                            disabled style="opacity: 0.5; cursor: not-allowed; background: #555; color: #ccc; border: 1px solid #000; width: 90%;"
-                        {{else}}
-                            style="background: #222; color: white; border: 1px solid #000; width: 90%;"
-                        {{/unless}}>
+                        {{#unless systemData.calculator.attack_roll}}disabled style="opacity: 0.5; cursor: not-allowed; background: #555; color: #ccc; border: 1px solid #000; width: 90%;"{{/unless}}
+                        {{#if systemData.calculator.attack_roll}}style="background: #222; color: white; border: 1px solid #000; width: 90%;"{{/if}}>
                         <i class="fas fa-calculator"></i> PREVIEW RESULT
                     </button>
                 </div>
 
-                {{!-- Output / Execution Area --}}
+                {{!-- Output --}}
                 {{#if systemData.calculator.output}}
                 <div style="padding: 10px; background: #fff;">
                     {{{systemData.calculator.output}}}
@@ -253,15 +194,12 @@
             {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
         </div>
 
-        {{!-- ================================================================= --}}
-        {{!-- 2. ITEMS TAB                                                      --}}
-        {{!-- ================================================================= --}}
+        {{!-- 2. ITEMS TAB --}}
         <div class="tab items" data-group="primary" data-tab="items">
             <ol class="items-list">
                 <li class="item flexrow item-header">
                     <div class="item-image"></div>
                     <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
-                    {{!-- Quantity Column --}}
                     <div style="flex: 0 0 40px; text-align: center; font-weight: bold; font-size: 0.8em; color: #555;">Qty</div>
                     <div class="item-controls">
                         <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
@@ -273,12 +211,10 @@
                     <h4 class="item-name mb-0">
                         <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
                     </h4>
-                    {{!-- Quantity Display --}}
                     <div style="flex: 0 0 40px; text-align: center; color: #555;">
                         {{#if item.system.quantity}} x{{item.system.quantity}} {{/if}}
                     </div>
                     <div class="item-controls">
-                        {{!-- Use Button (Flask Icon) --}}
                         <a class="item-control item-use" title="Use/Consume"><i class="fas fa-flask"></i></a>
                         <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
                         <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
@@ -288,9 +224,7 @@
             </ol>
         </div>
 
-        {{!-- ================================================================= --}}
-        {{!-- 3. BIOGRAPHY TAB                                                  --}}
-        {{!-- ================================================================= --}}
+        {{!-- 3. BIOGRAPHY TAB --}}
         <div class="tab biography" data-group="primary" data-tab="biography">
             {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
         </div>

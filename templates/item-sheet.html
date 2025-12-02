@@ -1,38 +1,25 @@
 <form class="{{cssClass}}" autocomplete="off">
     
-    {{!-- ================================================================= --}}
-    {{!-- HEADER: Identity & Core Mechanics                                 --}}
-    {{!-- ================================================================= --}}
     <header class="sheet-header">
-        
-        {{!-- Item Icon: Click to open file picker and upload image --}}
         <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
-        
         <div class="header-fields">
-            {{!-- Item Name --}}
             <h1 class="charname">
                 <input name="name" type="text" value="{{item.name}}" placeholder="Name"/>
             </h1>
             
-            {{!-- MECHANICS GRID: Top row of stats used by the Calculator --}}
+            {{!-- MECHANICS GRID --}}
             <div class="resource-row" style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
                 
-                {{!-- Weight (Attrition) --}}
+                {{!-- Weight: Updated placeholder to show new standard classes --}}
                 <div class="resource">
                     <label>Weight:</label>
-                    <input type="number" name="system.weight" value="{{systemData.weight}}" placeholder="15" style="width: 40px; text-align: center;">
+                    <input type="number" name="system.weight" value="{{systemData.weight}}" placeholder="10/15/20" style="width: 60px; text-align: center;" title="Light: 10, Medium: 15, Heavy: 20">
                 </div>
 
-                {{!-- Range (ft) --}}
+                {{!-- Range --}}
                 <div class="resource">
                     <label>Range (ft):</label>
-                    <input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 40px; text-align: center;">
-                </div>
-
-                {{!-- Equipped Toggle (New v0.9.7) --}}
-                <div class="resource">
-                    <label>Equipped?</label>
-                    <input type="checkbox" name="system.equipped" {{checked systemData.equipped}}>
+                    <input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 60px; text-align: center;">
                 </div>
 
                 {{!-- Target Type --}}
@@ -47,7 +34,7 @@
                     </select>
                 </div>
 
-                {{!-- Affects (Resource) --}}
+                {{!-- Affects Resource --}}
                 <div class="resource">
                     <label>Affects:</label>
                     <select name="system.target_resource" style="height: 22px; font-size: 0.8em;">
@@ -62,82 +49,29 @@
                     </select>
                 </div>
             </div>
-
-            {{!-- WEAPON SPECIFIC FIELDS (New v0.9.7) --}}
-            {{#if (eq item.type "weapon")}}
-            <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px; border: 1px solid #999; margin-top: 5px;">
-                <div class="resource">
-                    <label title="Attack Bonus (Adds to AFP)">Atk (+):</label>
-                    <input type="number" name="system.damage_bonus" value="{{systemData.damage_bonus}}" style="width:30px; text-align: center;">
-                </div>
-                <div class="resource">
-                    <label title="Parry Bonus (Adds to Mitigation)">Def (+):</label>
-                    <input type="number" name="system.defense_bonus" value="{{systemData.defense_bonus}}" style="width:30px; text-align: center;">
-                </div>
-                <div class="resource">
-                    <label title="Integrity (Current / Max)">Integrity:</label>
-                    <input type="number" name="system.integrity.value" value="{{systemData.integrity.value}}" style="width:30px; text-align: center;">
-                    /
-                    <input type="number" name="system.integrity.max" value="{{systemData.integrity.max}}" style="width:30px; text-align: center;">
-                </div>
-                <div class="resource">
-                    <label title="Is this a ranged weapon? (Disables Parry)">Ranged?</label>
-                    <input type="checkbox" name="system.is_ranged" {{checked systemData.is_ranged}}>
-                </div>
-            </div>
-            {{/if}}
-
-            {{!-- ARMOR SPECIFIC FIELDS (New v0.9.7) --}}
-            {{#if (eq item.type "armor")}}
-            <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px; border: 1px solid #999; margin-top: 5px;">
-                <div class="resource">
-                    <label>Mitigation (+):</label>
-                    <input type="number" name="system.mitigation_bonus" value="{{systemData.mitigation_bonus}}" style="width:40px; text-align: center;">
-                </div>
-            </div>
-            {{/if}}
             
-            {{!-- Damage Formula (Generic Fallback) --}}
-            {{#unless (eq item.type "weapon")}}
+            {{!-- Damage/Heal Formula --}}
             <div class="resource-row" style="margin-top: 5px;">
                  <label style="font-weight:bold; margin-right:5px;">Dmg/Heal Formula:</label>
                  <input type="text" name="system.damage_bonus" value="{{systemData.damage_bonus}}" placeholder="e.g. -1d4 (Heal) or 2 (Damage)" style="flex:1;">
             </div>
-            {{/unless}}
         </div>
-		
     </header>
 
-    {{!-- ================================================================= --}}
-    {{!-- NAVIGATION TABS                                                   --}}
-    {{!-- ================================================================= --}}
     <nav class="sheet-tabs tabs" data-group="primary">
         <a class="item" data-tab="description">{{localize "Description"}}</a>
         <a class="item" data-tab="details">{{localize "Details"}}</a>
         <a class="item" data-tab="attributes">{{localize "Attributes"}}</a>
     </nav>
 
-    {{!-- ================================================================= --}}
-    {{!-- SHEET BODY                                                        --}}
-    {{!-- ================================================================= --}}
     <section class="sheet-body">
-
-        {{!-- 1. DESCRIPTION TAB: Rich Text --}}
         <div class="tab" data-group="primary" data-tab="description">
             {{editor descriptionHTML target="system.description" button=true editable=editable engine="prosemirror"}}
         </div>
 
-        {{!-- 2. DETAILS TAB: Essence Costs --}}
         <div class="tab" data-group="primary" data-tab="details">
             <div class="essence-grid-container">
                 <h3 style="border-bottom: 1px solid #333; margin-bottom: 10px;">Action Costs & Scaling</h3>
-                
-                {{!-- 
-                   Motor Essence ($E_P):
-                   The primary stat used for the action. 
-                   Takes the Variable Attrition Cost.
-                   Sets the default Defensive Stat for the contest.
-                --}}
                 <div class="form-group">
                     <label><strong>Motor Essence ($E_P$):</strong></label>
                     <select name="system.cost.motor" style="width: 100%;">
@@ -148,11 +82,6 @@
                         {{/select}}
                     </select>
                 </div>
-
-                {{!-- 
-                   Quality Essence ($E_S$):
-                   The secondary stat. Takes a fixed 1% Attrition Cost.
-                --}}
                 <div class="form-group" style="margin-top: 10px;">
                     <label><strong>Quality Essence ($E_S$):</strong></label>
                     <select name="system.cost.quality" style="width: 100%;">
@@ -166,7 +95,6 @@
             </div>
         </div>
 
-        {{!-- 3. ATTRIBUTES TAB: Legacy support for custom fields --}}
         <div class="tab attributes" data-group="primary" data-tab="attributes">
             {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
         </div>
