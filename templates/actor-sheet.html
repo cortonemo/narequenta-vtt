@@ -8,7 +8,7 @@
         <div class="header-fields">
             <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
             
-            <div class="resource-row">
+			<div class="resource-row">
                 {{!-- 1. Active Vigor (HP) --}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
@@ -17,7 +17,15 @@
                     <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
                 </div>
 
-                {{!-- 2. Action Surges (PC Only) with Use Button --}}
+                {{!-- 2. Total Mitigation Display (v0.9.73) --}}
+                <div class="resource" title="Total Mitigation (Reflex + Armor + Parry)">
+                    <label>Def ($\bar{M}$)</label>
+                    <span class="derived-stat" style="font-weight: bold; font-size: 1.4em; color: #333; margin-left: 5px;">
+                        {{systemData.mitigation.total}}
+                    </span>
+                </div>
+
+                {{!-- 3. Action Surges (PC Only) with Use Button --}}
                 {{#if (eq actor.type "character")}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.ActionSurges"}}</label>
@@ -32,7 +40,7 @@
                 </div>
                 {{/if}}
 
-                {{!-- 3. Utility Buttons --}}
+                {{!-- 4. Utility Buttons --}}
                 <div class="resource" style="display: flex; gap: 5px; align-items: flex-end;">
                     <a class="rest-btn end-turn" title="End Turn"><i class="fas fa-step-forward"></i> End Turn</a>
                     <a class="rest-btn short-rest" title="Refocus"><i class="fas fa-coffee"></i> Short</a>

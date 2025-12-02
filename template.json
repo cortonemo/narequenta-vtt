@@ -6,6 +6,12 @@
         "biography": "",
         "resources": {
           "hp": { "value": 100, "min": 0, "max": 100 }
+        },
+        "mitigation": {
+          "base": 0,
+          "static": 0,
+          "parry": 0,
+          "total": 0
         }
       }
     },
@@ -16,7 +22,7 @@
         "hp": { "value": 100, "min": 0, "max": 100 },
         "action_surges": { "value": 0, "min": 0, "max": 5 }
       },
-     "calculator": {
+      "calculator": {
         "attack_roll": null,
         "prof_roll": null,
         "defense_roll": null,
@@ -44,7 +50,7 @@
     "npc": {
       "templates": ["base"],
       "tier": 0,
-     "calculator": {
+      "calculator": {
         "attack_roll": null,
         "prof_roll": null,
         "defense_roll": null,
@@ -71,7 +77,7 @@
     }
   },
   "Item": {
-    "types": ["item", "ability", "weapon"],
+    "types": ["item", "ability", "weapon", "armor"],
     "htmlFields": ["description"],
     "item": {
       "description": "",
@@ -102,13 +108,26 @@
       "range": 5,
       "quantity": 1,
       "damage_bonus": "", 
+      "defense_bonus": 0,
+      "integrity": { "value": 3, "max": 3 },
       "weight": 15,
+      "equipped": false,
+      "is_ranged": false,
       "target_type": "one",
       "target_resource": "hp",
       "cost": {
         "motor": "vitalis",
         "quality": "motus"
       },
+      "attributes": {},
+      "groups": {}
+    },
+    "armor": {
+      "description": "",
+      "quantity": 1,
+      "weight": 15,
+      "mitigation_bonus": 0,
+      "equipped": false,
       "attributes": {},
       "groups": {}
     }

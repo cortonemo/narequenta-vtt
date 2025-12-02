@@ -173,7 +173,7 @@ export class NarequentaActorSheet extends ActorSheet {
       if (Number(rawAttack) === 0) { ui.notifications.warn("Attack cannot be 0."); return; }
       if (!Array.isArray(targetIds) || targetIds.length === 0) { ui.notifications.warn("No targets selected."); return; }
 
-      // Gather Data
+      // Gather Data (Updated for v0.9.73)
       const context = {
           Attacker_d100: Number(calc.attack_roll),
           R_prof: Number(calc.prof_roll) || 0,
@@ -183,6 +183,10 @@ export class NarequentaActorSheet extends ActorSheet {
           motorKey: calc.active_motor || "vitalis",
           defStat: calc.target_def_stat || "vitalis",
           targetResource: calc.apply_to || "hp",
+          
+          // New Context for Integrity & Range
+          itemId: calc.selected_item_id,
+          attackRange: Number(calc.item_range) || 5,
           
           E_max: this.actor.system.essences[calc.active_motor]?.max || 100,
           E_cur: this.actor.system.essences[calc.active_motor]?.value || 100,
@@ -236,14 +240,35 @@ export class NarequentaActorSheet extends ActorSheet {
       }).render(true);
   }
 
-  /* --- Helper: Final Computation --- */
+  /* --- Helper: Final Computation (v0.9.73 Logic) --- */
   async _processAttackComputation(ctx) {
-      const { Attacker_d100, R_prof, itemBonus, itemWeight, weaponType, motorKey, defStat, targetResource, E_max, E_cur, Attacker_Tier, targetIds, defenseRolls } = ctx;
+      const { Attacker_d100, R_prof, itemBonus, itemWeight, weaponType, motorKey, defStat, targetResource, E_max, E_cur, Attacker_Tier, targetIds, defenseRolls, itemId, attackRange } = ctx;
 
       const isHealing = itemBonus < 0;
       const isPotion = isHealing && (itemWeight === 0);
 
-      // Hit Logic
+      // --- 1. WEAPON INTEGRITY LOGIC ---
+      let integrityMsg = "";
+      const weapon = this.actor.items.get(itemId);
+      
+      if (weapon && weapon.type === "weapon") {
+          const currentInt = weapon.system.integrity?.value ?? 3;
+          
+          // Broken Weapon? (Optional: Could reduce damage here, strictly handling Integrity updates for now)
+          if (currentInt <= 0 && !isHealing) {
+              integrityMsg += `<div style="color:red; font-size:0.8em;">⚠️ BROKEN WEAPON</div>`;
+          }
+          
+          // Crit Fail Check (96-100) - Apply Damage to Weapon
+          if (Attacker_d100 >= 96 && currentInt > 0) {
+              const newInt = currentInt - 1;
+              await weapon.update({"system.integrity.value": newInt});
+              integrityMsg = `<div style="color:darkred; font-weight:bold; margin-top:5px; border-top:1px dashed #ccc; padding-top:2px;">⚠️ WEAPON CHIPPED! (Int: ${newInt})</div>`;
+              if (newInt === 0) integrityMsg += `<div style="color:red; font-weight:bold;">💥 WEAPON SHATTERED!</div>`;
+          }
+      }
+
+      // --- 2. HIT LOGIC ---
       const effectiveRoll = Attacker_d100 - R_prof;
       let zonePenalty = 0;
       if (E_cur <= 25) zonePenalty = 30; else if (E_cur <= 50) zonePenalty = 20; else if (E_cur <= 75) zonePenalty = 10;
@@ -259,6 +284,7 @@ export class NarequentaActorSheet extends ActorSheet {
       let chatTableRows = ""; 
       let payloadTargets = [];
 
+      // --- 3. TARGET LOOP ---
       for (const tid of targetIds) {
           const tToken = canvas.tokens.get(tid);
           if (!tToken) continue;
@@ -273,6 +299,17 @@ export class NarequentaActorSheet extends ActorSheet {
           let details = "";
           let resultColor = "#333";
           
+          // --- SPLIT MITIGATION CALCULATION ---
+          const defData = tActor.system.mitigation || { base: 0, static: 0, parry: 0 };
+          let activeMitigation = defData.base + defData.static;
+          let shieldIcon = '<i class="fas fa-shield-alt"></i>'; // Default Shield
+
+          // Rule: Parry only applies if attack is within 5ft (Melee)
+          if (attackRange <= 5) {
+              activeMitigation += defData.parry;
+              if (defData.parry > 0) shieldIcon = '<i class="fas fa-swords"></i>'; // Parry Active
+          }
+
           if (attackerSuccess) {
               if (isHealing) {
                   let healAmount = Math.abs(itemBonus);
@@ -280,13 +317,13 @@ export class NarequentaActorSheet extends ActorSheet {
                   finalDamage = -Math.max(1, healAmount);
                   resultColor = "#006400";
               } else {
-                  // Damage Formula
+                  // Damage Formula: D_Final = max(R_prof, (A_FP - M_Total + D_Margin + R_prof)) * TierMult
                   let A_FP = 100 - effectiveRoll;
                   if (Attacker_d100 <= 5) A_FP = 100 - (1 - R_prof);
                   if (weaponType === "slashing") { const slashBonus = Math.floor(Math.random() * 4) + 1; A_FP += slashBonus; details += ` (Slash +${slashBonus})`; }
 
-                  const M_Defense = Def_Tier * 5.5;
-                  let rawCalc = (A_FP - M_Defense + D_Margin + R_prof + itemBonus);
+                  // Use calculated activeMitigation instead of simple Tier formula
+                  let rawCalc = (A_FP - activeMitigation + D_Margin + R_prof + itemBonus);
                   let baseDamage = Math.max(R_prof, rawCalc);
                   if (baseDamage < 1) baseDamage = 1;
 
@@ -300,10 +337,16 @@ export class NarequentaActorSheet extends ActorSheet {
               
               payloadTargets.push({ id: tid, damage: finalDamage, name: tToken.name });
               if (!details.includes("Slash")) details += ` (Def:${Def_Roll})`; else details += ` / (Def:${Def_Roll})`;
-              chatTableRows += `<tr><td style="text-align:left;">${tToken.name}</td><td style="text-align:center;">${Def_Roll}</td><td style="text-align:right; font-weight:bold; color:${resultColor};">${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}</td></tr>`;
+              
+              chatTableRows += `<tr>
+                  <td style="text-align:left;">${tToken.name}</td>
+                  <td style="text-align:center;">${Def_Roll}</td>
+                  <td style="text-align:center; font-size:0.8em; color:#555;">-${activeMitigation.toFixed(1)} ${shieldIcon}</td>
+                  <td style="text-align:right; font-weight:bold; color:${resultColor};">${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}</td>
+              </tr>`;
           } else {
               details = `(Missed)`;
-              chatTableRows += `<tr><td style="text-align:left; color:#999;">${tToken.name}</td><td colspan="2" style="text-align:center; color:#999;">Evaded</td></tr>`;
+              chatTableRows += `<tr><td style="text-align:left; color:#999;">${tToken.name}</td><td colspan="3" style="text-align:center; color:#999;">Evaded</td></tr>`;
           }
           sheetListHtml += `<div style="display:flex; justify-content:space-between; align-items:center; padding:2px 0;"><div><strong>${tToken.name}</strong> <span style="font-size:0.8em; color:#555;">${details}</span></div><div style="font-weight:bold; color:${resultColor}; font-size:1.1em;">${finalDamage > 0 ? finalDamage : '+' + Math.abs(finalDamage)}</div></div>`;
       }
@@ -317,6 +360,7 @@ export class NarequentaActorSheet extends ActorSheet {
       if (Attacker_d100 >= 96) attritionCost = attritionCost * 2;
       
       sheetListHtml += `<div style="text-align:right; margin-top:5px; font-size:0.8em; color:#333; font-weight:bold;">Self Attrition: -${attritionCost}% <span style="font-weight:normal; color:#777;">(Min 5%)</span></div>`;
+      if (integrityMsg) sheetListHtml += integrityMsg;
 
       const resolutionPayload = { essenceKey: motorKey, attritionCost: attritionCost, targets: payloadTargets, targetResource: targetResource, mode: "attack" };
       await this.actor.update({
@@ -330,7 +374,8 @@ export class NarequentaActorSheet extends ActorSheet {
               <h3>${isHealing ? "Restoration" : "Attack Resolution"}</h3>
               <div><strong>Status:</strong> ${hitLabel} ${weaponType !== "none" ? `(${weaponType.toUpperCase()})` : ""}</div>
               <div style="font-size:0.9em; border-top:1px dashed #ccc; margin-top:5px; padding-top:2px;">Cost: <span style="color:#a00; font-weight:bold;">-${attritionCost}%</span> ${motorKey.toUpperCase()}</div>
-              <hr><table style="width:100%; font-size:0.9em; border-collapse:collapse;"><thead><tr style="background:#eee;"><th style="text-align:left;">Target</th><th>Def</th><th>Effect</th></tr></thead><tbody>${chatTableRows}</tbody></table>
+              ${integrityMsg}
+              <hr><table style="width:100%; font-size:0.9em; border-collapse:collapse;"><thead><tr style="background:#eee;"><th style="text-align:left;">Target</th><th>Def</th><th>Mit</th><th>Effect</th></tr></thead><tbody>${chatTableRows}</tbody></table>
               <div style="margin-top:5px; font-style:italic; font-size:0.8em; text-align:center;">Apply results via Sheet.</div>
           </div>` 
       });

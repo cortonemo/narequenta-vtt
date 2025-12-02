@@ -17,34 +17,25 @@
             {{!-- MECHANICS GRID: Top row of stats used by the Calculator --}}
             <div class="resource-row" style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
                 
-                {{!-- 
-                   Weight (Attrition):
-                   Used in formula: Cost = max(0, Weight - floor(R_prof/2)).
-                   Standard values: Light (10), Medium (15), Heavy (20).
-                   Zero (0) indicates a Potion/Consumable (Fixed Potency).
-                --}}
+                {{!-- Weight (Attrition) --}}
                 <div class="resource">
                     <label>Weight:</label>
-                    <input type="number" name="system.weight" value="{{systemData.weight}}" placeholder="15" style="width: 50px; text-align: center;">
+                    <input type="number" name="system.weight" value="{{systemData.weight}}" placeholder="15" style="width: 40px; text-align: center;">
                 </div>
 
-                {{!-- 
-                   Range (ft):
-                   Used by the Tactical Targeting system to filter valid targets.
-                   Defaults to 5 (Melee).
-                --}}
+                {{!-- Range (ft) --}}
                 <div class="resource">
                     <label>Range (ft):</label>
-                    <input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 60px; text-align: center;">
+                    <input type="number" name="system.range" value="{{systemData.range}}" placeholder="5" style="width: 40px; text-align: center;">
                 </div>
 
-                {{!-- 
-                   Target Type:
-                   Determines how the 'Use' button behaves.
-                   - One: Prompts "Self or Administer?"
-                   - AoE: Opens targeting dialog with Auto-Select logic.
-                   - Self: Applies immediately to user.
-                --}}
+                {{!-- Equipped Toggle (New v0.9.7) --}}
+                <div class="resource">
+                    <label>Equipped?</label>
+                    <input type="checkbox" name="system.equipped" {{checked systemData.equipped}}>
+                </div>
+
+                {{!-- Target Type --}}
                 <div class="resource">
                     <label>Target:</label>
                     <select name="system.target_type" style="height: 22px; font-size: 0.8em;">
@@ -56,12 +47,7 @@
                     </select>
                 </div>
 
-                {{!-- 
-                   Affects (Target Resource):
-                   Determines WHICH pool is damaged or healed on the target.
-                   - HP: Standard damage/healing.
-                   - Essences: Specific restoration (e.g. Vitalis Balm) or damage.
-                --}}
+                {{!-- Affects (Resource) --}}
                 <div class="resource">
                     <label>Affects:</label>
                     <select name="system.target_resource" style="height: 22px; font-size: 0.8em;">
@@ -75,29 +61,51 @@
                         {{/select}}
                     </select>
                 </div>
-				{{!-- Weapon Type Selector --}}
-				<div class="resource">
-					<label>Type:</label>
-					<select name="system.weapon_type" style="height: 22px; font-size: 0.8em;">
-						{{#select systemData.weapon_type}}
-						{{#each systemData.weaponTypes as |label key|}}
-							<option value="{{key}}">{{label}}</option>
-						{{/each}}
-						{{/select}}
-					</select>
-				</div>
-            </div>            
-            {{!-- 
-               Damage/Heal Formula:
-               Accepts dice formulas (e.g., "1d8 + 2") or static numbers.
-               - Positive: Damage.
-               - Negative (e.g., "-1d4"): Healing.
-            --}}
+            </div>
+
+            {{!-- WEAPON SPECIFIC FIELDS (New v0.9.7) --}}
+            {{#if (eq item.type "weapon")}}
+            <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px; border: 1px solid #999; margin-top: 5px;">
+                <div class="resource">
+                    <label title="Attack Bonus (Adds to AFP)">Atk (+):</label>
+                    <input type="number" name="system.damage_bonus" value="{{systemData.damage_bonus}}" style="width:30px; text-align: center;">
+                </div>
+                <div class="resource">
+                    <label title="Parry Bonus (Adds to Mitigation)">Def (+):</label>
+                    <input type="number" name="system.defense_bonus" value="{{systemData.defense_bonus}}" style="width:30px; text-align: center;">
+                </div>
+                <div class="resource">
+                    <label title="Integrity (Current / Max)">Integrity:</label>
+                    <input type="number" name="system.integrity.value" value="{{systemData.integrity.value}}" style="width:30px; text-align: center;">
+                    /
+                    <input type="number" name="system.integrity.max" value="{{systemData.integrity.max}}" style="width:30px; text-align: center;">
+                </div>
+                <div class="resource">
+                    <label title="Is this a ranged weapon? (Disables Parry)">Ranged?</label>
+                    <input type="checkbox" name="system.is_ranged" {{checked systemData.is_ranged}}>
+                </div>
+            </div>
+            {{/if}}
+
+            {{!-- ARMOR SPECIFIC FIELDS (New v0.9.7) --}}
+            {{#if (eq item.type "armor")}}
+            <div class="resource-row" style="background: rgba(0,0,0,0.05); padding: 5px; border: 1px solid #999; margin-top: 5px;">
+                <div class="resource">
+                    <label>Mitigation (+):</label>
+                    <input type="number" name="system.mitigation_bonus" value="{{systemData.mitigation_bonus}}" style="width:40px; text-align: center;">
+                </div>
+            </div>
+            {{/if}}
+            
+            {{!-- Damage Formula (Generic Fallback) --}}
+            {{#unless (eq item.type "weapon")}}
             <div class="resource-row" style="margin-top: 5px;">
                  <label style="font-weight:bold; margin-right:5px;">Dmg/Heal Formula:</label>
                  <input type="text" name="system.damage_bonus" value="{{systemData.damage_bonus}}" placeholder="e.g. -1d4 (Heal) or 2 (Damage)" style="flex:1;">
             </div>
+            {{/unless}}
         </div>
+		
     </header>
 
     {{!-- ================================================================= --}}
