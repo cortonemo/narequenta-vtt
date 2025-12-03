@@ -28,12 +28,23 @@
         font-size: 14px;
         color: @color-text;
         background: @color-bg;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Important for internal scrolling */
+    }
+
+    form {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     /* --------------------------------------------------------------------
        SHEET HEADER (Avatar, Name, Resources)
        -------------------------------------------------------------------- */
     header.sheet-header {
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
         margin-bottom: 10px;
@@ -63,6 +74,7 @@
             border: none;
             border-bottom: 1px solid #000;
             width: 100%;
+            background: transparent;
         }
         
         /* Resource Rows (HP, Action Surges, Rest Buttons) */
@@ -84,7 +96,7 @@
             }
         }
         
-        /* Rest Buttons (Icons + Text) */
+        /* Buttons */
         .rest-btn {
             background: #444;
             color: white;
@@ -93,11 +105,97 @@
             font-size: 0.9em;
             cursor: pointer;
             border: 1px solid #000;
-            
+
             &:hover {
                 background: #666;
                 text-shadow: 0 0 2px #fff;
             }
+        }
+
+        .quick-breath {
+            cursor: pointer;
+            transition: background 0.2s;
+            &:hover {
+                background: #3b5e52 !important;
+                box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            }
+        }
+    }
+
+    /* --------------------------------------------------------------------
+       MAIN LAYOUT (Flex Wrapper for Tabs + Sidebar)
+       -------------------------------------------------------------------- */
+    .sheet-content-wrapper {
+        flex: 1;
+        display: flex;
+        overflow: hidden; /* Contain scrolls inside columns */
+    }
+
+    .main-content-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* --------------------------------------------------------------------
+       SIDEBAR (Combatants)
+       -------------------------------------------------------------------- */
+    .sheet-sidebar {
+        flex: 0 0 160px;
+        background: rgba(0,0,0,0.03);
+        border-left: 1px solid #ccc;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        h3 {
+            margin: 0 0 5px 0;
+            padding-bottom: 2px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            
+            li {
+                display: flex;
+                align-items: center;
+                margin-bottom: 4px;
+                padding: 2px;
+                border-radius: 3px;
+                background: rgba(255,255,255,0.3);
+
+                img {
+                    width: 24px;
+                    height: 24px;
+                    border: 1px solid #999;
+                    margin-right: 5px;
+                    background: #000;
+                }
+
+                span {
+                    font-size: 0.85em;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+            }
+        }
+
+        .ally-list, .enemy-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 5px;
+            
+            /* Custom scrollbar for small areas */
+            &::-webkit-scrollbar { width: 4px; }
+            &::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
         }
     }
 
@@ -105,10 +203,10 @@
        NAVIGATION TABS
        -------------------------------------------------------------------- */
     .sheet-tabs {
-        flex: 0 0 40px;
+        flex: 0 0 30px;
         border-top: 1px solid #AAA;
         border-bottom: 1px solid #AAA;
-        line-height: 40px;
+        line-height: 30px;
         margin-bottom: 10px;
 
         .item {
@@ -131,6 +229,12 @@
         }
     }
 
+    .sheet-body {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
     /* --------------------------------------------------------------------
        ESSENCE GRID (The Core Mechanic Display)
        -------------------------------------------------------------------- */
@@ -144,7 +248,7 @@
         /* Header Row Grid Definition */
         .essence-header {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr; /* Label | Max | Cur | Tier | Dice */
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
             gap: 5px;
             align-items: center;
             padding: 4px;
@@ -203,7 +307,7 @@
         border: none;
         color: #555;
         font-style: italic;
-        pointer-events: none; /* Prevent user interaction */
+        pointer-events: none;
     }
 
     /* --------------------------------------------------------------------
@@ -225,7 +329,7 @@
         padding: 0 5px;
         cursor: pointer;
         color: #333;
-        
+
         &:hover {
             background: #ccc;
             color: #000;
@@ -274,6 +378,32 @@
                 flex: 0 0 50px;
                 text-align: right;
                 a { margin-left: 5px; color: #555; }
+            }
+        }
+    }
+
+    /* --------------------------------------------------------------------
+       FOOTER (End Turn)
+       -------------------------------------------------------------------- */
+    .sheet-footer {
+        flex: 0 0 auto;
+        padding-top: 5px;
+        margin-top: 5px;
+        border-top: 1px solid #333;
+
+        .end-turn {
+            width: 100%;
+            background: #4a1212; /* Dark red */
+            color: white;
+            border: 1px solid #000;
+            cursor: pointer;
+            padding: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            
+            &:hover {
+                background: #600;
+                box-shadow: 0 0 5px #f00;
             }
         }
     }

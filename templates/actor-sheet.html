@@ -1,15 +1,22 @@
-<form class="{{cssClass}} {{actor.type}}" autocomplete="off">
+<form class="{{cssClass}} flexcol" autocomplete="off">
 
     {{!-- ================================================================= --}}
-    {{!-- SHEET HEADER: Avatar, Name, Resources, Rest, Combat Utils         --}}
+    {{!-- SHEET HEADER: Avatar, Name, Resources, Quick Actions              --}}
     {{!-- ================================================================= --}}
     <header class="sheet-header">
+        
+        {{!-- Avatar Image --}}
         <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
+        
         <div class="header-fields">
-            <h1 class="charname"><input name="name" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
+            {{!-- Character Name --}}
+            <h1 class="charname">
+                <input name="name" type="text" value="{{actor.name}}" placeholder="Name"/>
+            </h1>
             
             <div class="resource-row">
-                {{!-- 1. Active Vigor (HP) --}}
+                {{!-- 1. Active Vigor (HP/Essence Current) --}}
+                {{!-- This tracks the immediate physical health of the character --}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.EssenceCur"}} / HP</label>
                     <input type="number" name="system.resources.hp.value" value="{{systemData.resources.hp.value}}" style="width: 50px;">
@@ -17,29 +24,40 @@
                     <input type="number" name="system.resources.hp.max" value="{{systemData.resources.hp.max}}" style="width: 50px;">
                 </div>
 
-                {{!-- 2. Action Surges (PC Only) with Use Button --}}
+                {{!-- 2. Action Surges (PC Only) --}}
+                {{!-- PCs gain surges based on their Tier. Used for extra actions. --}}
                 {{#if (eq actor.type "character")}}
                 <div class="resource">
                     <label>{{localize "NAREQUENTA.ActionSurges"}}</label>
                     <input type="number" name="system.resources.action_surges.value" value="{{systemData.resources.action_surges.value}}" style="width: 40px;">
                     <span> / </span>
-                    <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">{{systemData.resources.action_surges.max}}</span>
+                    <span class="derived-stat" style="font-weight: bold; font-size: 1.2em;">
+                        {{systemData.resources.action_surges.max}}
+                    </span>
                     
-                    {{!-- Use Action Surge Button (Lightning) --}}
+                    {{!-- Use Action Surge Button (Lightning Icon) --}}
                     <a class="use-action-surge" title="Use Action Surge" style="margin-left: 8px; color: #d4af37; cursor: pointer;">
                         <i class="fas fa-bolt"></i>
                     </a>
                 </div>
                 {{/if}}
 
-                {{!-- 3. Utility Buttons --}}
+                {{!-- 3. Recovery & Rest Actions --}}
                 <div class="resource" style="display: flex; gap: 5px; align-items: flex-end;">
-                    <a class="rest-btn end-turn" title="End Turn"><i class="fas fa-step-forward"></i> End Turn</a>
-                    <a class="rest-btn short-rest" title="Refocus (Quick Breath)"><i class="fas fa-coffee"></i> Short</a>
-                    <a class="rest-btn long-rest" title="Renewal (Full Restore)"><i class="fas fa-bed"></i> Long</a>
+                    
+                    {{!-- [NEW] Quick Breath Button --}}
+                    {{!-- Recover 1d10 Vigor immediately. Standard combat action. --}}
+                    <button type="button" class="quick-breath" title="Recover 1d10 Vigor" style="background: #2a423a; color: #fff; border: 1px solid #333; font-size: 0.8em; padding: 2px 6px;">
+                        <i class="fas fa-lungs"></i> Quick Breath
+                    </button>
+
+                    {{!-- Legacy Rest Buttons --}}
+                    <a class="rest-btn short-rest" title="Refocus"><i class="fas fa-coffee"></i> Short</a>
+                    <a class="rest-btn long-rest" title="Renewal"><i class="fas fa-bed"></i> Long</a>
                 </div>
             </div>
             
+            {{!-- Final Vow / Promise (PC Only) --}}
             {{#if (eq actor.type "character")}}
             <div class="resource-row">
                 <input type="text" name="system.promise" value="{{systemData.promise}}" placeholder="{{localize 'NAREQUENTA.TabPromise'}}" style="font-style: italic; width: 100%;">
@@ -48,186 +66,242 @@
         </div>
     </header>
 
-    <nav class="sheet-tabs tabs" data-group="primary">
-        <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
-        <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
-        <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
-    </nav>
+    {{!-- ================================================================= --}}
+    {{!-- MAIN LAYOUT WRAPPER                                               --}}
+    {{!-- Flex container to hold the Tabs (Left) and Combatant List (Right) --}}
+    {{!-- ================================================================= --}}
+    <div class="sheet-content-wrapper flexrow" style="flex: 1; overflow: hidden;">
 
-    <section class="sheet-body">
-
-        {{!-- 1. ESSENCES TAB & COMBAT CALCULATOR --}}
-        <div class="tab essences" data-group="primary" data-tab="essences">
+        {{!-- LEFT COLUMN: Tabs & Main Content --}}
+        <div class="main-content-column flexcol" style="flex: 1; padding-right: 5px;">
             
-            {{!-- A. Essence Grid --}}
-            <div class="essence-grid-container">
-                <div class="essence-header">
-                    <span>{{localize "NAREQUENTA.TabEssences"}} <span style="font-size:0.7em; color:#888; font-weight:normal;">(Floor: 50%)</span></span>
-                    <span>E_MAX</span>
-                    <span>E_CUR</span>
-                    <span>TIER</span>
-                    <span>DICE</span>
-                </div>
-                {{#each systemData.essences as |essence key|}}
-                <div class="essence-row">
-                    <span class="essence-label">{{essence.label}}</span>
-                    {{!-- E_MAX: Red Limit --}}
-                    <input class="input-emax" type="number" name="system.essences.{{key}}.max" value="{{essence.max}}" min="50" max="100">
-                    {{!-- E_CUR: Green Energy --}}
-                    <input class="input-ecur" type="number" name="system.essences.{{key}}.value" value="{{essence.value}}" min="0" max="100">
-                    <span class="derived-stat">{{essence.tier}}</span>
-                    <span class="derived-stat">{{essence.diceString}}</span>
-                </div>
-                {{/each}}
-            </div>
+            {{!-- Navigation Tabs --}}
+            <nav class="sheet-tabs tabs" data-group="primary">
+                <a class="item" data-tab="essences">{{localize "NAREQUENTA.TabEssences"}}</a>
+                <a class="item" data-tab="items">{{localize "NAREQUENTA.TabAbilities"}}</a>
+                <a class="item" data-tab="biography">{{localize "NAREQUENTA.TabBiography"}}</a>
+            </nav>
 
-            {{!-- B. Combat Calculator Panel --}}
-            <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
-                
-                {{!-- Context Header --}}
-                <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em; align-items: center;">
-                    <div style="border-right: 1px solid #666; padding-right: 5px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span>
-                            {{#if systemData.calculator.active_motor}}
-                            <span style="font-size: 0.8em; background: #555; color: #fff; padding: 1px 4px; border-radius: 3px; text-transform: uppercase;">
-                                {{systemData.calculator.active_motor}}
-                            </span>
-                            {{/if}}
-                        </div>
-                        <select class="active-item-select" name="system.calculator.selected_item_id" style="width: 100%; font-size: 0.9em; background: #444; color: white; border: none;">
-                            <option value="">-- Select Item --</option>
-                            {{#each combatItems}}
-                                <option value="{{this.id}}" {{#if (eq this.id ../systemData.calculator.selected_item_id)}}selected{{/if}}>
-                                    {{this.name}} ({{this.range}}ft)
-                                </option>
-                            {{/each}}
-                        </select>
-                    </div>
-                    
-                    <div style="padding-left: 5px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="font-weight: bold; color: #ccc;">TARGET DEF:</span><br>
-                            {{#if systemData.calculator.target_def_stat}}
-                                <span style="text-transform: uppercase;">{{systemData.calculator.target_def_stat}}</span>
-                            {{else}}
-                                <em style="color:#999">VITALIS</em>
-                            {{/if}}
-                        </div>
-                        <button class="launch-contest" title="Select Targets" style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;">
-                            <i class="fas fa-crosshairs"></i>
-                        </button>
-                    </div>
-                </div>
+            <section class="sheet-body" style="flex: 1; overflow-y: auto;">
 
-                {{!-- Input Grid --}}
-                <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
+                {{!-- 1. ESSENCES TAB & COMBAT CALCULATOR --}}
+                <div class="tab essences" data-group="primary" data-tab="essences">
                     
-                    {{!-- Attacker Side --}}
-                    <div style="text-align: center;">
-                        <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">ATTACK (d100)</label>
-                        <div style="display: flex; justify-content: center; gap: 2px;">
-                            <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="Roll" style="width: 50px; text-align: center;">
-                            <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                    {{!-- A. Essence Grid --}}
+                    <div class="essence-grid-container">
+                        <div class="essence-header">
+                            <span>{{localize "NAREQUENTA.TabEssences"}}</span>
+                            <span>E_MAX</span> {{!-- Red: Permanent Limit --}}
+                            <span>E_CUR</span> {{!-- Green: Current Energy --}}
+                            <span>TIER</span>
+                            <span>DICE</span>
                         </div>
+                    
+                        {{#each systemData.essences as |essence key|}}
+                        <div class="essence-row">
+                            <span class="essence-label">{{essence.label}}</span>
+                            <input class="input-emax" type="number" name="system.essences.{{key}}.max" value="{{essence.max}}" min="50" max="100">
+                            <input class="input-ecur" type="number" name="system.essences.{{key}}.value" value="{{essence.value}}" min="0" max="100">
+                            <span class="derived-stat">{{essence.tier}}</span>
+                            <span class="derived-stat">{{essence.diceString}}</span>
+                        </div>
+                        {{/each}}
+                    </div>
+
+                    {{!-- B. Combat Calculator Panel --}}
+                    <div class="essence-grid-container" style="background: #f0f0f0; border: 1px solid #999; padding: 0;">
                         
-                        {{!-- Manual Proficiency Input --}}
-                        <div style="margin-top: 5px;">
-                            <label style="font-size: 0.8em; display:block;">Proficiency</label>
-                            <div style="display: flex; justify-content: center; gap: 2px;">
-                                <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="Prof" style="width: 50px; text-align: center;">
-                                <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof"><i class="fas fa-dice-d6"></i></a>
+                        {{!-- Calculator Header --}}
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; background: #333; color: white; padding: 5px; font-size: 0.9em; align-items: center;">
+                            
+                            {{!-- Attacker / Weapon Select --}}
+                            <div style="border-right: 1px solid #666; padding-right: 5px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-weight: bold; color: #ccc;">WEAPON / ACTION:</span>
+                                    {{#if systemData.calculator.active_motor}}
+                                    <span style="font-size: 0.8em; background: #555; color: #fff; padding: 1px 4px; border-radius: 3px; text-transform: uppercase;">
+                                        {{systemData.calculator.active_motor}}
+                                    </span>
+                                    {{/if}}
+                                </div>
+                                <select class="active-item-select" name="system.calculator.selected_item_id" style="width: 100%; font-size: 0.9em; background: #444; color: white; border: none;">
+                                    <option value="">-- Select Item --</option>
+                                    {{#each combatItems}}
+                                        <option value="{{this.id}}" {{#if (eq this.id ../systemData.calculator.selected_item_id)}}selected{{/if}}>
+                                            {{this.name}} ({{this.range}}ft)
+                                        </option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            
+                            {{!-- Defender / Target Select --}}
+                            <div style="padding-left: 5px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <span style="font-weight: bold; color: #ccc;">TARGET DEF:</span><br>
+                                    {{#if systemData.calculator.target_def_stat}}
+                                        <span style="text-transform: uppercase;">{{systemData.calculator.target_def_stat}}</span>
+                                    {{else}}
+                                        <em style="color:#999">VITALIS</em>
+                                    {{/if}}
+                                </div>
+                                <button class="launch-contest" title="Select Targets" style="background: #555; border: 1px solid #777; color: white; padding: 2px 8px; cursor: pointer;">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
 
-                    <div style="background: #ccc; height: 100%;"></div>
+                        {{!-- Calculator Input Grid --}}
+                        <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 5px; padding: 10px; align-items: center;">
+                            
+                            {{!-- Attacker Rolls --}}
+                            <div style="text-align: center;">
+                                <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">ATTACK (d100)</label>
+                                <div style="display: flex; justify-content: center; gap: 2px;">
+                                    <input type="number" name="system.calculator.attack_roll" value="{{systemData.calculator.attack_roll}}" placeholder="Roll" style="width: 50px; text-align: center;">
+                                    <a class="roll-calc-btn" data-target="system.calculator.attack_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                                </div>
+                                <div style="margin-top: 5px;">
+                                    <label style="font-size: 0.8em; display:block;">Proficiency</label>
+                                    <div style="display: flex; justify-content: center; gap: 2px;">
+                                        <input type="number" name="system.calculator.prof_roll" value="{{systemData.calculator.prof_roll}}" placeholder="Prof" style="width: 50px; text-align: center;">
+                                        <a class="roll-calc-btn" data-target="system.calculator.prof_roll" data-type="prof"><i class="fas fa-dice-d6"></i></a>
+                                    </div>
+                                </div>
+                            </div>
 
-                    {{!-- Defender Side --}}
-                    <div style="text-align: center;">
-                        <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">DEFENSE (d100)</label>
-                        <div style="display: flex; justify-content: center; gap: 2px;">
-                            <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="Auto" style="width: 50px; text-align: center; border: 1px dashed #666;">
-                            <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                            <div style="background: #ccc; height: 100%;"></div>
+
+                            {{!-- Defender Rolls --}}
+                            <div style="text-align: center;">
+                                <label style="font-weight: bold; display: block; font-size: 0.8em; margin-bottom: 2px;">DEFENSE (d100)</label>
+                                <div style="display: flex; justify-content: center; gap: 2px;">
+                                    <input type="number" name="system.calculator.defense_roll" value="{{systemData.calculator.defense_roll}}" placeholder="Auto" style="width: 50px; text-align: center; border: 1px dashed #666;">
+                                    <a class="roll-calc-btn" data-target="system.calculator.defense_roll" data-type="d100"><i class="fas fa-dice-d20"></i></a>
+                                </div>
+                                <p style="font-size: 0.7em; color: #555; margin-top: 2px;">(Leave 0 for Auto-Roll)</p>
+                            </div>
                         </div>
-                        <p style="font-size: 0.7em; color: #555; margin-top: 2px;">
-                            (Leave 0 for Auto-Roll)
-                        </p>
+
+                        {{!-- Preview Button --}}
+                        <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
+                            <button type="button" class="roll-calculation" 
+                                {{#unless systemData.calculator.attack_roll}}disabled style="opacity: 0.5; cursor: not-allowed; background: #555; color: #ccc; border: 1px solid #000; width: 90%;"{{/unless}}
+                                {{#if systemData.calculator.attack_roll}}style="background: #222; color: white; border: 1px solid #000; width: 90%;"{{/if}}>
+                                <i class="fas fa-calculator"></i> PREVIEW RESULT
+                            </button>
+                        </div>
+
+                        {{!-- Results Output --}}
+                        {{#if systemData.calculator.output}}
+                        <div style="padding: 10px; background: #fff;">
+                            {{{systemData.calculator.output}}}
+                            {{#if systemData.calculator.batch_data}}
+                            <button type="button" class="execute-batch" style="background: #8b0000; color: white; width: 100%; margin-top: 5px; font-weight: bold;">
+                                <i class="fas fa-skull"></i> EXECUTE
+                            </button>
+                            {{/if}}
+                        </div>
+                        {{/if}}
                     </div>
-                </div>
 
-                {{!-- Action Bar (Disabled if no attack roll) --}}
-                <div style="background: #ddd; padding: 5px; text-align: center; border-top: 1px solid #ccc;">
-                    <button type="button" class="roll-calculation" 
-                        {{#unless systemData.calculator.attack_roll}}disabled style="opacity: 0.5; cursor: not-allowed; background: #555; color: #ccc; border: 1px solid #000; width: 90%;"{{/unless}}
-                        {{#if systemData.calculator.attack_roll}}style="background: #222; color: white; border: 1px solid #000; width: 90%;"{{/if}}>
-                        <i class="fas fa-calculator"></i> PREVIEW RESULT
-                    </button>
-                </div>
-
-                {{!-- Output --}}
-                {{#if systemData.calculator.output}}
-                <div style="padding: 10px; background: #fff;">
-                    {{{systemData.calculator.output}}}
-                    {{#if systemData.calculator.batch_data}}
-                    <button type="button" class="execute-batch" style="background: #8b0000; color: white; width: 100%; margin-top: 5px; font-weight: bold;">
-                        <i class="fas fa-skull"></i> EXECUTE
-                    </button>
+                    {{!-- C. Waning Phase (PC Only) --}}
+                    {{#if (eq actor.type "character")}}
+                    <div style="text-align:center; margin-bottom: 15px; margin-top: 20px; border-top: 2px solid #333; padding-top: 10px;">
+                        <div style="margin-bottom: 5px;">
+                            <input type="checkbox" class="waning-toggle" id="enable-waning">
+                            <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
+                        </div>
+                        <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
+                            <i class="fas fa-skull"></i> Trigger Waning Phase
+                        </button>
+                    </div>
                     {{/if}}
+
+                    {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
                 </div>
-                {{/if}}
+
+                {{!-- 2. ITEMS TAB --}}
+                <div class="tab items" data-group="primary" data-tab="items">
+                    <ol class="items-list">
+                        <li class="item flexrow item-header">
+                            <div class="item-image"></div>
+                            <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
+                            <div style="flex: 0 0 40px; text-align: center; font-weight: bold; font-size: 0.8em; color: #555;">Qty</div>
+                            <div class="item-controls">
+                                <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
+                            </div>
+                        </li>
+                        {{#each items as |item id|}}
+                        <li class="item flexrow" data-item-id="{{item._id}}">
+                            <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
+                            <h4 class="item-name mb-0">
+                                <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
+                            </h4>
+                            <div style="flex: 0 0 40px; text-align: center; color: #555;">
+                                {{#if item.system.quantity}} x{{item.system.quantity}} {{/if}}
+                            </div>
+                            <div class="item-controls">
+                                <a class="item-control item-use" title="Use/Consume"><i class="fas fa-flask"></i></a>
+                                <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
+                                <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
+                            </div>
+                        </li>
+                        {{/each}}
+                    </ol>
+                </div>
+
+                {{!-- 3. BIOGRAPHY TAB --}}
+                <div class="tab biography" data-group="primary" data-tab="biography">
+                    {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
+                </div>
+
+            </section>
+        </div>
+
+        {{!-- RIGHT COLUMN: Combatant Sidebar (Allies/Enemies) --}}
+        {{!-- [NEW] This section displays active combatants for quick reference --}}
+        <aside class="sheet-sidebar combatant-lists flexcol" style="flex: 0 0 160px; background: rgba(0,0,0,0.02); border-left: 1px solid #ccc; padding-left: 5px;">
+            
+            {{!-- Allies List --}}
+            <div class="ally-list" style="flex: 1; overflow-y: auto; margin-bottom: 5px;">
+                <h3 style="border-bottom: 2px solid #006400; color: #006400; font-size: 0.9em; margin: 0 0 5px 0;">Allies</h3>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {{#each allies as |ally|}}
+                    <li class="flexrow" style="align-items: center; margin-bottom: 4px; opacity: {{#if ally.isDead}}0.5{{else}}1{{/if}};">
+                        <img src="{{ally.img}}" width="24" height="24" style="border: none; margin-right: 5px;"/>
+                        <span style="font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ally.name}}">{{ally.name}}</span>
+                    </li>
+                    {{else}}
+                    <li style="font-size: 0.8em; color: #999; font-style: italic;">No allies in combat.</li>
+                    {{/each}}
+                </ul>
             </div>
 
-            {{!-- C. Waning Phase (PC Only) --}}
-            {{#if (eq actor.type "character")}}
-            <div style="text-align:center; margin-bottom: 15px; margin-top: 20px; border-top: 2px solid #333; padding-top: 10px;">
-                <div style="margin-bottom: 5px;">
-                    <input type="checkbox" class="waning-toggle" id="enable-waning">
-                    <label for="enable-waning" style="font-weight:bold; color:#555;">Enable Waning Phase</label>
-                </div>
-                <button class="waning-roll-btn" style="background: #8b0000; color: white; border: 1px solid #333; display: none;">
-                    <i class="fas fa-skull"></i> Trigger Waning Phase
-                </button>
+            {{!-- Enemies List --}}
+            <div class="enemy-list" style="flex: 1; overflow-y: auto;">
+                <h3 style="border-bottom: 2px solid #8b0000; color: #8b0000; font-size: 0.9em; margin: 0 0 5px 0;">Enemies</h3>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {{#each enemies as |enemy|}}
+                    <li class="flexrow" style="align-items: center; margin-bottom: 4px; opacity: {{#if enemy.isDead}}0.5{{else}}1{{/if}};">
+                        <img src="{{enemy.img}}" width="24" height="24" style="border: none; margin-right: 5px;"/>
+                        <span style="font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{enemy.name}}">{{enemy.name}}</span>
+                    </li>
+                    {{else}}
+                    <li style="font-size: 0.8em; color: #999; font-style: italic;">No enemies visible.</li>
+                    {{/each}}
+                </ul>
             </div>
-            {{/if}}
+        </aside>
 
-            {{> "systems/narequenta/templates/parts/sheet-groups.html"}}
-        </div>
+    </div>
 
-        {{!-- 2. ITEMS TAB --}}
-        <div class="tab items" data-group="primary" data-tab="items">
-            <ol class="items-list">
-                <li class="item flexrow item-header">
-                    <div class="item-image"></div>
-                    <div class="item-name">{{localize "NAREQUENTA.ItemNew"}}</div>
-                    <div style="flex: 0 0 40px; text-align: center; font-weight: bold; font-size: 0.8em; color: #555;">Qty</div>
-                    <div class="item-controls">
-                        <a class="item-control item-create" title="Create item" data-type="item" data-action="create"><i class="fas fa-plus"></i> {{localize "NAREQUENTA.Create"}}</a>
-                    </div>
-                </li>
-                {{#each items as |item id|}}
-                <li class="item flexrow" data-item-id="{{item._id}}">
-                    <div class="item-image"><img src="{{item.img}}" title="{{item.name}}" width="24" height="24"/></div>
-                    <h4 class="item-name mb-0">
-                        <a class="rollable" data-roll-type="item"><i class="fas fa-dice-d20"></i> {{item.name}}</a>
-                    </h4>
-                    <div style="flex: 0 0 40px; text-align: center; color: #555;">
-                        {{#if item.system.quantity}} x{{item.system.quantity}} {{/if}}
-                    </div>
-                    <div class="item-controls">
-                        <a class="item-control item-use" title="Use/Consume"><i class="fas fa-flask"></i></a>
-                        <a class="item-control" data-action="edit" title="Edit Item"><i class="fas fa-edit"></i></a>
-                        <a class="item-control" data-action="delete" title="Delete Item"><i class="fas fa-trash"></i></a>
-                    </div>
-                </li>
-                {{/each}}
-            </ol>
-        </div>
+    {{!-- ================================================================= --}}
+    {{!-- SHEET FOOTER: End Turn Button                                     --}}
+    {{!-- ================================================================= --}}
+    <footer class="sheet-footer" style="border-top: 1px solid #333; padding-top: 5px; margin-top: 5px;">
+        <button class="combat-control end-turn" type="button" title="End Turn & Advance Initiative" style="background: #4a1212; color: white; width: 100%;">
+            <i class="fas fa-hourglass-end"></i> End Turn
+        </button>
+    </footer>
 
-        {{!-- 3. BIOGRAPHY TAB --}}
-        <div class="tab biography" data-group="primary" data-tab="biography">
-            {{editor biographyHTML target="system.biography" button=true editable=editable engine="prosemirror"}}
-        </div>
-
-    </section>
 </form>

@@ -27,25 +27,77 @@ export class NarequentaActorSheet extends ActorSheet {
     const context = await super.getData(options);
     const actorData = this.actor.toObject(false);
     
+    // 1. Core System Data
     context.systemData = this.actor.system; 
     context.system = this.actor.system; 
     
+    // 2. Attribute & Group Handling (Legacy/Helper)
     EntitySheetHelper.getAttributeData(actorData);
     context.shorthand = !!game.settings.get("narequenta", "macroShorthand");
     context.dtypes = ATTRIBUTE_TYPES;
-    
+
+    // 3. Biography Enrichment
     context.biographyHTML = await TextEditor.enrichHTML(context.systemData.biography, {
       secrets: this.document.isOwner,
       async: true
     });
 
+    // 4. Combat Items Dropdown (for Calculator)
     context.combatItems = this.actor.items.filter(i => ["weapon", "ability"].includes(i.type))
         .map(i => ({
             id: i.id,
             name: i.name,
-            range: i.system.range || 5, 
+            range: i.system.range || 5, // 5ft Default
             type: i.type.toUpperCase()
         }));
+
+    // 5. [NEW] Combatant Lists (Allies vs Enemies)
+    // Populates the sidebar lists if a combat is active
+    context.allies = [];
+    context.enemies = [];
+
+    if (game.combat) {
+        // Determine "My" disposition to filter who is friend or foe
+        let myDisposition = 1; // Default: Friendly
+        
+        // Try to get the disposition from the specific token linked to this sheet
+        if (this.token) {
+            myDisposition = this.token.disposition;
+        } else {
+            // If sheet is opened from Sidebar, try to find an active token on the scene
+            const activeTokens = this.actor.getActiveTokens();
+            if (activeTokens.length > 0) {
+                myDisposition = activeTokens[0].document.disposition;
+            } else {
+                // Fallback based on Actor Type (PC = Friendly, NPC = Hostile)
+                myDisposition = (this.actor.type === "character") ? 1 : -1;
+            }
+        }
+
+        // Iterate through combatants
+        for (let c of game.combat.combatants) {
+            if (c.actorId === this.actor.id) continue; // Skip self
+            if (!c.token) continue; // Skip invalid tokens
+
+            const targetDisp = c.token.disposition;
+            
+            // Prepare lightweight data object for the Handlebars loop
+            const combatantData = {
+                id: c.id,
+                name: c.name,
+                img: c.img,
+                isDead: c.isDefeated
+            };
+
+            // Logic: Same disposition = Ally. Different = Enemy.
+            // Note: Neutral (0) tokens will appear as Enemies to Friendly/Hostile actors here.
+            if (targetDisp === myDisposition) {
+                context.allies.push(combatantData);
+            } else {
+                context.enemies.push(combatantData);
+            }
+        }
+    }
 
     return context;
   }
@@ -53,32 +105,104 @@ export class NarequentaActorSheet extends ActorSheet {
   /** @inheritdoc */
   activateListeners(html) {
     super.activateListeners(html);
-    if ( !this.isEditable ) return;
+    
+    // Exit if sheet is not editable
+    if (!this.isEditable) return;
 
-    // Item Controls
+    // -------------------------------------------------------------
+    // 1. STANDARD ITEM & SHEET CONTROLS
+    // -------------------------------------------------------------
     html.find(".item-control").click(this._onItemControl.bind(this));
     html.find(".items .rollable").on("click", this._onItemRoll.bind(this));
-    html.find(".item-use").click(this._onItemUse.bind(this)); 
+    html.find(".item-use").click(this._onItemUse.bind(this));
 
-    // Calculator Controls
+    // -------------------------------------------------------------
+    // 2. CALCULATOR & COMBAT INPUTS
+    // -------------------------------------------------------------
     html.find(".roll-calculation").click(this._onCalculate.bind(this));
     html.find(".execute-batch").click(this._onExecuteBatch.bind(this));
     html.find(".active-item-select").change(this._onSelectActiveItem.bind(this));
-    html.find(".launch-contest").click(this._onLaunchContest.bind(this)); 
-    html.find(".roll-calc-btn").click(this._onRollSheetCalc.bind(this));   
-    html.find(".toggle-quick-breath").click(this._onToggleQuickBreath.bind(this));
+    
+    // Dice Rolling Helpers for Calculator
+    html.find(".roll-calc-btn").click(this._onRollSheetCalc.bind(this));    
+    
+    // Targeting Dialog (Updated Logic)
+    html.find(".launch-contest").click(this._onLaunchContest.bind(this));
 
-    // Phase & Rest Controls
+    // -------------------------------------------------------------
+    // 3. RESOURCE & PHASE MANAGEMENT
+    // -------------------------------------------------------------
+    // Waning Phase Toggle
     html.find(".waning-toggle").change(ev => {
         const isChecked = ev.target.checked;
         if (isChecked) html.find(".waning-roll-btn").slideDown();
         else html.find(".waning-roll-btn").slideUp();
     });
     html.find(".waning-roll-btn").click(this._onWaningPhase.bind(this));
+
+    // Standard Rests (Legacy/Utility)
     html.find(".short-rest").click(this._onShortRest.bind(this));
     html.find(".long-rest").click(this._onLongRest.bind(this));
+    
+    // Action Surge (PC Only)
     html.find(".use-action-surge").click(this._onUseActionSurge.bind(this));
+
+    // -------------------------------------------------------------
+    // 4. NEW UI ELEMENTS (NSA-v0.7 Updates)
+    // -------------------------------------------------------------
+    
+    // End Turn (Footer Button)
     html.find(".end-turn").click(this._onEndTurn.bind(this));
+
+    // Quick Breath (Header Button)
+    // Performs a 1d10 recovery to all Essences and HP (Capped at Max)
+    html.find('.quick-breath').click(async ev => {
+        ev.preventDefault();
+        
+        // 1. Roll Recovery (1d10 per rules)
+        const roll = await new Roll("1d10").evaluate();
+        if (game.dice3d) game.dice3d.showForRoll(roll);
+        const recovery = roll.total;
+
+        // 2. Prepare Updates
+        const updates = {};
+        let restoredAny = false;
+
+        // Recover Essences
+        for (const [key, essence] of Object.entries(this.actor.system.essences)) {
+            if (essence.value < 100) { // Assuming 100 is Peak
+                const newVal = Math.min(100, essence.value + recovery);
+                updates[`system.essences.${key}.value`] = newVal;
+                restoredAny = true;
+            }
+        }
+
+        // Recover HP
+        const hp = this.actor.system.resources.hp;
+        if (hp.value < hp.max) {
+            const newHp = Math.min(hp.max, hp.value + recovery);
+            updates[`system.resources.hp.value`] = newHp;
+            restoredAny = true;
+        }
+
+        // 3. Apply & Chat
+        if (restoredAny) {
+            await this.actor.update(updates);
+            ChatMessage.create({
+                speaker: ChatMessage.getSpeaker({actor: this.actor}),
+                content: `
+                <div class="narequenta chat-card">
+                    <h3 style="color:#2a423a; border-bottom:1px solid #2a423a">Quick Breath</h3>
+                    <div style="text-align:center; font-size:1.2em; padding:5px;">
+                        Recovered <strong>${recovery}</strong> Vigor
+                    </div>
+                    <div style="font-size:0.8em; color:#666; text-align:center;">(Active Vigor & HP)</div>
+                </div>`
+            });
+        } else {
+            ui.notifications.info("Active Vigor is already full.");
+        }
+    });
   }
 
   /* -------------------------------------------- */
@@ -382,101 +506,153 @@ export class NarequentaActorSheet extends ActorSheet {
   }
 
   /* -------------------------------------------- */
-  /* TARGETING DIALOG (Dynamic Ally/Enemy)       */
+  /* TACTICAL TARGETING UI (AoE Logic)            */
   /* -------------------------------------------- */
   _onLaunchContest(event) {
       if(event) event.preventDefault();
       
+      // 1. Setup Data
       const attacker = this.actor;
       const calc = attacker.system.calculator;
       const range = calc.item_range || 5;
       const defaultDef = calc.active_motor || "vitalis";
-      const itemId = calc.selected_item_id;
-      const item = attacker.items.get(itemId);
-      const targetType = item?.system.target_type || "one"; 
       
+      // Determine if Offensive or Healing based on bonus in calculator
       const isHealing = (Number(calc.item_bonus) || 0) < 0;
-      const tier = (attacker.type === 'character') ? (attacker.system.resources.action_surges.max || 0) : (attacker.system.tier || 0);
-
-      // Determine Source Token (Priority: Selected > Owned)
-      let sourceToken = null;
-      const controlled = canvas.tokens.controlled.find(t => t.actor?.id === attacker.id);
-      if (controlled) sourceToken = controlled;
-      else {
-          const active = attacker.getActiveTokens();
-          if (active.length > 0) sourceToken = active[0];
-      }
-
-      if (!sourceToken) { ui.notifications.warn("Place token on scene."); return; }
       
-      const myType = attacker.type; 
-      let friendHtml = ""; let foeHtml = ""; let count = 0;
+      // Determine Tier for Safeguard Logic
+      const tier = (attacker.type === 'character') 
+          ? (attacker.system.resources.action_surges.max || 0) 
+          : (attacker.system.tier || 0);
+          
+      const tokens = attacker.getActiveTokens();
+      if (tokens.length === 0) { 
+          ui.notifications.warn("Place token on scene."); 
+          return;
+      }
+      const sourceToken = tokens[0];
+      
+      // 2. Build Target Lists (No Distance Limit)
+      let pcHtml = "";
+      let npcHtml = ""; 
+      let count = 0;
       
       canvas.tokens.placeables.forEach(t => {
-          if (t.id === sourceToken.id) return; 
-          const dist = canvas.grid.measureDistance(sourceToken, t);
-          if (dist <= range && t.actor?.system.resources?.hp?.value > 0) {
-              const targetActorType = t.actor.type;
-              const entry = `<div style="padding:2px;"><input type="checkbox" name="target" value="${t.id}" class="target-checkbox" data-type="${targetActorType}"> <strong>${t.name}</strong> (${Math.round(dist)}ft)</div>`;
-              if (targetActorType === myType) friendHtml += entry; else foeHtml += entry;
+          if (t.id === sourceToken.id) return; // Skip self
+          
+          // Basic validation: Must have an actor and be alive (HP > 0)
+          if (t.actor && t.actor.system.resources?.hp?.value > 0) {
+              
+              // Measure distance purely for display context
+              const dist = canvas.grid.measureDistance(sourceToken, t);
+              const isOutOfRange = dist > range;
+              
+              // Style: Gray out text if out of range, but keep checkbox active
+              const entryStyle = isOutOfRange ? "color: #888; font-style: italic;" : "color: #000;";
+              const distLabel = isOutOfRange ? `(${Math.round(dist)}ft - Far)` : `(${Math.round(dist)}ft)`;
+
+              const entry = `
+              <div style="padding:2px; ${entryStyle}">
+                   <input type="checkbox" name="target" value="${t.id}" class="target-checkbox" data-type="${t.actor.type}"> 
+                  <strong>${t.name}</strong> <span style="font-size:0.85em;">${distLabel}</span>
+              </div>`;
+              
+              if (t.actor.type === "character") {
+                  pcHtml += entry;
+              } else {
+                  npcHtml += entry;
+              }
               count++;
           }
       });
 
-      if (count === 0) { ui.notifications.warn(`No targets within ${range}ft of ${sourceToken.name}.`); return; }
+      if (count === 0) { 
+          ui.notifications.warn(`No valid targets on scene.`); 
+          return;
+      }
 
+      // 3. Build Selection Logic Scripts
+      // Note: We use the existing safeguards to auto-check boxes, but users can now manually check distant targets
       let autoSelectScript = "";
-      const friendType = myType; 
-      const foeType = (myType === "character") ? "npc" : "character";
-
-      if (targetType === "aoe") {
-          if (isHealing) autoSelectScript = `$('input[data-type="${friendType}"]').prop('checked', true);`;
-          else {
-              if (tier >= 3) autoSelectScript = `$('input[data-type="${foeType}"]').prop('checked', true);`;
-              else autoSelectScript = `$('input.target-checkbox').prop('checked', true);`;
+      if (isHealing) {
+          // HEALING: Auto-select PCs (Allies)
+          autoSelectScript = `$('input[data-type="character"]').prop('checked', true);`;
+      } else {
+          const itemId = calc.selected_item_id;
+          const item = attacker.items.get(itemId);
+          const targetType = item?.system.target_type || "one"; 
+          
+          if (targetType === "aoe") {
+              // DAMAGE AoE: Check Tier
+              if (tier >= 3) {
+                  // Mastery: Safe Casting (Select NPCs only)
+                  autoSelectScript = `$('input[data-type="npc"]').prop('checked', true);`;
+              } else {
+                  // Wild: Dangerous Casting (Select ALL)
+                  autoSelectScript = `$('input.target-checkbox').prop('checked', true);`;
+              }
           }
       }
 
+      // 4. Render Dialog
       const essences = ["vitalis", "motus", "sensus", "verbum", "anima", "hp"];
       let options = "";
       essences.forEach(k => { options += `<option value="${k}" ${k===defaultDef?"selected":""}>${k.toUpperCase()}</option>`; });
-
+      
       const content = `
       <form>
-          <div style="text-align:center; margin-bottom:5px;">Origin: <strong>${sourceToken.name}</strong> | Range: <strong>${range}ft</strong></div>
-          <div style="display:flex; gap:5px; margin-bottom:10px;">
-              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;"><strong>Allies</strong><br>${friendHtml || "-"}</div>
-              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;"><strong>Enemies</strong><br>${foeHtml || "-"}</div>
+          <div style="text-align:center; margin-bottom:5px; font-size: 0.9em; color:#555;">
+              Item Range: <strong>${range}ft</strong> (Distant targets marked in gray)
           </div>
+          
+          <div style="display:flex; gap:5px; margin-bottom:10px; max-height: 400px; overflow-y: auto;">
+              <div style="flex:1; background:#eef; padding:5px; border:1px solid #ccc;">
+                  <strong style="color: #004d00;">Allies (PCs)</strong><br>${pcHtml || "-"}
+              </div>
+              <div style="flex:1; background:#fee; padding:5px; border:1px solid #ccc;">
+                  <strong style="color: #8b0000;">Enemies (NPCs)</strong><br>${npcHtml || "-"}
+              </div>
+          </div>
+
           <div style="text-align:center; margin-bottom:10px;">
-              <button type="button" id="auto-select-btn" style="font-size:0.8em; width:100%;">${targetType === "aoe" ? "Reset / Auto-Select" : "Auto-Select Targets"}</button>
+              <button type="button" id="auto-select-btn" style="font-size:0.8em; width:100%;">
+                  ${isHealing ? "Auto-Target Allies (Healing)" : "Auto-Select (Contextual)"}
+              </button>
           </div>
+
           <label>Defensive Stat:</label>
           <select id="target-essence" style="width:100%;">${options}</select>
       </form>
       <script>
-          ${autoSelectScript}
-          $("#auto-select-btn").click(function() { 
+          $("#auto-select-btn").click(function() {
               const anyChecked = $("input:checkbox:checked").length > 0;
-              if (anyChecked) { $("input:checkbox").prop('checked', false); } else { ${autoSelectScript || `$('input.target-checkbox').prop('checked', true);`} }
+              if (anyChecked) {
+                 $("input:checkbox").prop('checked', false); // Toggle Off
+              } else {
+                 ${autoSelectScript || ""} // Toggle On based on logic
+              }
           });
-      </script>`;
+      </script>
+      `;
 
       new Dialog({ 
-          title: `Targeting (${targetType.toUpperCase()})`, content: content, 
+          title: "Tactical Targeting", 
+          content: content, 
           buttons: { 
-              confirm: { label: "Lock", icon: "<i class='fas fa-crosshairs'></i>", callback: async (html) => {
-                      const ids = []; const names = [];
-                      html.find("input:checked").each(function(){ ids.push($(this).val()); const t = canvas.tokens.get($(this).val()); if (t) names.push(t.name); });
-                      if(ids.length) {
-                          let nameString = names.join(", ");
-                          if (nameString.length > 25) nameString = names.length + " Targets Selected";
-                          await attacker.update({ 
-                              "system.calculator.target_ids": ids, "system.calculator.target_def_stat": html.find("#target-essence").val(), "system.calculator.target_name": nameString,
-                              "system.calculator.attack_roll": 0, "system.calculator.defense_roll": 0, "system.calculator.quick_breath_active": false
-                          });
-                      }
-                  }}
+              confirm: { 
+                  label: "Lock Targets", 
+                  icon: "<i class='fas fa-crosshairs'></i>",
+                  callback: async (html) => {
+                      const ids = []; 
+                      html.find("input:checked").each(function(){ ids.push($(this).val()); });
+                      
+                      if(ids.length) await this.actor.update({ 
+                          "system.calculator.target_ids": ids, 
+                          "system.calculator.target_def_stat": html.find("#target-essence").val(), 
+                          "system.calculator.target_name": `${ids.length} Targets` 
+                      });
+                  }
+              }
           }
       }).render(true);
   }

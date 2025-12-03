@@ -1,5 +1,29 @@
 # CHANGELOG
 ***
+## [v0.9.76] — 2025-12-03 (Tactical Visibility & Flow)
+
+**Status:** Beta - UI Overhaul & Logic Unbound
+
+### 💻 Interface (Actor Sheet)
+
+  - **Changed:** **Single Page Architecture (SPA):** The sheet layout was restructured into a flex-row design.
+      - **Main Column:** Contains Tabs (Essences, Items, Bio) and the Calculator.
+      - **Combatant Sidebar:** A new right-hand column displaying active **Allies** and **Enemies**, categorized by token disposition relative to the actor.
+  - **Added:** **Quick Breath Action:** Added a dedicated button to the Header. Clicking this performs an immediate **1d10** recovery to all Essences and HP (capped at $E_{max}$).
+  - **Changed:** **End Turn:** Moved the "End Turn" button to a sticky **Sheet Footer**, separating it from the resource header for better combat flow ergonomics.
+
+### 🎯 Targeting & Logic
+
+  - **Changed:** **Unbound Targeting:** Removed the hard distance constraint from the **Tactical Targeting** dialog.
+      - *Old Behavior:* Targets \> Range were hidden.
+      - *New Behavior:* All tokens on the scene are listed. Targets outside the Item's range are visually marked as **"(Far)"** and grayed out, but remain manually selectable.
+  - **Added:** **Scrollable Lists:** Added `overflow-y` handling to the Targeting Dialog to support crowded scenes without breaking the UI.
+  - **Added:** **Contextual Disposition:** The `getData()` method now actively fetches and sorts combatants into `allies` and `enemies` arrays based on the actor's current disposition.
+
+### 🎨 Visuals (LESS)
+
+  - **Added:** **Theme Integration:** The new Sidebar and Footer inherit the PC (Green) and NPC (Red) thematic styling defined in `narequenta.less`.
+***
 ## [v0.9.75] — 2025-12-02 (Item Standardization & UI Hints)
 **Status:** Beta - Content Polish & Math Sync
 
