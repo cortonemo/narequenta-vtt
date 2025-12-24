@@ -116,4 +116,5 @@
 
 ### 🐛 UI Fixes
 - **Item Sheet Layout:** Increased the width of the **Range** input field to `60px` to prevent text cutting off when entering long distances (e.g., "120").
+
 ***

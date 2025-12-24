@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "CHANGELOG.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "CHANGELOG"
             }
           }
         ]
@@ -183,10 +183,11 @@
       "bases:Create new base": false
     }
   },
-  "active": "75124cb6002016d9",
+  "active": "f55994c571b8cd88",
   "lastOpenFiles": [
-    "README.md",
     "header_image.jpeg",
+    "LICENSE.md",
+    "README.md",
     "header_image.png",
     "CHANGELOG.md",
     "system.zip",
@@ -209,7 +210,6 @@
     "templates.txt",
     "styles.txt",
     "module.txt",
-    "lang.txt",
-    "LICENSE.md"
+    "lang.txt"
   ]
 }
